@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 580">
+  <defs>
+    <style>
+      .title { font-family: "Times New Roman", Georgia, serif; font-weight: 700; letter-spacing: 6px; fill: #3f3f3f; stroke: #3f3f3f; stroke-width: 3; }
+      .subtitle { font-family: "Times New Roman", Georgia, serif; font-weight: 700; letter-spacing: 3px; fill: #3f3f3f; }
+      .stroke { fill: none; stroke: #3f3f3f; stroke-width: 10; stroke-linecap: round; stroke-linejoin: round; }
+      .fill { fill: #3f3f3f; }
+    </style>
+    <path id="topArc" d="M150,340 A250,250 0 1,1 650,340" />
+  </defs>
+  <!-- Arched brand name -->
+  <text font-size="68" class="title">
+    <textPath href="#topArc" startOffset="50%" text-anchor="middle">PAI'S TASTE</textPath>
+  </text>
+  <!-- Cloche dome (plate closer to text) -->
+  <path class="stroke" d="M300,390 a100,80 0 1,1 200,0" />
+  <circle cx="400" cy="300" r="12" class="fill"/>
+  <path class="stroke" d="M390,310 h20" />
+  <!-- Steam lines -->
+  <path class="stroke" d="M375,275 q15,-25 0,-45" />
+  <path class="stroke" d="M425,275 q15,-25 0,-45" />
+  <!-- Fish detail -->
+  <path class="stroke" d="M340,380 q40,-35 120,0 q-40,35 -120,0 z" />
+  <circle cx="385" cy="365" r="6" class="fill"/>
+  <path class="stroke" d="M455,375 l25,15 l-25,15" />
+  <!-- Plate rim moved up -->
+  <path class="stroke" d="M300,405 h200" />
+  <!-- Serving hand/arm -->
+  <path class="stroke" d="M280,440 h240" />
+  <path class="stroke" d="M520,440 q-15,30 -60,30 h-120 q-45,0 -60,-30" />
+  <path class="stroke" d="M340,470 q-5,20 10,25 h100 q15,-5 10,-25" />
+  <!-- Subtitle -->
+  <text x="400" y="540" font-size="30" text-anchor="middle" class="subtitle">FOOD SPECIAL</text>
+</svg>
