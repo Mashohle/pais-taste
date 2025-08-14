@@ -1,4 +1,4 @@
-import { MenuGrid } from '@/components/menu/menu-grid'
+import { MenuGrid } from '@/components/menu'
 import Image from 'next/image'
 
 export default function HomePage() {

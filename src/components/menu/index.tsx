@@ -2,9 +2,10 @@
 
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Plus } from "lucide-react"
+import { Plus, ShoppingCartIcon } from "lucide-react"
 import { useState } from "react"
 import { useMenuItems } from '@/lib/hooks/use-menu-items'
+import { ShoppingCart } from "@/components/cart"
 
 interface ProcessedGroup {
 	id: string
@@ -18,6 +19,7 @@ interface ProcessedGroup {
 export function MenuGrid() {
 	const { items, loading, error } = useMenuItems()
 	const [cart, setCart] = useState<{ itemId: string; type: "traditional" | "combo" }[]>([])
+	const [isCartOpen, setIsCartOpen] = useState(false)
 
 	const processedGroups: ProcessedGroup[] = items
 		.filter(item => item.category === 'Traditional Dishes')
@@ -158,7 +160,7 @@ export function MenuGrid() {
 					<div className="absolute top-96 right-16 sm:right-32 space-y-1">
 						<div className="w-1 h-3 bg-stone-500 opacity-40 rounded-full"></div>
 						<div className="w-1 h-4 bg-stone-600 opacity-45 rounded-full ml-1"></div>
-						<div className="w-1 h-3 bg-stone-600 opacity-35 rounded-full ml-0.5"></div>
+						<div className="w-1 h-3 bg-stone-600 opacity-45 rounded-full ml-0.5"></div>
 					</div>
 
 					<div className="absolute top-144 right-12 sm:right-24 space-y-1">
@@ -279,9 +281,17 @@ export function MenuGrid() {
 
 			{cart.length > 0 && (
 				<div className="fixed bottom-4 sm:bottom-6 right-4 sm:right-6 bg-stone-800 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-full shadow-xl border-2 border-white backdrop-blur-sm">
-					<span className="font-semibold text-sm sm:text-base">Cart: {cart.length} items</span>
+					<button
+						onClick={() => setIsCartOpen(true)}
+						className="flex items-center space-x-2 hover:opacity-80 transition-opacity"
+					>
+						<ShoppingCartIcon className="w-4 h-4" />
+						<span className="font-semibold text-sm sm:text-base">Cart: {cart.length} items</span>
+					</button>
 				</div>
 			)}
+
+			<ShoppingCart isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
 		</div>
 	)
 }
