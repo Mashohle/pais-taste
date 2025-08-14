@@ -3,9 +3,9 @@
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Plus, ShoppingCartIcon } from "lucide-react"
-import { useState } from "react"
 import { useMenuItems } from '@/lib/hooks/use-menu-items'
 import { ShoppingCart } from "@/components/cart"
+import { useCart } from '@/lib/context/cart-context'
 
 interface ProcessedGroup {
 	id: string
@@ -18,9 +18,9 @@ interface ProcessedGroup {
 
 export function MenuGrid() {
 	const { items, loading, error } = useMenuItems()
-	const [cart, setCart] = useState<{ itemId: string; type: "traditional" | "combo" }[]>([])
-	const [isCartOpen, setIsCartOpen] = useState(false)
+	const { state, addItem, setCartOpen } = useCart()
 
+	// todo: move into state (could help with showing items out of stock etc later)
 	const processedGroups: ProcessedGroup[] = items
 		.filter(item => item.category === 'Traditional Dishes')
 		.map(item => {
@@ -63,13 +63,23 @@ export function MenuGrid() {
 		)
 	}
 
-	const addToCart = (groupId: string, type: "traditional" | "combo") => {
-		setCart((prev) => [...prev, { itemId: groupId, type }])
+	const handleAddToCart = (group: ProcessedGroup, type: "traditional" | "combo") => {
+		const item = type === "traditional" ? group.traditional : group.combo
+		addItem({
+			id: `${group.id}-${type}`,
+			name: item.name,
+			price: item.price,
+			type: type
+		})
 	}
 
 	const getItemCount = (groupId: string, type: "traditional" | "combo") => {
-		return cart.filter((item) => item.itemId === groupId && item.type === type).length
+		return state.items.filter(item => 
+			item.id === `${groupId}-${type}`
+		).reduce((sum, item) => sum + item.quantity, 0)
 	}
+
+	const totalItems = state.items.reduce((sum, item) => sum + item.quantity, 0)
 
 	return (
 		<div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -227,7 +237,7 @@ export function MenuGrid() {
 												</Badge>
 											</div>
 											<Button
-												onClick={() => addToCart(group.id, "traditional")}
+												onClick={() => handleAddToCart(group, "traditional")}
 												size="sm"
 												className="w-full bg-stone-700 hover:bg-stone-800 text-white shadow-lg hover:shadow-xl transition-all duration-200 text-xs sm:text-sm"
 											>
@@ -258,7 +268,7 @@ export function MenuGrid() {
 												</Badge>
 											</div>
 											<Button
-												onClick={() => addToCart(group.id, "combo")}
+												onClick={() => handleAddToCart(group, "combo")}
 												size="sm"
 												className="w-full bg-stone-700 hover:bg-stone-800 text-white shadow-lg hover:shadow-xl transition-all duration-200 text-xs sm:text-sm"
 											>
@@ -279,19 +289,20 @@ export function MenuGrid() {
 				))}
 			</div>
 
-			{cart.length > 0 && (
+			{/* Cart Button */}
+			{totalItems > 0 && (
 				<div className="fixed bottom-4 sm:bottom-6 right-4 sm:right-6 bg-stone-800 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-full shadow-xl border-2 border-white backdrop-blur-sm">
 					<button
-						onClick={() => setIsCartOpen(true)}
+						onClick={() => setCartOpen(true)}
 						className="flex items-center space-x-2 hover:opacity-80 transition-opacity"
 					>
 						<ShoppingCartIcon className="w-4 h-4" />
-						<span className="font-semibold text-sm sm:text-base">Cart: {cart.length} items</span>
+						<span className="font-semibold text-sm sm:text-base">Cart: {totalItems} items</span>
 					</button>
 				</div>
 			)}
 
-			<ShoppingCart isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
+			<ShoppingCart isOpen={state.isOpen} onClose={() => setCartOpen(false)} />
 		</div>
 	)
 }

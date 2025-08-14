@@ -3,15 +3,7 @@
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { X, Plus, Minus, Trash2, ShoppingCartIcon as CartIcon } from "lucide-react"
-import { useState } from "react"
-
-interface CartItem {
-  id: string
-  name: string
-  price: number
-  quantity: number
-  type: "traditional" | "combo"
-}
+import { useCart } from '@/lib/context/cart-context'
 
 interface ShoppingCartProps {
   isOpen: boolean
@@ -19,31 +11,10 @@ interface ShoppingCartProps {
 }
 
 export function ShoppingCart({ isOpen, onClose }: ShoppingCartProps) {
-  // Sample cart items for demonstration
-  const [cartItems, setCartItems] = useState<CartItem[]>([
-    { id: "skop-traditional", name: "Traditional Skop", price: 85, quantity: 2, type: "traditional" },
-    { id: "mogodu-combo", name: "Mogodu & Pap", price: 100, quantity: 1, type: "combo" },
-    { id: "hardbody-traditional", name: "Hardbody Chicken", price: 85, quantity: 1, type: "traditional" },
-  ])
+  const { state, updateQuantity, removeItem, clearCart } = useCart()
 
-  const updateQuantity = (id: string, newQuantity: number) => {
-    if (newQuantity === 0) {
-      removeItem(id)
-      return
-    }
-    setCartItems((items) => items.map((item) => (item.id === id ? { ...item, quantity: newQuantity } : item)))
-  }
-
-  const removeItem = (id: string) => {
-    setCartItems((items) => items.filter((item) => item.id !== id))
-  }
-
-  const clearCart = () => {
-    setCartItems([])
-  }
-
-  const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0)
-  const totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0)
+  const subtotal = state.items.reduce((sum, item) => sum + item.price * item.quantity, 0)
+  const totalItems = state.items.reduce((sum, item) => sum + item.quantity, 0)
 
   return (
     <>
@@ -94,8 +65,8 @@ export function ShoppingCart({ isOpen, onClose }: ShoppingCartProps) {
 
           {/* Cart Content */}
           <div className="flex-1 overflow-y-auto">
-            {cartItems.length === 0 ? (
-              // Empty State
+            {state.items.length === 0 ? (
+              // Empty State - keep existing
               <div className="flex flex-col items-center justify-center h-full p-6 text-center">
                 <div className="w-24 h-24 rounded-full bg-stone-100/80 backdrop-blur-sm flex items-center justify-center mb-4 border border-stone-200/50">
                   <CartIcon className="w-12 h-12 text-stone-400" />
@@ -111,7 +82,7 @@ export function ShoppingCart({ isOpen, onClose }: ShoppingCartProps) {
             ) : (
               // Cart Items
               <div className="p-4 sm:p-6 space-y-4">
-                {cartItems.map((item) => (
+                {state.items.map((item) => (
                   <div
                     key={item.id}
                     className="relative bg-white/85 backdrop-blur-sm rounded-xl p-4 border border-stone-200/60 shadow-lg overflow-hidden"
@@ -177,7 +148,7 @@ export function ShoppingCart({ isOpen, onClose }: ShoppingCartProps) {
                 ))}
 
                 {/* Clear Cart Button */}
-                {cartItems.length > 0 && (
+                {state.items.length > 0 && (
                   <Button
                     variant="ghost"
                     size="sm"
@@ -193,7 +164,7 @@ export function ShoppingCart({ isOpen, onClose }: ShoppingCartProps) {
           </div>
 
           {/* Footer with Subtotal and Checkout */}
-          {cartItems.length > 0 && (
+          {state.items.length > 0 && (
             <div className="border-t border-stone-200/50 bg-white/40 backdrop-blur-sm p-4 sm:p-6 space-y-4">
               <div className="flex justify-between items-center">
                 <span className="text-lg font-semibold text-stone-700">Subtotal:</span>
