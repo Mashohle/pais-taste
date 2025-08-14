@@ -3,7 +3,7 @@ export default function HomePage() {
     <div className="container mx-auto px-4 py-8">
       <header className="text-center mb-8">
         <h1 className="text-4xl font-bold text-green-800 mb-2">
-          Pai's Taste Food Special
+          Pai&apos;s Taste Food Special
         </h1>
         <p className="text-stone-600">
           Traditional South African cuisine for pickup
@@ -16,7 +16,7 @@ export default function HomePage() {
       <div className="bg-white rounded-lg shadow-md p-6 text-center">
         <h2 className="text-2xl font-semibold mb-4">Menu Coming Soon</h2>
         <p className="text-stone-600">
-          We're setting up our online ordering system. 
+          We&apos;re setting up our online ordering system. 
           Call us to place your order!
         </p>
       </div>
