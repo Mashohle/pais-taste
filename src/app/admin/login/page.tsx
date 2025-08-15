@@ -2,6 +2,7 @@
 
 import type React from "react"
 import { useState } from "react"
+import { useRouter } from 'next/navigation'
 import { Lock, Eye, EyeOff } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
@@ -13,18 +14,21 @@ export default function AdminLogin() {
   const [showPin, setShowPin] = useState(false)
   const [error, setError] = useState("")
   const [isLoading, setIsLoading] = useState(false)
+  const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
     setIsLoading(true)
 
-    // Simulate authentication
+    // Simulate authentication delay
     setTimeout(() => {
-      if (pin === "1234") {
-        window.location.href = "/admin"
+      if (pin === "pai2024") {
+        localStorage.setItem('admin-session', 'true')
+        router.push('/admin')
       } else {
         setError("Invalid PIN. Please try again.")
+        setPin("") // Clear the PIN on error
       }
       setIsLoading(false)
     }, 1000)
@@ -63,9 +67,9 @@ export default function AdminLogin() {
               <Image
                 src="/logo.svg"
                 alt="Pai's Taste Food Special"
-                width={400}
-                height={290}
-                className="mx-auto mb-2"
+                width={120}
+                height={87}
+                className="scale-75"
               />
             </div>
           </div>
@@ -86,13 +90,16 @@ export default function AdminLogin() {
                   value={pin}
                   onChange={(e) => setPin(e.target.value)}
                   className="text-center text-2xl font-mono tracking-widest h-14 bg-gradient-to-r from-white/90 to-stone-50/80 border-2 border-stone-300 focus:border-stone-500 focus:ring-4 focus:ring-stone-500/20 shadow-inner hover:shadow-lg transition-all duration-300 hover:border-stone-400"
-                  maxLength={6}
+                  maxLength={8}
                   required
+                  autoFocus
+                  disabled={isLoading}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPin(!showPin)}
                   className="absolute right-3 top-1/2 transform -translate-y-1/2 text-stone-500 hover:text-stone-700 transition-all duration-200 hover:scale-110"
+                  disabled={isLoading}
                 >
                   {showPin ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
@@ -100,7 +107,7 @@ export default function AdminLogin() {
             </div>
 
             {error && (
-              <div className="text-red-600 text-sm text-center bg-gradient-to-r from-red-50 to-red-100 border-2 border-red-200 rounded-lg p-3 shadow-lg animate-shake">
+              <div className="text-red-600 text-sm text-center bg-gradient-to-r from-red-50 to-red-100 border-2 border-red-200 rounded-lg p-3 shadow-lg animate-pulse">
                 {error}
               </div>
             )}

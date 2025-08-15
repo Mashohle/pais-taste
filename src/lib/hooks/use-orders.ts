@@ -6,7 +6,9 @@ interface Order {
   customer_name: string
   customer_phone: string
   total_amount: number
-  order_status: string
+  order_status: 'pending' | 'preparing' | 'ready' | 'collected' | 'completed'
+  payment_status: 'pending' | 'paid'
+  payment_method: 'online' | 'cash_on_pickup'
   pickup_location: string
   special_instructions: string | null
   created_at: string
@@ -74,8 +76,24 @@ export function useOrders() {
       fetchOrders() // Refresh orders
     } catch (error) {
       console.error('Error updating order status:', error)
+      throw error
     }
   }
 
-  return { orders, loading, updateOrderStatus }
+  const updatePaymentStatus = async (orderId: string, paymentStatus: 'paid' | 'pending') => {
+    try {
+      const { error } = await supabase
+        .from('orders')
+        .update({ payment_status: paymentStatus })
+        .eq('id', orderId)
+
+      if (error) throw error
+      fetchOrders() // Refresh orders
+    } catch (error) {
+      console.error('Error updating payment status:', error)
+      throw error
+    }
+  }
+
+  return { orders, loading, updateOrderStatus, updatePaymentStatus }
 }

@@ -12,7 +12,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { ArrowLeft, MapPin, Phone, User, FileText } from "lucide-react"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { ArrowLeft, MapPin, Phone, User, FileText, CreditCard, Banknote } from "lucide-react"
 import Link from "next/link"
 
 export default function CheckoutPage() {
@@ -31,6 +32,7 @@ export default function CheckoutPage() {
         phoneNumber: "",
         pickupLocation: "",
         specialInstructions: "",
+        paymentMethod: "cash_on_pickup", // Default to cash
     })
 
     const [errors, setErrors] = useState<Record<string, string>>({})
@@ -68,6 +70,10 @@ export default function CheckoutPage() {
             newErrors.pickupLocation = "Please select a pickup location"
         }
 
+        if (!formData.paymentMethod) {
+            newErrors.paymentMethod = "Please select a payment method"
+        }
+
         setErrors(newErrors)
         return Object.keys(newErrors).length === 0
     }
@@ -83,7 +89,8 @@ export default function CheckoutPage() {
                     pickup_location: formData.pickupLocation,
                     special_instructions: formData.specialInstructions,
                     total_amount: total,
-                    items: orderItems
+                    items: orderItems,
+                    payment_method: formData.paymentMethod as 'online' | 'cash_on_pickup'
                 })
 
                 // Navigate FIRST, then clear cart
@@ -210,6 +217,51 @@ export default function CheckoutPage() {
                                     {errors.pickupLocation && <p className="text-red-500 text-sm">{errors.pickupLocation}</p>}
                                 </div>
 
+                                {/* Payment Method Section */}
+                                <div className="space-y-3">
+                                    <Label className="text-stone-700 font-medium flex items-center">
+                                        <CreditCard className="w-4 h-4 mr-1" />
+                                        Payment Method *
+                                    </Label>
+                                    <RadioGroup
+                                        value={formData.paymentMethod}
+                                        onValueChange={(value: string) => handleInputChange("paymentMethod", value)}
+                                        className="space-y-3"
+                                    >
+                                        {/* Cash on Pickup Option */}
+                                        <div className="flex items-center space-x-3 p-3 rounded-lg border border-stone-200 bg-white/60 hover:bg-white/80 transition-colors">
+                                            <RadioGroupItem value="cash_on_pickup" id="cash_on_pickup" />
+                                            <div className="flex items-center flex-1">
+                                                <Banknote className="w-5 h-5 text-green-600 mr-3" />
+                                                <div className="flex-1">
+                                                    <Label htmlFor="cash_on_pickup" className="text-stone-800 font-medium cursor-pointer">
+                                                        Cash on Pickup
+                                                    </Label>
+                                                    <p className="text-sm text-stone-600">Pay when you collect your order</p>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Online Payment Option (Disabled) */}
+                                        <div className="flex items-center space-x-3 p-3 rounded-lg border border-stone-200 bg-stone-100/50 opacity-60">
+                                            <RadioGroupItem value="online" id="online" disabled />
+                                            <div className="flex items-center flex-1">
+                                                <CreditCard className="w-5 h-5 text-stone-400 mr-3" />
+                                                <div className="flex-1">
+                                                    <Label htmlFor="online" className="text-stone-500 font-medium cursor-not-allowed">
+                                                        Online Payment
+                                                        <span className="ml-2 text-xs bg-stone-200 text-stone-600 px-2 py-1 rounded-full">
+                                                            Coming Soon
+                                                        </span>
+                                                    </Label>
+                                                    <p className="text-sm text-stone-400">Pay online with card or EFT</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </RadioGroup>
+                                    {errors.paymentMethod && <p className="text-red-500 text-sm">{errors.paymentMethod}</p>}
+                                </div>
+
                                 <div className="space-y-2">
                                     <Label htmlFor="specialInstructions" className="text-stone-700 font-medium flex items-center">
                                         <FileText className="w-4 h-4 mr-1" />
@@ -272,6 +324,22 @@ export default function CheckoutPage() {
                                     </div>
                                 )}
 
+                                {formData.paymentMethod && (
+                                    <div className="flex justify-between text-stone-700 text-sm">
+                                        <span className="flex items-center">
+                                            {formData.paymentMethod === 'cash_on_pickup' ? (
+                                                <Banknote className="w-3 h-3 mr-1" />
+                                            ) : (
+                                                <CreditCard className="w-3 h-3 mr-1" />
+                                            )}
+                                            Payment:
+                                        </span>
+                                        <span className="capitalize">
+                                            {formData.paymentMethod === 'cash_on_pickup' ? 'Cash on Pickup' : 'Online Payment'}
+                                        </span>
+                                    </div>
+                                )}
+
                                 <div className="flex justify-between text-lg sm:text-xl font-bold text-stone-800 pt-2 border-t border-stone-300">
                                     <span>Total:</span>
                                     <span>R{total}</span>
@@ -287,7 +355,10 @@ export default function CheckoutPage() {
                             </Button>
 
                             <p className="text-xs text-stone-600 text-center mt-3">
-                                You will receive a confirmation call within 10 minutes
+                                {formData.paymentMethod === 'cash_on_pickup' 
+                                    ? 'You will receive a confirmation call within 10 minutes. Payment due on pickup.'
+                                    : 'You will receive a confirmation call within 10 minutes'
+                                }
                             </p>
                         </div>
                     </div>
