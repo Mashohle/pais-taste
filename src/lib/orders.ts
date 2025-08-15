@@ -70,7 +70,7 @@ export async function createOrder(orderData: OrderData) {
   }
 }
 
-// Export helper function to update payment status
+// Helper function to update payment status
 export async function markOrderAsPaid(orderId: string) {
   try {
     const { error } = await supabase

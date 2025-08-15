@@ -9,8 +9,8 @@ export default function HomePage() {
           <Image
             src="/logo.svg"
             alt="Pai's Taste Food Special"
-            width={400}
-            height={290}
+            width={300}
+            height={215}
             className="mx-auto mb-4"
           />
           <p className="text-stone-600">

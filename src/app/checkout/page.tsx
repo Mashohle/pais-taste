@@ -15,6 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { ArrowLeft, MapPin, Phone, User, FileText, CreditCard, Banknote } from "lucide-react"
 import Link from "next/link"
+import Image from 'next/image'
 
 export default function CheckoutPage() {
     const { state, clearCart } = useCart() //todo: The clearCart function should be called after successfully placing an order to empty the cart
@@ -142,7 +143,13 @@ export default function CheckoutPage() {
                         Back to Menu
                     </Link>
                     <div className="text-center">
-                        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-stone-800 mb-2">Pai's Taste Food Special</h1>
+                        <Image
+                            src="/logo.svg"
+                            alt="Pai's Taste Food Special"
+                            width={200}
+                            height={145}
+                            className="mx-auto mb-4"
+                        />
                         <p className="text-stone-600 text-sm sm:text-base">
                             Complete your order for traditional South African cuisine
                         </p>
@@ -357,7 +364,7 @@ export default function CheckoutPage() {
                             </Button>
 
                             <p className="text-xs text-stone-600 text-center mt-3">
-                                {formData.paymentMethod === 'cash_on_pickup' 
+                                {formData.paymentMethod === 'cash_on_pickup'
                                     ? 'You will receive a confirmation call within 10 minutes. Payment due on pickup.'
                                     : 'You will receive a confirmation call within 10 minutes'
                                 }
