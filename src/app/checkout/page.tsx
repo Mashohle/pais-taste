@@ -3,7 +3,9 @@
 import type React from "react"
 import { useCart } from '@/lib/context/cart-context'
 import { useRouter } from 'next/navigation'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
+
+import { createOrder } from '@/lib/orders'
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -11,11 +13,10 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ArrowLeft, MapPin, Phone, User, FileText } from "lucide-react"
-import { useState } from "react"
 import Link from "next/link"
 
 export default function CheckoutPage() {
-    const { state, clearCart } = useCart()
+    const { state, clearCart } = useCart() //todo: The clearCart function should be called after successfully placing an order to empty the cart
     const router = useRouter()
 
     // Redirect if cart is empty
@@ -34,7 +35,6 @@ export default function CheckoutPage() {
 
     const [errors, setErrors] = useState<Record<string, string>>({})
 
-    // Use real cart data
     const orderItems = state.items
     const subtotal = orderItems.reduce((sum, item) => sum + item.price * item.quantity, 0)
     const total = subtotal
@@ -72,12 +72,32 @@ export default function CheckoutPage() {
         return Object.keys(newErrors).length === 0
     }
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         if (validateForm()) {
-            // Handle order submission
-            console.log("Order submitted:", { formData, items: orderItems, total })
-            // TODO: Save order to Supabase and clear cart
+            try {
+                // Create order in Supabase
+                const order = await createOrder({
+                    customer_name: formData.fullName,
+                    customer_phone: formData.phoneNumber,
+                    pickup_location: formData.pickupLocation,
+                    special_instructions: formData.specialInstructions,
+                    total_amount: total,
+                    items: orderItems
+                })
+
+                // Navigate FIRST, then clear cart
+                router.push(`/order-confirmation?id=${order.id}`)
+
+                // Clear cart after navigation starts
+                setTimeout(() => clearCart(), 100)
+
+            } catch (error) {
+                console.error('Order submission failed:', error)
+                // Show error message to user
+                // todo: use toastify maybe
+                alert('Failed to place order. Please try again.')
+            }
         }
     }
 
