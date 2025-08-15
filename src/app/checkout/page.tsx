@@ -20,12 +20,16 @@ export default function CheckoutPage() {
     const { state, clearCart } = useCart() //todo: The clearCart function should be called after successfully placing an order to empty the cart
     const router = useRouter()
 
-    // Redirect if cart is empty
+    // Only redirect if cart is empty on initial load (not after clearing cart)
     useEffect(() => {
-        if (state.items.length === 0) {
-            router.push('/')
+        if (state.items.length === 0 && typeof window !== 'undefined') {
+            // Only redirect if we're not coming from a successful order
+            const urlParams = new URLSearchParams(window.location.search)
+            if (!urlParams.has('success')) {
+                router.push('/')
+            }
         }
-    }, [state.items.length, router])
+    }, [])
 
     const [formData, setFormData] = useState({
         fullName: "",
@@ -93,11 +97,9 @@ export default function CheckoutPage() {
                     payment_method: formData.paymentMethod as 'online' | 'cash_on_pickup'
                 })
 
-                // Navigate FIRST, then clear cart
+                // Clear cart and navigate
+                clearCart()
                 router.push(`/order-confirmation?id=${order.id}`)
-
-                // Clear cart after navigation starts
-                setTimeout(() => clearCart(), 100)
 
             } catch (error) {
                 console.error('Order submission failed:', error)
