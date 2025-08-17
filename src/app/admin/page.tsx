@@ -242,23 +242,13 @@ export default function AdminDashboard() {
                     <div className="relative flex flex-col sm:flex-row justify-between items-start sm:items-center">
                         <div>
                             <h1 className="text-2xl sm:text-3xl font-bold text-stone-800 mb-2">Pai's Taste Admin</h1>
-                            <p className="text-stone-600 text-sm sm:text-base">Traditional South African Cuisine</p>
-                            <p className="text-stone-500 text-xs mt-1">Logged in as: {user?.email}</p>
+                            <p className="text-stone-600 text-sm">Kitchen Dashboard</p>
                         </div>
                         <div className="mt-4 sm:mt-0 flex items-center gap-4">
                             <div className="text-right">
                                 <p className="text-stone-700 font-semibold">{currentDate}</p>
-                                <p className="text-stone-600 text-sm">Kitchen Dashboard</p>
+                                <p className="text-stone-500 text-xs mt-1">Logged in as: {user?.email}</p>
                             </div>
-                            <Button
-                                onClick={handleSignOut}
-                                variant="outline"
-                                size="sm"
-                                className="flex items-center gap-2 border-stone-300 text-stone-700 hover:bg-stone-50"
-                            >
-                                <LogOut className="w-4 h-4" />
-                                Sign Out
-                            </Button>
                         </div>
                     </div>
                 </div>

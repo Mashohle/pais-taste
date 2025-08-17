@@ -2,55 +2,103 @@
 
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Plus, ShoppingCartIcon } from "lucide-react"
+import { Plus, ShoppingCartIcon, Package } from "lucide-react"
 import { useMenuItems } from '@/lib/hooks/use-menu-items'
 import { ShoppingCart } from "@/components/cart"
 import { useCart } from '@/lib/contexts/cart-context'
+import { useState, useEffect, useMemo } from 'react'
 
 interface ProcessedGroup {
 	id: string
 	name: string
 	description: string
 	image: string
-	traditional: { name: string; price: number; description: string }
-	combo: { name: string; price: number; description: string }
+	traditional: {
+		name: string
+		price: number
+		description: string
+		image_url?: string
+		available: boolean
+		published: boolean
+	}
+	combo: {
+		name: string
+		price: number
+		description: string
+		image_url?: string
+		available: boolean
+		published: boolean
+	}
 }
 
 export function MenuGrid() {
 	const { items, loading, error } = useMenuItems()
 	const { state, addItem, setCartOpen } = useCart()
+	const [processedGroups, setProcessedGroups] = useState<ProcessedGroup[]>([])
 
-	// todo: move into state (could help with showing items out of stock etc later)
-	const processedGroups: ProcessedGroup[] = items
-		.filter(item => item.category === 'Traditional Dishes')
-		.map(item => {
-			const comboItem = items.find(combo =>
-				combo.category === 'Combo Meals' &&
-				combo.name.toLowerCase().includes(item.name.toLowerCase())
-			)
+	// Process menu items into groups whenever items change
+	useEffect(() => {
+		if (items.length === 0) {
+			setProcessedGroups([])
+			return
+		}
 
-			return {
-				id: item.name.toLowerCase().replace(/\s+/g, '-'),
-				name: item.name.toUpperCase(),
-				description: item.description || 'Traditional South African dish',
-				image: `/south-african-${item.name.toLowerCase().replace(/\s+/g, '-')}.png`,
-				traditional: {
-					name: item.name,
-					price: item.price,
-					description: item.description || 'Traditional preparation'
-				},
-				combo: {
-					name: comboItem?.name || `${item.name} & Pap`,
-					price: comboItem?.price || item.combo_price || 100,
-					description: comboItem?.description || `${item.name} with pap`
+		const newProcessedGroups: ProcessedGroup[] = items
+			.filter(item => item.category === 'Traditional Dishes' && item.published)
+			.map(item => {
+				const comboItem = items.find(combo =>
+					combo.category === 'Combo Meals' &&
+					combo.name.toLowerCase().includes(item.name.toLowerCase()) &&
+					combo.published
+				)
+
+				return {
+					id: item.name.toLowerCase().replace(/\s+/g, '-'),
+					name: item.name.toUpperCase(),
+					description: item.description || 'Traditional South African dish',
+					image: item.image_url || `/south-african-${item.name.toLowerCase().replace(/\s+/g, '-')}.png`,
+					traditional: {
+						name: item.name,
+						price: item.price,
+						description: item.description || 'Traditional preparation',
+						image_url: item.image_url || undefined, // Convert null to undefined
+						available: item.available,
+						published: item.published
+					},
+					combo: {
+						name: comboItem?.name || `${item.name} & Pap`,
+						price: comboItem?.price || item.combo_price || 100,
+						description: comboItem?.description || `${item.name} with pap`,
+						image_url: comboItem?.image_url || undefined, // Convert null to undefined
+						available: comboItem?.available ?? true,
+						published: comboItem?.published ?? true
+					}
 				}
-			}
+			})
+
+		setProcessedGroups(newProcessedGroups)
+	}, [items])
+
+	// Memoized counts for performance
+	const itemCounts = useMemo(() => {
+		const counts: Record<string, number> = {}
+		state.items.forEach(item => {
+			counts[item.id] = (counts[item.id] || 0) + item.quantity
 		})
+		return counts
+	}, [state.items])
+
+	const totalItems = useMemo(() =>
+		state.items.reduce((sum, item) => sum + item.quantity, 0)
+		, [state.items])
 
 	if (loading) {
 		return (
 			<div className="text-center py-8">
-				<div className="text-amber-800">Loading delicious menu...</div>
+				<div className="animate-pulse space-y-4">
+					<div className="h-4 bg-stone-300 rounded w-1/4 mx-auto"></div>
+					<div className="text-stone-600">Loading delicious menu...</div>
+				</div>
 			</div>
 		)
 	}
@@ -58,13 +106,42 @@ export function MenuGrid() {
 	if (error) {
 		return (
 			<div className="text-center py-8 text-red-600">
-				Error loading menu: {error}
+				<div className="space-y-2">
+					<div>❌ Error loading menu</div>
+					<div className="text-sm">{error}</div>
+					<Button
+						onClick={() => window.location.reload()}
+						variant="outline"
+						size="sm"
+					>
+						Try Again
+					</Button>
+				</div>
+			</div>
+		)
+	}
+
+	if (processedGroups.length === 0) {
+		return (
+			<div className="text-center py-12">
+				<div className="space-y-4">
+					<Package className="w-16 h-16 text-stone-400 mx-auto" />
+					<div className="text-stone-600 text-lg">No menu items available</div>
+					<div className="text-stone-500 text-sm">Please check back later</div>
+				</div>
 			</div>
 		)
 	}
 
 	const handleAddToCart = (group: ProcessedGroup, type: "traditional" | "combo") => {
 		const item = type === "traditional" ? group.traditional : group.combo
+
+		// Check if item is available
+		if (!item.available) {
+			alert(`Sorry, ${item.name} is currently out of stock.`)
+			return
+		}
+
 		addItem({
 			id: `${group.id}-${type}`,
 			name: item.name,
@@ -74,12 +151,12 @@ export function MenuGrid() {
 	}
 
 	const getItemCount = (groupId: string, type: "traditional" | "combo") => {
-		return state.items.filter(item => 
-			item.id === `${groupId}-${type}`
-		).reduce((sum, item) => sum + item.quantity, 0)
+		return itemCounts[`${groupId}-${type}`] || 0
 	}
 
-	const totalItems = state.items.reduce((sum, item) => sum + item.quantity, 0)
+	const isItemAvailable = (item: ProcessedGroup['traditional'] | ProcessedGroup['combo']) => {
+		return item.available && item.published
+	}
 
 	return (
 		<div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -219,67 +296,228 @@ export function MenuGrid() {
 								</div>
 
 								<div className="w-full space-y-3">
-									<div className="relative bg-white/85 backdrop-blur-sm rounded-xl p-3 sm:p-4 border border-stone-200/60 shadow-lg overflow-hidden">
+									{/* Traditional Item Card with Image */}
+									{/* Traditional Item Card with Enhanced Layout */}
+									<div className={`relative backdrop-blur-sm rounded-xl p-3 sm:p-4 border shadow-lg overflow-hidden transition-all duration-200 ${
+										isItemAvailable(group.traditional) 
+											? 'bg-white/85 border-stone-200/60 hover:shadow-xl' 
+											: 'bg-stone-100/60 border-stone-300/40'
+									}`}>
 										<div className="absolute inset-0 bg-gradient-to-br from-white/50 via-transparent to-transparent rounded-xl"></div>
 										<div className="relative">
-											<div className="flex justify-between items-start mb-3">
-												<div className="flex-1 text-left">
-													<h4 className="font-semibold text-stone-800 text-sm sm:text-base">
-														{group.traditional.name}
-													</h4>
-													<p className="text-xs text-stone-600">{group.traditional.description}</p>
+											<div className="flex space-x-4">
+												{/* Item Image - 25% */}
+												<div className={`w-1/4 aspect-square rounded-lg overflow-hidden border-2 shadow-md flex-shrink-0 ${
+													isItemAvailable(group.traditional) 
+														? 'border-white/90 bg-stone-50' 
+														: 'border-stone-300/60 bg-stone-200/60'
+												}`}>
+													{group.traditional.image_url ? (
+														<img
+															src={group.traditional.image_url}
+															alt={group.traditional.name}
+															className={`w-full h-full object-cover transition-all duration-200 ${
+																!isItemAvailable(group.traditional) ? 'grayscale opacity-60' : ''
+															}`}
+															onError={(e) => {
+																(e.target as HTMLImageElement).src = "/placeholder.svg"
+															}}
+														/>
+													) : (
+														<div className="w-full h-full flex items-center justify-center text-stone-400">
+															<Package className="w-6 h-6" />
+														</div>
+													)}
 												</div>
-												<Badge
-													variant="outline"
-													className="text-stone-700 border-stone-400 bg-stone-50/90 backdrop-blur-sm ml-2 text-xs sm:text-sm"
-												>
-													R{group.traditional.price}
-												</Badge>
+
+												{/* Item Content - 75% */}
+												<div className="flex-1 flex flex-col justify-between min-h-0">
+													{/* Title Section */}
+													<div className="mb-1">
+														<div className="flex items-start justify-between">
+															<h4 className={`font-bold text-base sm:text-lg leading-tight ${
+																isItemAvailable(group.traditional) ? 'text-stone-800' : 'text-stone-500'
+															}`}>
+																{group.traditional.name}
+															</h4>
+															{/* Sale Badge - Future feature */}
+															{/* {group.traditional.onSale && (
+																<Badge className="ml-2 bg-red-500 text-white text-xs animate-pulse">
+																	SALE
+																</Badge>
+															)} */}
+														</div>
+														{!isItemAvailable(group.traditional) && (
+															<span className="text-xs text-red-600 font-medium">Out of Stock</span>
+														)}
+													</div>
+													
+													{/* Description */}
+													<p className={`text-sm leading-relaxed mb-3 text-left ${
+														isItemAvailable(group.traditional) ? 'text-stone-600' : 'text-stone-400'
+													}`}>
+														{group.traditional.description}
+													</p>
+													
+													{/* Price Section with Sale Support */}
+													<div className="mb-3">
+														<div className="flex items-center gap-2">
+															{/* Regular Price or Sale Price */}
+															<span className={`font-bold text-lg ${
+																isItemAvailable(group.traditional) ? 'text-stone-800' : 'text-stone-500'
+															}`}>
+																R{group.traditional.price}
+															</span>
+															
+															{/* Original Price (crossed out during sale) - Future feature */}
+															{/* {group.traditional.originalPrice && group.traditional.originalPrice > group.traditional.price && (
+																<span className="text-sm text-stone-400 line-through">
+																	R{group.traditional.originalPrice}
+																</span>
+															)} */}
+															
+															{/* Discount Percentage - Future feature */}
+															{/* {group.traditional.discountPercent && (
+																<Badge className="bg-green-500 text-white text-xs">
+																	{group.traditional.discountPercent}% OFF
+																</Badge>
+															)} */}
+														</div>
+													</div>
+													
+													{/* Button */}
+													<Button
+														onClick={() => handleAddToCart(group, "traditional")}
+														size="sm"
+														disabled={!isItemAvailable(group.traditional)}
+														className={`w-full text-sm font-medium shadow-lg transition-all duration-200 ${
+															isItemAvailable(group.traditional)
+																? 'bg-stone-700 hover:bg-stone-800 text-white hover:shadow-xl hover:scale-[1.02]'
+																: 'bg-stone-300 text-stone-500 cursor-not-allowed'
+														}`}
+													>
+														<Plus className="w-4 h-4 mr-2" />
+														{isItemAvailable(group.traditional) ? 'Add to Cart' : 'Out of Stock'}
+														{getItemCount(group.id, "traditional") > 0 && (
+															<Badge className="ml-2 bg-stone-100 text-stone-800 text-xs font-bold">
+																{getItemCount(group.id, "traditional")}
+															</Badge>
+														)}
+													</Button>
+												</div>
 											</div>
-											<Button
-												onClick={() => handleAddToCart(group, "traditional")}
-												size="sm"
-												className="w-full bg-stone-700 hover:bg-stone-800 text-white shadow-lg hover:shadow-xl transition-all duration-200 text-xs sm:text-sm"
-											>
-												<Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
-												Add to Cart
-												{getItemCount(group.id, "traditional") > 0 && (
-													<Badge className="ml-2 bg-stone-100 text-stone-800 text-xs">
-														{getItemCount(group.id, "traditional")}
-													</Badge>
-												)}
-											</Button>
 										</div>
 									</div>
 
-									<div className="relative bg-white/85 backdrop-blur-sm rounded-xl p-3 sm:p-4 border border-stone-200/60 shadow-lg overflow-hidden">
+									{/* Combo Item Card with Enhanced Layout */}
+									<div className={`relative backdrop-blur-sm rounded-xl p-3 sm:p-4 border shadow-lg overflow-hidden transition-all duration-200 ${
+										isItemAvailable(group.combo) 
+											? 'bg-white/85 border-stone-200/60 hover:shadow-xl' 
+											: 'bg-stone-100/60 border-stone-300/40'
+									}`}>
 										<div className="absolute inset-0 bg-gradient-to-br from-white/50 via-transparent to-transparent rounded-xl"></div>
 										<div className="relative">
-											<div className="flex justify-between items-start mb-3">
-												<div className="flex-1 text-left">
-													<h4 className="font-semibold text-stone-800 text-sm sm:text-base">{group.combo.name}</h4>
-													<p className="text-xs text-stone-600">{group.combo.description}</p>
+											<div className="flex space-x-4">
+												{/* Item Image - 25% */}
+												<div className={`w-1/4 aspect-square rounded-lg overflow-hidden border-2 shadow-md flex-shrink-0 ${
+													isItemAvailable(group.combo) 
+														? 'border-white/90 bg-stone-50' 
+														: 'border-stone-300/60 bg-stone-200/60'
+												}`}>
+													{group.combo.image_url ? (
+														<img
+															src={group.combo.image_url}
+															alt={group.combo.name}
+															className={`w-full h-full object-cover transition-all duration-200 ${
+																!isItemAvailable(group.combo) ? 'grayscale opacity-60' : ''
+															}`}
+															onError={(e) => {
+																(e.target as HTMLImageElement).src = "/placeholder.svg"
+															}}
+														/>
+													) : (
+														<div className="w-full h-full flex items-center justify-center text-stone-400">
+															<Package className="w-6 h-6" />
+														</div>
+													)}
 												</div>
-												<Badge
-													variant="outline"
-													className="text-stone-700 border-stone-400 bg-stone-50/90 backdrop-blur-sm ml-2 text-xs sm:text-sm"
-												>
-													R{group.combo.price}
-												</Badge>
+
+												{/* Item Content - 75% */}
+												<div className="flex-1 flex flex-col justify-between min-h-0">
+													{/* Title Section */}
+													<div className="mb-1">
+														<div className="flex items-start justify-between">
+															<h4 className={`font-bold text-base sm:text-lg leading-tight ${
+																isItemAvailable(group.combo) ? 'text-stone-800' : 'text-stone-500'
+															}`}>
+																{group.combo.name}
+															</h4>
+															{/* Sale Badge - Future feature */}
+															{/* {group.combo.onSale && (
+																<Badge className="ml-2 bg-red-500 text-white text-xs animate-pulse">
+																	SALE
+																</Badge>
+															)} */}
+														</div>
+														{!isItemAvailable(group.combo) && (
+															<span className="text-xs text-red-600 font-medium">Out of Stock</span>
+														)}
+													</div>
+													
+													{/* Description */}
+													<p className={`text-sm leading-relaxed mb-3 text-left ${
+														isItemAvailable(group.combo) ? 'text-stone-600' : 'text-stone-400'
+													}`}>
+														{group.combo.description}
+													</p>
+													
+													{/* Price Section with Sale Support */}
+													<div className="mb-3">
+														<div className="flex items-center gap-2">
+															{/* Regular Price or Sale Price */}
+															<span className={`font-bold text-lg ${
+																isItemAvailable(group.combo) ? 'text-stone-800' : 'text-stone-500'
+															}`}>
+																R{group.combo.price}
+															</span>
+															
+															{/* Original Price (crossed out during sale) - Future feature */}
+															{/* {group.combo.originalPrice && group.combo.originalPrice > group.combo.price && (
+																<span className="text-sm text-stone-400 line-through">
+																	R{group.combo.originalPrice}
+																</span>
+															)} */}
+															
+															{/* Discount Percentage - Future feature */}
+															{/* {group.combo.discountPercent && (
+																<Badge className="bg-green-500 text-white text-xs">
+																	{group.combo.discountPercent}% OFF
+																</Badge>
+															)} */}
+														</div>
+													</div>
+													
+													{/* Button */}
+													<Button
+														onClick={() => handleAddToCart(group, "combo")}
+														size="sm"
+														disabled={!isItemAvailable(group.combo)}
+														className={`w-full text-sm font-medium shadow-lg transition-all duration-200 ${
+															isItemAvailable(group.combo)
+																? 'bg-stone-700 hover:bg-stone-800 text-white hover:shadow-xl hover:scale-[1.02]'
+																: 'bg-stone-300 text-stone-500 cursor-not-allowed'
+														}`}
+													>
+														<Plus className="w-4 h-4 mr-2" />
+														{isItemAvailable(group.combo) ? 'Add to Cart' : 'Out of Stock'}
+														{getItemCount(group.id, "combo") > 0 && (
+															<Badge className="ml-2 bg-stone-100 text-stone-800 text-xs font-bold">
+																{getItemCount(group.id, "combo")}
+															</Badge>
+														)}
+													</Button>
+												</div>
 											</div>
-											<Button
-												onClick={() => handleAddToCart(group, "combo")}
-												size="sm"
-												className="w-full bg-stone-700 hover:bg-stone-800 text-white shadow-lg hover:shadow-xl transition-all duration-200 text-xs sm:text-sm"
-											>
-												<Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
-												Add to Cart
-												{getItemCount(group.id, "combo") > 0 && (
-													<Badge className="ml-2 bg-stone-100 text-stone-800 text-xs">
-														{getItemCount(group.id, "combo")}
-													</Badge>
-												)}
-											</Button>
 										</div>
 									</div>
 								</div>
@@ -287,22 +525,24 @@ export function MenuGrid() {
 						</div>
 					</div>
 				))}
-			</div>
+			</div >
 
-			{/* Cart Button */}
-			{totalItems > 0 && (
-				<div className="fixed bottom-4 sm:bottom-6 right-4 sm:right-6 bg-stone-800 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-full shadow-xl border-2 border-white backdrop-blur-sm">
-					<button
-						onClick={() => setCartOpen(true)}
-						className="flex items-center space-x-2 hover:opacity-80 transition-opacity"
-					>
-						<ShoppingCartIcon className="w-4 h-4" />
-						<span className="font-semibold text-sm sm:text-base">Cart: {totalItems} items</span>
-					</button>
-				</div>
-			)}
-
-			<ShoppingCart isOpen={state.isOpen} onClose={() => setCartOpen(false)} />
+	{/* Cart Button */ }
+{
+	totalItems > 0 && (
+		<div className="fixed bottom-4 sm:bottom-6 right-4 sm:right-6 bg-stone-800 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-full shadow-xl border-2 border-white backdrop-blur-sm z-50">
+			<button
+				onClick={() => setCartOpen(true)}
+				className="flex items-center space-x-2 hover:opacity-80 transition-opacity"
+			>
+				<ShoppingCartIcon className="w-4 h-4" />
+				<span className="font-semibold text-sm sm:text-base">Cart: {totalItems} items</span>
+			</button>
 		</div>
+	)
+}
+
+<ShoppingCart isOpen={state.isOpen} onClose={() => setCartOpen(false)} />
+		</div >
 	)
 }

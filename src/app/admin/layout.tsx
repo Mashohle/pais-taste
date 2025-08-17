@@ -6,6 +6,7 @@ import { useAuth } from '@/lib/contexts/auth-context'
 import { useRouter, usePathname } from 'next/navigation'
 import { LogOut, LayoutDashboard, UtensilsCrossed, Plus } from 'lucide-react'
 import Link from 'next/link'
+import Image from 'next/image'
 
 export default function AdminLayout({
     children,
@@ -42,7 +43,17 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex justify-between items-center h-16">
                         <div className="flex items-center space-x-8">
-                            <h1 className="text-xl font-bold text-stone-800">Pai's Taste Admin</h1>
+                            <div className="flex justify-center">
+                                <div className="w-12 h-12 bg-gradient-to-br from-stone-200 via-stone-100 to-stone-300 rounded-full flex items-center justify-center shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-110 ring-4 ring-stone-200/50">
+                                    <Image
+                                        src="/logo.svg"
+                                        alt="Pai's Taste Food Special"
+                                        width={150}
+                                        height={100}
+                                        className="mb-1"
+                                    />
+                                </div>
+                            </div>
                             <div className="hidden md:flex space-x-4">
                                 <Link href="/admin">
                                     <Button variant="ghost" size="sm" className="flex items-center gap-2">

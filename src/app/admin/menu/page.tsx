@@ -56,7 +56,7 @@ export default function MenuManagement() {
   // Show loading state
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-amber-50 via-stone-50 to-amber-25 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-stone-50 to-stone-100 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-stone-600 mx-auto mb-4"></div>
           <p className="text-stone-700">Loading menu items...</p>
@@ -68,7 +68,7 @@ export default function MenuManagement() {
   // Show error state
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-amber-50 via-stone-50 to-amber-25 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-stone-50 to-stone-100 flex items-center justify-center">
         <div className="text-center">
           <div className="text-red-600 mb-4">❌ Error loading menu items</div>
           <p className="text-stone-700 mb-4">{error}</p>
@@ -81,11 +81,11 @@ export default function MenuManagement() {
   }
 
   return (
-    <div className="relative min-h-screen bg-gradient-to-br from-amber-50 via-stone-50 to-amber-25 p-4 sm:p-6 lg:p-8">
-      {/* Decorative background */}
+    <div className="relative min-h-screen bg-gradient-to-br from-stone-50 to-stone-100 p-4 sm:p-6 lg:p-8">
+      {/* Decorative background - matching dashboard style */}
       <div className="fixed right-0 top-0 h-full w-48 sm:w-64 lg:w-96 pointer-events-none overflow-hidden">
         <div className="absolute inset-0 opacity-15">
-          <svg className="absolute top-10 right-4 w-16 h-16 text-stone-600" viewBox="0 0 100 100">
+          <svg className="absolute top-10 right-8 w-16 h-16 text-stone-600" viewBox="0 0 100 100">
             <circle cx="50" cy="50" r="40" fill="none" stroke="currentColor" strokeWidth="2" />
             <circle cx="50" cy="50" r="25" fill="none" stroke="currentColor" strokeWidth="1.5" />
             <circle cx="50" cy="50" r="10" fill="currentColor" opacity="0.4" />
@@ -94,14 +94,12 @@ export default function MenuManagement() {
             <polygon points="50,10 90,90 10,90" fill="none" stroke="currentColor" strokeWidth="2" />
             <polygon points="50,30 70,70 30,70" fill="currentColor" opacity="0.3" />
           </svg>
-          <div className="absolute top-32 right-0 w-32 h-0.5 bg-gradient-to-l from-stone-600/40 to-transparent"></div>
-          <div className="absolute top-72 right-4 w-28 h-0.5 bg-gradient-to-l from-stone-500/35 to-transparent"></div>
         </div>
       </div>
 
       <div className="relative max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="relative bg-gradient-to-r from-stone-100/95 via-stone-50/80 to-stone-25/40 backdrop-blur-md rounded-2xl p-6 shadow-2xl border border-stone-200/50 mb-8">
+        {/* Header - matching dashboard style */}
+        <div className="relative bg-gradient-to-r from-stone-100/95 via-stone-50/60 to-stone-25/20 backdrop-blur-md rounded-2xl p-6 shadow-2xl border border-stone-200/50 mb-8">
           <div className="absolute inset-0 bg-gradient-to-br from-white/40 via-white/20 to-transparent rounded-2xl"></div>
           <div className="relative">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -131,9 +129,9 @@ export default function MenuManagement() {
           </div>
         </div>
 
-        {/* Search and Filter */}
-        <div className="relative bg-gradient-to-r from-stone-100/90 via-stone-50/70 to-stone-25/30 backdrop-blur-md rounded-xl p-4 shadow-xl border border-stone-200/50 mb-6">
-          <div className="absolute inset-0 bg-gradient-to-br from-white/30 via-white/15 to-transparent rounded-xl"></div>
+        {/* Search and Filter - stone theme */}
+        <div className="relative bg-gradient-to-r from-stone-100/95 via-stone-50/60 to-stone-25/20 backdrop-blur-md rounded-xl p-4 shadow-xl border border-stone-200/50 mb-6">
+          <div className="absolute inset-0 bg-gradient-to-br from-white/40 via-white/20 to-transparent rounded-xl"></div>
           <div className="relative flex flex-col sm:flex-row gap-4">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-stone-500 w-4 h-4" />
@@ -174,49 +172,48 @@ export default function MenuManagement() {
           </div>
         </div>
 
-        {/* Stats */}
+        {/* Stats - stone theme matching dashboard */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
-          <div className="bg-gradient-to-r from-stone-100/90 via-stone-50/70 to-stone-25/30 backdrop-blur-md rounded-xl p-4 shadow-lg border border-stone-200/50">
-            <div className="text-center">
+          <div className="bg-gradient-to-r from-stone-100/95 via-stone-50/60 to-stone-25/20 backdrop-blur-md rounded-xl p-4 shadow-lg border border-stone-200/50">
+            <div className="relative text-center">
               <div className="text-2xl font-bold text-stone-800">{menuItems.length}</div>
               <div className="text-stone-600 text-sm">Total Items</div>
             </div>
           </div>
-          <div className="bg-gradient-to-r from-green-100/90 via-green-50/70 to-green-25/30 backdrop-blur-md rounded-xl p-4 shadow-lg border border-green-200/50">
-            <div className="text-center">
+          <div className="bg-gradient-to-r from-green-100/95 via-green-50/60 to-green-25/20 backdrop-blur-md rounded-xl p-4 shadow-lg border border-green-200/50">
+            <div className="relative text-center">
               <div className="text-2xl font-bold text-green-800">{menuItems.filter(item => item.published).length}</div>
               <div className="text-green-700 text-sm">Published</div>
             </div>
           </div>
-          <div className="bg-gradient-to-r from-blue-100/90 via-blue-50/70 to-blue-25/30 backdrop-blur-md rounded-xl p-4 shadow-lg border border-blue-200/50">
-            <div className="text-center">
+          <div className="bg-gradient-to-r from-blue-100/95 via-blue-50/60 to-blue-25/20 backdrop-blur-md rounded-xl p-4 shadow-lg border border-blue-200/50">
+            <div className="relative text-center">
               <div className="text-2xl font-bold text-blue-800">{menuItems.filter(item => item.published && item.available).length}</div>
               <div className="text-blue-700 text-sm">In Stock</div>
             </div>
           </div>
-          <div className="bg-gradient-to-r from-red-100/90 via-red-50/70 to-red-25/30 backdrop-blur-md rounded-xl p-4 shadow-lg border border-red-200/50">
-            <div className="text-center">
+          <div className="bg-gradient-to-r from-red-100/95 via-red-50/60 to-red-25/20 backdrop-blur-md rounded-xl p-4 shadow-lg border border-red-200/50">
+            <div className="relative text-center">
               <div className="text-2xl font-bold text-red-800">{menuItems.filter(item => item.published && !item.available).length}</div>
               <div className="text-red-700 text-sm">Out of Stock</div>
             </div>
           </div>
-          <div className="bg-gradient-to-r from-amber-100/90 via-amber-50/70 to-amber-25/30 backdrop-blur-md rounded-xl p-4 shadow-lg border border-amber-200/50">
-            <div className="text-center">
+          <div className="bg-gradient-to-r from-amber-100/95 via-amber-50/60 to-amber-25/20 backdrop-blur-md rounded-xl p-4 shadow-lg border border-amber-200/50">
+            <div className="relative text-center">
               <div className="text-2xl font-bold text-amber-800">{availableCategories.length - 1}</div>
               <div className="text-amber-700 text-sm">Categories</div>
             </div>
           </div>
         </div>
 
-        {/* Menu Items Grid */}
+        {/* Menu Items Grid - stone theme */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredItems.map((item) => (
             <Card
               key={item.id}
-              className="relative bg-gradient-to-br from-white/95 via-white/85 to-stone-50/60 backdrop-blur-md border border-stone-200/50 shadow-xl hover:shadow-2xl transition-all duration-300 overflow-hidden"
+              className="relative bg-gradient-to-br from-stone-100/95 via-stone-50/80 to-stone-100/60 backdrop-blur-xl border border-stone-200/50 shadow-2xl hover:shadow-3xl transition-all duration-300 overflow-hidden"
             >
-              <div className="absolute inset-0 bg-gradient-to-br from-white/30 via-transparent to-transparent"></div>
-              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-white/60 to-transparent"></div>
+              <div className="absolute inset-0 bg-gradient-to-br from-white/40 via-white/20 to-transparent"></div>
 
               <CardHeader className="relative pb-3">
                 <div className="flex items-start justify-between">
@@ -261,15 +258,21 @@ export default function MenuManagement() {
 
               <CardContent className="relative">
                 <div className="flex items-start space-x-4 mb-4">
-                  <div className="w-16 h-16 rounded-lg overflow-hidden border-2 border-white/90 shadow-lg flex-shrink-0">
-                    {/* <img
-                      src={item.image_url || "/placeholder.svg"}
-                      alt={item.name}
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).src = "/placeholder.svg"
-                      }}
-                    /> */}
+                  <div className="w-16 h-16 rounded-lg overflow-hidden border-2 border-white/90 shadow-lg flex-shrink-0 bg-stone-50">
+                    {item.image_url ? (
+                      <img
+                        src={item.image_url}
+                        alt={item.name}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = "/placeholder.svg"
+                        }}
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-stone-400">
+                        <Package className="w-6 h-6" />
+                      </div>
+                    )}
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm text-stone-600 line-clamp-3">
@@ -329,11 +332,11 @@ export default function MenuManagement() {
           ))}
         </div>
 
-        {/* No Results State */}
+        {/* No Results State - stone theme */}
         {filteredItems.length === 0 && (
           <div className="text-center py-12">
-            <div className="relative bg-gradient-to-r from-stone-100/90 via-stone-50/70 to-stone-25/30 backdrop-blur-md rounded-xl p-8 shadow-xl border border-stone-200/50">
-              <div className="absolute inset-0 bg-gradient-to-br from-white/30 via-white/15 to-transparent rounded-xl"></div>
+            <div className="relative bg-gradient-to-r from-stone-100/95 via-stone-50/60 to-stone-25/20 backdrop-blur-md rounded-xl p-8 shadow-xl border border-stone-200/50">
+              <div className="absolute inset-0 bg-gradient-to-br from-white/40 via-white/20 to-transparent rounded-xl"></div>
               <div className="relative">
                 <p className="text-stone-600 text-lg">No menu items found matching your criteria.</p>
                 <p className="text-stone-500 text-sm mt-2">Try adjusting your search or filter settings.</p>
