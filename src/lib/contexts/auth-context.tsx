@@ -9,7 +9,10 @@ interface AuthContextType {
   session: Session | null
   loading: boolean
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>
+  signUp: (email: string, password: string, userData: { full_name: string; phone: string }) => Promise<{ error: Error | null; user: User | null }>
   signOut: () => Promise<void>
+  resetPassword: (email: string) => Promise<{ error: Error | null }>
+  signInWithOAuth: (provider: 'google' | 'facebook') => Promise<{ error: Error | null }>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -55,8 +58,51 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
+  const signUp = async (email: string, password: string, userData: { full_name: string; phone: string }) => {
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: userData
+        }
+      })
+      
+      return { error, user: data.user }
+    } catch (error) {
+      return { error: error as Error, user: null }
+    }
+  }
+
   const signOut = async () => {
     await supabase.auth.signOut()
+  }
+
+  const resetPassword = async (email: string) => {
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth/reset-password`,
+      })
+      
+      return { error }
+    } catch (error) {
+      return { error: error as Error }
+    }
+  }
+
+  const signInWithOAuth = async (provider: 'google' | 'facebook') => {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: {
+          redirectTo: `${window.location.origin}/account`,
+        }
+      })
+      
+      return { error }
+    } catch (error) {
+      return { error: error as Error }
+    }
   }
 
   const value = {
@@ -64,7 +110,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     session,
     loading,
     signIn,
-    signOut
+    signUp,
+    signOut,
+    resetPassword,
+    signInWithOAuth
   }
 
   return (
