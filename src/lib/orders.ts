@@ -15,7 +15,7 @@ export async function createOrder(orderData: OrderData) {
   try {
     // Determine initial statuses based on payment method
     const isOnlinePayment = orderData.payment_method === 'online'
-    const orderStatus = 'pending' // Always start as pending
+    const orderStatus = 'received' // Always start as received
     const paymentStatus = isOnlinePayment ? 'paid' : 'pending' // Only paid if online payment
 
     // 1. Create the order

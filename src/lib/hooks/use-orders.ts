@@ -6,7 +6,7 @@ interface Order {
   customer_name: string
   customer_phone: string
   total_amount: number
-  order_status: 'pending' | 'preparing' | 'ready' | 'collected' | 'completed'
+  order_status: 'received' | 'preparing' | 'ready' | 'collected' | 'completed'
   payment_status: 'pending' | 'paid'
   payment_method: 'online' | 'cash_on_pickup'
   pickup_location: string
