@@ -38,7 +38,6 @@ interface EditMenuItemProps {
 
 export default function EditMenuItem({ params }: EditMenuItemProps) {
   const router = useRouter()
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
   const { items: existingItems, updateMenuItem, uploadMenuItemImage, deleteMenuItemImage } = useMenuItems(true)
   const resolvedParams = use(params)
   
@@ -73,15 +72,6 @@ export default function EditMenuItem({ params }: EditMenuItemProps) {
   // Find the current item
   const currentItem = existingItems.find(item => item.id === resolvedParams.id)
 
-  useEffect(() => {
-    const session = localStorage.getItem('admin-session')
-    if (session === 'true') {
-      setIsAuthenticated(true)
-    } else {
-      router.push('/admin/login')
-    }
-  }, [router])
-
   // Load item data when items are fetched
   useEffect(() => {
     if (existingItems.length > 0) {
@@ -112,10 +102,6 @@ export default function EditMenuItem({ params }: EditMenuItemProps) {
       }
     }
   }, [existingItems, currentItem, resolvedParams.id])
-
-  if (!isAuthenticated) {
-    return <div>Checking access...</div>
-  }
 
   if (loadingItem) {
     return (

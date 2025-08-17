@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useCart } from '@/lib/context/cart-context'
+import { useCart } from '@/lib/contexts/cart-context'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 

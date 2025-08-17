@@ -1,5 +1,5 @@
 import { supabase } from './supabase'
-import { CartItem } from './context/cart-context'
+import { CartItem } from './contexts/cart-context'
 
 interface OrderData {
   customer_name: string

@@ -2,10 +2,11 @@
 
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Clock, Users, CheckCircle, AlertCircle, Phone, MapPin, CreditCard, Banknote, ChevronRight, X } from "lucide-react"
+import { Clock, Users, CheckCircle, AlertCircle, Phone, MapPin, CreditCard, Banknote, ChevronRight, X, LogOut } from "lucide-react"
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useOrders } from '@/lib/hooks/use-orders'
+import { useAuth } from '@/lib/contexts/auth-context'
 
 // Interface to match your existing UI structure
 interface Order {
@@ -22,23 +23,15 @@ interface Order {
 }
 
 export default function AdminDashboard() {
-    const [isAuthenticated, setIsAuthenticated] = useState(false)
     const { orders: dbOrders, loading, updateOrderStatus, updatePaymentStatus } = useOrders()
+    const { signOut, user } = useAuth()
     const router = useRouter()
     const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
     const [isModalOpen, setIsModalOpen] = useState(false)
 
-    useEffect(() => {
-        const session = localStorage.getItem('admin-session')
-        if (session === 'true') {
-            setIsAuthenticated(true)
-        } else {
-            router.push('/admin/login')
-        }
-    }, [router])
-
-    if (!isAuthenticated) {
-        return <div>Checking access...</div>
+    const handleSignOut = async () => {
+        await signOut()
+        router.push('/admin/login')
     }
 
     // Transform database orders to match your UI interface
@@ -55,28 +48,28 @@ export default function AdminDashboard() {
         status: dbOrder.order_status as "received" | "preparing" | "ready" | "collected" | "completed",
         paymentStatus: dbOrder.payment_status as "pending" | "paid",
         paymentMethod: dbOrder.payment_method as "online" | "cash_on_pickup",
-        timestamp: new Date(dbOrder.created_at).toLocaleTimeString('en-ZA', { 
-            hour: '2-digit', 
-            minute: '2-digit' 
+        timestamp: new Date(dbOrder.created_at).toLocaleTimeString('en-ZA', {
+            hour: '2-digit',
+            minute: '2-digit'
         }),
         location: dbOrder.pickup_location
     }))
 
     const handleUpdateStatus = async (orderId: string, newStatus: Order["status"]) => {
-        const dbOrder = dbOrders.find(order => 
+        const dbOrder = dbOrders.find(order =>
             `ORD-${order.id.slice(-3).toUpperCase()}` === orderId
         )
-        
+
         if (dbOrder) {
             await updateOrderStatus(dbOrder.id, newStatus)
         }
     }
 
     const handleUpdatePaymentStatus = async (orderId: string, newPaymentStatus: "paid" | "pending") => {
-        const dbOrder = dbOrders.find(order => 
+        const dbOrder = dbOrders.find(order =>
             `ORD-${order.id.slice(-3).toUpperCase()}` === orderId
         )
-        
+
         if (dbOrder) {
             await updatePaymentStatus(dbOrder.id, newPaymentStatus)
         }
@@ -250,10 +243,22 @@ export default function AdminDashboard() {
                         <div>
                             <h1 className="text-2xl sm:text-3xl font-bold text-stone-800 mb-2">Pai's Taste Admin</h1>
                             <p className="text-stone-600 text-sm sm:text-base">Traditional South African Cuisine</p>
+                            <p className="text-stone-500 text-xs mt-1">Logged in as: {user?.email}</p>
                         </div>
-                        <div className="mt-4 sm:mt-0 text-right">
-                            <p className="text-stone-700 font-semibold">{currentDate}</p>
-                            <p className="text-stone-600 text-sm">Kitchen Dashboard</p>
+                        <div className="mt-4 sm:mt-0 flex items-center gap-4">
+                            <div className="text-right">
+                                <p className="text-stone-700 font-semibold">{currentDate}</p>
+                                <p className="text-stone-600 text-sm">Kitchen Dashboard</p>
+                            </div>
+                            <Button
+                                onClick={handleSignOut}
+                                variant="outline"
+                                size="sm"
+                                className="flex items-center gap-2 border-stone-300 text-stone-700 hover:bg-stone-50"
+                            >
+                                <LogOut className="w-4 h-4" />
+                                Sign Out
+                            </Button>
                         </div>
                     </div>
                 </div>

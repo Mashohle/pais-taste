@@ -12,26 +12,12 @@ import { useMenuItems } from '@/lib/hooks/use-menu-items'
 import Link from "next/link"
 
 export default function MenuManagement() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
   // Use forAdmin=true to show all items in admin
   const { items: menuItems, loading, error, updateMenuItem, deleteMenuItem } = useMenuItems(true)
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedCategory, setSelectedCategory] = useState("All Categories")
   const [isFilterOpen, setIsFilterOpen] = useState(false)
   const router = useRouter()
-
-  useEffect(() => {
-    const session = localStorage.getItem('admin-session')
-    if (session === 'true') {
-      setIsAuthenticated(true)
-    } else {
-      router.push('/admin/login')
-    }
-  }, [router])
-
-  if (!isAuthenticated) {
-    return <div>Checking access...</div>
-  }
 
   const togglePublishedStatus = async (id: string, currentStatus: boolean) => {
     const success = await updateMenuItem(id, { published: !currentStatus })

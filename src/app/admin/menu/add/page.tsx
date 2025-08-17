@@ -30,7 +30,6 @@ interface FormData {
 
 export default function AddMenuItem() {
   const router = useRouter()
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
   const { items: existingItems, createMenuItem, updateMenuItem, uploadMenuItemImage } = useMenuItems(true)
   
   const [formData, setFormData] = useState<FormData>({
@@ -56,19 +55,6 @@ export default function AddMenuItem() {
   const existingCategories = Array.from(new Set(existingItems.map(item => item.category)))
   const defaultCategories = ["Traditional Dishes", "Combo Meals", "Beverages", "Sides"]
   const allCategories = Array.from(new Set([...defaultCategories, ...existingCategories]))
-
-  useEffect(() => {
-    const session = localStorage.getItem('admin-session')
-    if (session === 'true') {
-      setIsAuthenticated(true)
-    } else {
-      router.push('/admin/login')
-    }
-  }, [router])
-
-  if (!isAuthenticated) {
-    return <div>Checking access...</div>
-  }
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]

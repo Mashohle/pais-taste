@@ -46,7 +46,7 @@ export function useMenuItems(forAdmin: boolean = false) {
         .select('*')
 
       if (!forAdmin) {
-        // For customers: only show published items (regardless of available status)
+        // For customers: only show published items
         query = query.eq('published', true)
       }
       // For admin: show all items regardless of published/available status
@@ -67,6 +67,12 @@ export function useMenuItems(forAdmin: boolean = false) {
 
   const updateMenuItem = async (id: string, updates: Partial<MenuItem>) => {
     try {
+      // Check if user is authenticated
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) {
+        throw new Error('Authentication required')
+      }
+
       const { error } = await supabase
         .from('menu_items')
         .update(updates)
@@ -83,6 +89,12 @@ export function useMenuItems(forAdmin: boolean = false) {
 
   const deleteMenuItem = async (id: string) => {
     try {
+      // Check if user is authenticated
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) {
+        throw new Error('Authentication required')
+      }
+
       // First, delete the image from storage if it exists
       const item = items.find(i => i.id === id)
       if (item?.image_url) {
@@ -105,6 +117,12 @@ export function useMenuItems(forAdmin: boolean = false) {
 
   const createMenuItem = async (menuItem: Omit<MenuItem, 'id' | 'created_at' | 'updated_at'>) => {
     try {
+      // Check if user is authenticated
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) {
+        throw new Error('Authentication required')
+      }
+
       const { data, error } = await supabase
         .from('menu_items')
         .insert([menuItem])
@@ -120,9 +138,16 @@ export function useMenuItems(forAdmin: boolean = false) {
     }
   }
 
-  // Image upload function
+  // Image upload function with auth check
   const uploadMenuItemImage = async (file: File, menuItemId: string): Promise<string | null> => {
     try {
+      // Check if user is authenticated
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) {
+        console.error('No active session for upload')
+        return null
+      }
+
       const fileExt = file.name.split('.').pop()
       const fileName = `${menuItemId}-${Date.now()}.${fileExt}`
       const filePath = `menu-items/${fileName}`
@@ -134,7 +159,10 @@ export function useMenuItems(forAdmin: boolean = false) {
           upsert: false
         })
 
-      if (error) throw error
+      if (error) {
+        console.error('Upload error:', error)
+        throw error
+      }
 
       // Get the public URL
       const { data: { publicUrl } } = supabase.storage
@@ -148,9 +176,16 @@ export function useMenuItems(forAdmin: boolean = false) {
     }
   }
 
-  // Image deletion function
+  // Image deletion function with auth check
   const deleteMenuItemImage = async (imageUrl: string): Promise<boolean> => {
     try {
+      // Check if user is authenticated
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) {
+        console.error('No active session for deletion')
+        return false
+      }
+
       // Extract the file path from the URL
       const urlParts = imageUrl.split('/storage/v1/object/public/menu-images/')
       if (urlParts.length !== 2) return false

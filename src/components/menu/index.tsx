@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge"
 import { Plus, ShoppingCartIcon } from "lucide-react"
 import { useMenuItems } from '@/lib/hooks/use-menu-items'
 import { ShoppingCart } from "@/components/cart"
-import { useCart } from '@/lib/context/cart-context'
+import { useCart } from '@/lib/contexts/cart-context'
 
 interface ProcessedGroup {
 	id: string

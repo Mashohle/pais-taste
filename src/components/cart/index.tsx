@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { X, Plus, Minus, Trash2, ShoppingCartIcon as CartIcon } from "lucide-react"
-import { useCart } from '@/lib/context/cart-context'
+import { useCart } from '@/lib/contexts/cart-context'
 import { useRouter } from 'next/navigation'
 
 interface ShoppingCartProps {
