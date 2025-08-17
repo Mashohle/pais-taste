@@ -100,7 +100,7 @@ export default function CheckoutPage() {
 
                 // Clear cart and navigate
                 clearCart()
-                router.push(`/order-confirmation?id=${order.id}`)
+                router.push(`/order/${order.id}/confirmation`)
 
             } catch (error) {
                 console.error('Order submission failed:', error)
