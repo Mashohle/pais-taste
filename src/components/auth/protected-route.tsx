@@ -7,17 +7,22 @@ import { useAuth } from '@/lib/contexts/auth-context'
 interface ProtectedRouteProps {
   children: React.ReactNode
   fallback?: React.ReactNode
+  redirectTo?: string // Allow custom redirect path
 }
 
-export function ProtectedRoute({ children, fallback }: ProtectedRouteProps) {
+export function ProtectedRoute({ 
+  children, 
+  fallback,
+  redirectTo = '/admin/login' // Default to admin login for backward compatibility
+}: ProtectedRouteProps) {
   const { user, loading } = useAuth()
   const router = useRouter()
 
   useEffect(() => {
     if (!loading && !user) {
-      router.push('/admin/login')
+      router.push(redirectTo)
     }
-  }, [user, loading, router])
+  }, [user, loading, router, redirectTo])
 
   if (loading) {
     return (

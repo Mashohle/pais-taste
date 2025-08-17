@@ -10,6 +10,14 @@ export interface CartItem {
   type: 'traditional' | 'combo'
 }
 
+// New interface for reorder items
+export interface ReorderItem {
+  name: string
+  quantity: number
+  unit_price: number
+  menu_item_id?: string // Optional for menu item lookup
+}
+
 interface CartState {
   items: CartItem[]
   isOpen: boolean
@@ -17,6 +25,7 @@ interface CartState {
 
 type CartAction =
   | { type: 'ADD_ITEM'; payload: Omit<CartItem, 'quantity'> }
+  | { type: 'ADD_ITEMS'; payload: CartItem[] } // New action for bulk add
   | { type: 'UPDATE_QUANTITY'; payload: { id: string; quantity: number } }
   | { type: 'REMOVE_ITEM'; payload: { id: string } }
   | { type: 'CLEAR_CART' }
@@ -40,6 +49,23 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
       return {
         ...state,
         items: [...state.items, { ...action.payload, quantity: 1 }]
+      }
+
+    case 'ADD_ITEMS': // New case for bulk adding
+      const newItems = [...state.items]
+      
+      action.payload.forEach(newItem => {
+        const existingIndex = newItems.findIndex(item => item.id === newItem.id)
+        if (existingIndex >= 0) {
+          newItems[existingIndex].quantity += newItem.quantity
+        } else {
+          newItems.push(newItem)
+        }
+      })
+      
+      return {
+        ...state,
+        items: newItems
       }
 
     case 'UPDATE_QUANTITY':
@@ -81,11 +107,15 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
 const CartContext = createContext<{
   state: CartState
   addItem: (item: Omit<CartItem, 'quantity'>) => void
+  addItems: (items: CartItem[]) => void // New function for bulk add
+  addReorderItems: (items: ReorderItem[]) => void // New function for reorder
   updateQuantity: (id: string, quantity: number) => void
   removeItem: (id: string) => void
   clearCart: () => void
   toggleCart: () => void
   setCartOpen: (open: boolean) => void
+  getTotalItems: () => number
+  getTotalPrice: () => number
 } | null>(null)
 
 export function CartProvider({ children }: { children: ReactNode }) {
@@ -96,6 +126,23 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const addItem = (item: Omit<CartItem, 'quantity'>) => {
     dispatch({ type: 'ADD_ITEM', payload: item })
+  }
+
+  const addItems = (items: CartItem[]) => {
+    dispatch({ type: 'ADD_ITEMS', payload: items })
+  }
+
+  // New function to handle reorder items
+  const addReorderItems = (reorderItems: ReorderItem[]) => {
+    const cartItems: CartItem[] = reorderItems.map((item, index) => ({
+      id: item.menu_item_id || `reorder-${Date.now()}-${index}`, // Generate ID if not available
+      name: item.name,
+      price: item.unit_price,
+      quantity: item.quantity,
+      type: 'traditional' as const // Default type, you might want to make this dynamic
+    }))
+    
+    dispatch({ type: 'ADD_ITEMS', payload: cartItems })
   }
 
   const updateQuantity = (id: string, quantity: number) => {
@@ -118,15 +165,28 @@ export function CartProvider({ children }: { children: ReactNode }) {
     dispatch({ type: 'SET_CART_OPEN', payload: open })
   }
 
+  // Helper functions
+  const getTotalItems = () => {
+    return state.items.reduce((total, item) => total + item.quantity, 0)
+  }
+
+  const getTotalPrice = () => {
+    return state.items.reduce((total, item) => total + (item.price * item.quantity), 0)
+  }
+
   return (
     <CartContext.Provider value={{
       state,
       addItem,
+      addItems,
+      addReorderItems,
       updateQuantity,
       removeItem,
       clearCart,
       toggleCart,
-      setCartOpen
+      setCartOpen,
+      getTotalItems,
+      getTotalPrice
     }}>
       {children}
     </CartContext.Provider>
