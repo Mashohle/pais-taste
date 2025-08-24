@@ -2,6 +2,7 @@
 
 import type React from "react"
 import { useCart } from '@/lib/contexts/cart-context'
+import { useAuth } from '@/lib/contexts/auth-context'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 
@@ -13,12 +14,13 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { ArrowLeft, MapPin, Phone, User, FileText, CreditCard, Banknote } from "lucide-react"
+import { ArrowLeft, MapPin, Phone, User, FileText, CreditCard, Banknote, Loader2 } from "lucide-react"
 import Link from "next/link"
 import Image from 'next/image'
 
 export default function CheckoutPage() {
-    const { state, clearCart } = useCart() //todo: The clearCart function should be called after successfully placing an order to empty the cart
+    const { state, clearCart } = useCart()
+    const { user, profile } = useAuth()
     const router = useRouter()
 
     // Only redirect if cart is empty on initial load (not after clearing cart)
@@ -41,6 +43,19 @@ export default function CheckoutPage() {
     })
 
     const [errors, setErrors] = useState<Record<string, string>>({})
+    const [isSubmitting, setIsSubmitting] = useState(false)
+
+    // Auto-fill form with user data when component mounts
+    useEffect(() => {
+        if (user && profile) {
+            setFormData(prev => ({
+                ...prev,
+                fullName: profile.full_name || prev.fullName,
+                phoneNumber: profile.phone || prev.phoneNumber,
+                pickupLocation: profile.preferred_pickup_location || prev.pickupLocation,
+            }))
+        }
+    }, [user, profile])
 
     const orderItems = state.items
     const subtotal = orderItems.reduce((sum, item) => sum + item.price * item.quantity, 0)
@@ -87,7 +102,8 @@ export default function CheckoutPage() {
         e.preventDefault()
         if (validateForm()) {
             try {
-                // Create order in Supabase
+                setIsSubmitting(true)
+                
                 const order = await createOrder({
                     customer_name: formData.fullName,
                     customer_phone: formData.phoneNumber,
@@ -95,17 +111,22 @@ export default function CheckoutPage() {
                     special_instructions: formData.specialInstructions,
                     total_amount: total,
                     items: orderItems,
-                    payment_method: formData.paymentMethod as 'online' | 'cash_on_pickup'
+                    payment_method: formData.paymentMethod as 'online' | 'cash_on_pickup',
+                    user_id: user?.id // Include user ID if logged in
                 })
 
-                // Clear cart and navigate
+                // Clear cart
                 clearCart()
-                router.push(`/order/${order.id}/confirmation`)
+                
+                // Wait a moment for the order to be saved
+                await new Promise(resolve => setTimeout(resolve, 1000))
+                
+                // Navigate to tracking
+                router.push(`/order/${order.id}/track`)
 
             } catch (error) {
                 console.error('Order submission failed:', error)
-                // Show error message to user
-                // todo: use toastify maybe
+                setIsSubmitting(false)
                 alert('Failed to place order. Please try again.')
             }
         }
@@ -117,6 +138,11 @@ export default function CheckoutPage() {
             setErrors((prev) => ({ ...prev, [field]: "" }))
         }
     }
+
+    // Check if we should show auto-fill message
+    const showAutoFillMessage = user && profile && (
+        profile.full_name || profile.phone || profile.preferred_pickup_location
+    )
 
     return (
         <div className="min-h-screen bg-stone-50">
@@ -156,6 +182,17 @@ export default function CheckoutPage() {
                     </div>
                 </div>
 
+                {/* Auto-fill message */}
+                {showAutoFillMessage && (
+                    <div className="mb-6">
+                        <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                            <p className="text-green-800 text-sm">
+                                ✓ We've pre-filled your details from your account. Please review and update if needed.
+                            </p>
+                        </div>
+                    </div>
+                )}
+
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
                     {/* Customer Details Form */}
                     <div className="relative bg-gradient-to-r from-stone-100/95 via-stone-50/60 to-stone-25/20 backdrop-blur-md rounded-2xl p-4 sm:p-6 shadow-2xl border border-stone-200/50">
@@ -178,9 +215,9 @@ export default function CheckoutPage() {
                                         type="text"
                                         value={formData.fullName}
                                         onChange={(e) => handleInputChange("fullName", e.target.value)}
-                                        className={`bg-white/90 border-stone-300 focus:border-stone-500 ${errors.fullName ? "border-red-500" : ""
-                                            }`}
+                                        className={`bg-white/90 border-stone-300 focus:border-stone-500 ${errors.fullName ? "border-red-500" : ""}`}
                                         placeholder="Enter your full name"
+                                        disabled={isSubmitting}
                                     />
                                     {errors.fullName && <p className="text-red-500 text-sm">{errors.fullName}</p>}
                                 </div>
@@ -195,9 +232,9 @@ export default function CheckoutPage() {
                                         type="tel"
                                         value={formData.phoneNumber}
                                         onChange={(e) => handleInputChange("phoneNumber", e.target.value)}
-                                        className={`bg-white/90 border-stone-300 focus:border-stone-500 ${errors.phoneNumber ? "border-red-500" : ""
-                                            }`}
+                                        className={`bg-white/90 border-stone-300 focus:border-stone-500 ${errors.phoneNumber ? "border-red-500" : ""}`}
                                         placeholder="+27 81 454 1020"
+                                        disabled={isSubmitting}
                                     />
                                     {errors.phoneNumber && <p className="text-red-500 text-sm">{errors.phoneNumber}</p>}
                                 </div>
@@ -210,11 +247,9 @@ export default function CheckoutPage() {
                                     <Select
                                         value={formData.pickupLocation}
                                         onValueChange={(value) => handleInputChange("pickupLocation", value)}
+                                        disabled={isSubmitting}
                                     >
-                                        <SelectTrigger
-                                            className={`bg-white/90 border-stone-300 focus:border-stone-500 ${errors.pickupLocation ? "border-red-500" : ""
-                                                }`}
-                                        >
+                                        <SelectTrigger className={`bg-white/90 border-stone-300 focus:border-stone-500 ${errors.pickupLocation ? "border-red-500" : ""}`}>
                                             <SelectValue placeholder="Select pickup location" />
                                         </SelectTrigger>
                                         <SelectContent>
@@ -236,6 +271,7 @@ export default function CheckoutPage() {
                                         value={formData.paymentMethod}
                                         onValueChange={(value: string) => handleInputChange("paymentMethod", value)}
                                         className="space-y-3"
+                                        disabled={isSubmitting}
                                     >
                                         {/* Cash on Pickup Option */}
                                         <div className="flex items-center space-x-3 p-3 rounded-lg border border-stone-200 bg-white/60 hover:bg-white/80 transition-colors">
@@ -282,6 +318,7 @@ export default function CheckoutPage() {
                                         onChange={(e) => handleInputChange("specialInstructions", e.target.value)}
                                         className="bg-white/90 border-stone-300 focus:border-stone-500 min-h-[80px]"
                                         placeholder="Any special requests or dietary requirements..."
+                                        disabled={isSubmitting}
                                     />
                                 </div>
                             </form>
@@ -357,10 +394,18 @@ export default function CheckoutPage() {
 
                             <Button
                                 onClick={handleSubmit}
+                                disabled={isSubmitting}
                                 className="w-full mt-6 bg-stone-700 hover:bg-stone-800 text-white py-3 sm:py-4 text-base sm:text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-200"
                                 size="lg"
                             >
-                                Place Order - R{total}
+                                {isSubmitting ? (
+                                    <div className="flex items-center">
+                                        <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                                        Processing Order...
+                                    </div>
+                                ) : (
+                                    `Place Order - R${total}`
+                                )}
                             </Button>
 
                             <p className="text-xs text-stone-600 text-center mt-3">

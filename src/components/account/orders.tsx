@@ -4,10 +4,12 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { ShoppingBag, Loader2 } from "lucide-react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { useOrders } from '@/lib/hooks/use-orders'
 import OrderCard from './order-card'
 
 export default function OrdersTab() {
+  const router = useRouter()
   const { 
     activeOrders, 
     loading, 
@@ -16,10 +18,8 @@ export default function OrdersTab() {
   } = useOrders()
 
   const handleTrackOrder = (orderId: string) => {
-    // This would navigate to order tracking page
-    console.log('Tracking order:', orderId)
-    // For now, just show an alert
-    alert(`Order tracking for ${orderId} - this would open tracking details`)
+    // Navigate to the tracking page
+    router.push(`/order/${orderId}/track`)
   }
 
   const handleCallRestaurant = () => {

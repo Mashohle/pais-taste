@@ -3,10 +3,14 @@
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { CheckCircle, Clock, ChefHat, Package, MapPin, Phone, MessageCircle, ArrowLeft } from "lucide-react"
+import { CheckCircle, Clock, ChefHat, Package, MapPin, Phone, MessageCircle, ArrowLeft, User } from "lucide-react"
 import { useState, useEffect, use } from "react"
 import { useRouter } from "next/navigation"
 import { useOrders } from '@/lib/hooks/use-orders'
+import Link from "next/link"
+import { supabase } from "@/lib/supabase"
+import { useAuth } from "@/lib/contexts/auth-context"
+import { Order } from "@/types/order"
 
 const orderStages = [
   {
@@ -44,8 +48,9 @@ interface OrderTrackingPageProps {
 export default function OrderTrackingPage({ params }: OrderTrackingPageProps) {
   const router = useRouter()
   const { orders, loading } = useOrders()
+  const { user } = useAuth()
   const resolvedParams = use(params)
-  const [order, setOrder] = useState<any>(null)
+  const [order, setOrder] = useState<Order | null>(null)
   const [orderNotFound, setOrderNotFound] = useState(false)
   const [currentTime, setCurrentTime] = useState(new Date())
 
@@ -79,7 +84,7 @@ export default function OrderTrackingPage({ params }: OrderTrackingPageProps) {
     
     // Map 'ready' and 'collected' to the "Ready for Pickup" stage (index 2)
     if (order.order_status === 'ready' || order.order_status === 'collected') {
-      return 2 // Index of "Ready for Pickup" stage
+      return 2
     }
     
     return orderStages.findIndex((stage) => stage.key === order.order_status)
@@ -103,11 +108,11 @@ export default function OrderTrackingPage({ params }: OrderTrackingPageProps) {
     
     const orderTime = new Date(order.created_at)
     const statusTimes = {
-      'received': 30, // 30 minutes from order time
-      'preparing': 15, // 15 minutes from now
-      'ready': 0,     // Already ready
-      'collected': 0, // Already ready (collected)
-      'completed': 0  // Already completed
+      'received': 30,
+      'preparing': 15,
+      'ready': 0,
+      'collected': 0,
+      'completed': 0
     }
     
     const minutesToAdd = statusTimes[order.order_status as keyof typeof statusTimes] || 30
@@ -144,6 +149,22 @@ export default function OrderTrackingPage({ params }: OrderTrackingPageProps) {
     })
   }
 
+  const getBackButtonPath = () => {
+    // If user is logged in and this is their order, go to account
+    if (user && order?.user_id === user.id) {
+      return '/account/orders'
+    }
+    // Otherwise go to menu
+    return '/'
+  }
+
+  const getBackButtonText = () => {
+    if (user && order?.user_id === user.id) {
+      return 'Back to My Orders'
+    }
+    return 'Back to Menu'
+  }
+
   // Loading state
   if (loading) {
     return (
@@ -166,9 +187,21 @@ export default function OrderTrackingPage({ params }: OrderTrackingPageProps) {
           <p className="text-stone-600 mb-6">
             We couldn't find an order with that ID. Please check your order number or contact us for assistance.
           </p>
-          <Button onClick={() => router.push('/')} className="bg-stone-700 hover:bg-stone-800">
-            Back to Menu
-          </Button>
+          <div className="space-y-2">
+            {user && (
+              <Link href="/account/orders">
+                <Button className="w-full bg-stone-700 hover:bg-stone-800">
+                  <User className="w-4 h-4 mr-2" />
+                  My Orders
+                </Button>
+              </Link>
+            )}
+            <Link href="/">
+              <Button variant="outline" className="w-full">
+                Back to Menu
+              </Button>
+            </Link>
+          </div>
         </div>
       </div>
     )
@@ -178,23 +211,15 @@ export default function OrderTrackingPage({ params }: OrderTrackingPageProps) {
     <div className="relative min-h-screen bg-gradient-to-br from-stone-50 via-stone-100 to-stone-200">
       <div className="fixed right-0 top-0 h-full w-48 sm:w-64 lg:w-96 pointer-events-none overflow-hidden">
         <div className="absolute inset-0 opacity-15">
-          <svg
-            className="absolute top-10 right-4 sm:right-8 w-12 sm:w-16 lg:w-20 h-12 sm:h-16 lg:h-20 text-stone-600 opacity-50"
-            viewBox="0 0 100 100"
-          >
+          <svg className="absolute top-10 right-4 sm:right-8 w-12 sm:w-16 lg:w-20 h-12 sm:h-16 lg:h-20 text-stone-600 opacity-50" viewBox="0 0 100 100">
             <circle cx="50" cy="50" r="40" fill="none" stroke="currentColor" strokeWidth="2" />
             <circle cx="50" cy="50" r="25" fill="none" stroke="currentColor" strokeWidth="1.5" />
             <circle cx="50" cy="50" r="10" fill="currentColor" opacity="0.4" />
           </svg>
-
-          <svg
-            className="absolute top-48 right-8 sm:right-16 w-12 sm:w-14 lg:w-16 h-12 sm:h-14 lg:h-16 text-stone-500 opacity-45"
-            viewBox="0 0 100 100"
-          >
+          <svg className="absolute top-48 right-8 sm:right-16 w-12 sm:w-14 lg:w-16 h-12 sm:h-14 lg:h-16 text-stone-500 opacity-45" viewBox="0 0 100 100">
             <polygon points="50,10 90,90 10,90" fill="none" stroke="currentColor" strokeWidth="2" />
             <polygon points="50,30 70,70 30,70" fill="currentColor" opacity="0.3" />
           </svg>
-
           <div className="absolute top-16 right-0 w-24 sm:w-32 lg:w-48 h-0.5 bg-gradient-to-l from-stone-600/50 to-transparent"></div>
           <div className="absolute top-32 right-4 sm:right-8 w-20 sm:w-28 lg:w-40 h-0.5 bg-gradient-to-l from-stone-500/40 to-transparent"></div>
         </div>
@@ -202,19 +227,20 @@ export default function OrderTrackingPage({ params }: OrderTrackingPageProps) {
 
       <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="mb-6">
-          <Button
-            variant="outline"
-            onClick={() => router.back()}
-            className="mb-4 bg-white/80 backdrop-blur-sm border-stone-300 hover:bg-stone-50"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back
-          </Button>
+          <Link href={getBackButtonPath()}>
+            <Button variant="outline" className="mb-4 bg-white/80 backdrop-blur-sm border-stone-300 hover:bg-stone-50">
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              {getBackButtonText()}
+            </Button>
+          </Link>
 
           <div className="text-center">
             <h1 className="text-2xl sm:text-3xl font-bold text-stone-800 mb-2">Track Your Order</h1>
             <p className="text-stone-600">Order #{getOrderDisplayId()}</p>
             <p className="text-sm text-stone-500">Customer: {order.customer_name}</p>
+            {user && order.user_id === user.id && (
+              <Badge className="mt-2 bg-green-100 text-green-800">Your Order</Badge>
+            )}
           </div>
         </div>
 
@@ -446,15 +472,22 @@ export default function OrderTrackingPage({ params }: OrderTrackingPageProps) {
             Call Restaurant
           </Button>
 
-          <Button
-            variant="outline"
-            className="flex-1 bg-white/80 backdrop-blur-sm border-stone-300 hover:bg-stone-50"
-            onClick={() => router.push("/")}
-          >
-            Back to Menu
-          </Button>
+          {user && order.user_id === user.id ? (
+            <Link href="/account/orders" className="flex-1">
+              <Button variant="outline" className="w-full bg-white/80 backdrop-blur-sm border-stone-300 hover:bg-stone-50">
+                <User className="w-4 h-4 mr-2" />
+                My Orders
+              </Button>
+            </Link>
+          ) : (
+            <Link href="/" className="flex-1">
+              <Button variant="outline" className="w-full bg-white/80 backdrop-blur-sm border-stone-300 hover:bg-stone-50">
+                Back to Menu
+              </Button>
+            </Link>
+          )}
         </div>
       </div>
     </div>
   )
-}6767
+}

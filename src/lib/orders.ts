@@ -9,6 +9,7 @@ interface OrderData {
   total_amount: number
   items: CartItem[]
   payment_method?: 'online' | 'cash_on_pickup'
+  user_id?: string
 }
 
 export async function createOrder(orderData: OrderData) {
@@ -16,12 +17,13 @@ export async function createOrder(orderData: OrderData) {
     // Determine initial statuses based on payment method
     const isOnlinePayment = orderData.payment_method === 'online'
     const orderStatus = 'received' // Always start as received
-    const paymentStatus = isOnlinePayment ? 'paid' : 'pending' // Only paid if online payment
+    const paymentStatus = isOnlinePayment ? 'paid' : 'pending'
 
     // 1. Create the order
     const { data: order, error: orderError } = await supabase
       .from('orders')
       .insert([{
+        user_id: orderData.user_id || null,
         customer_name: orderData.customer_name,
         customer_phone: orderData.customer_phone,
         total_amount: orderData.total_amount,
@@ -36,9 +38,8 @@ export async function createOrder(orderData: OrderData) {
 
     if (orderError) throw orderError
 
-    // 2. Get menu item IDs by matching names/prices (since CartItem might not have menu_item_id)
+    // 2. Rest of your existing order items logic...
     const orderItemsPromises = orderData.items.map(async (item) => {
-      // Try to find the menu item by name and price
       const { data: menuItem } = await supabase
         .from('menu_items')
         .select('id')
