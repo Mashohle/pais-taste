@@ -298,27 +298,24 @@ export function MenuGrid() {
 								<div className="w-full space-y-3">
 									{/* Traditional Item Card with Image */}
 									{/* Traditional Item Card with Enhanced Layout */}
-									<div className={`relative backdrop-blur-sm rounded-xl p-3 sm:p-4 border shadow-lg overflow-hidden transition-all duration-200 ${
-										isItemAvailable(group.traditional) 
-											? 'bg-white/85 border-stone-200/60 hover:shadow-xl' 
+									<div className={`relative backdrop-blur-sm rounded-xl p-3 sm:p-4 border shadow-lg overflow-hidden transition-all duration-200 ${isItemAvailable(group.traditional)
+											? 'bg-white/85 border-stone-200/60 hover:shadow-xl'
 											: 'bg-stone-100/60 border-stone-300/40'
-									}`}>
+										}`}>
 										<div className="absolute inset-0 bg-gradient-to-br from-white/50 via-transparent to-transparent rounded-xl"></div>
 										<div className="relative">
 											<div className="flex space-x-4">
 												{/* Item Image - 25% */}
-												<div className={`w-1/4 aspect-square rounded-lg overflow-hidden border-2 shadow-md flex-shrink-0 ${
-													isItemAvailable(group.traditional) 
-														? 'border-white/90 bg-stone-50' 
+												<div className={`w-1/4 aspect-square rounded-lg overflow-hidden border-2 shadow-md flex-shrink-0 ${isItemAvailable(group.traditional)
+														? 'border-white/90 bg-stone-50'
 														: 'border-stone-300/60 bg-stone-200/60'
-												}`}>
+													}`}>
 													{group.traditional.image_url ? (
 														<img
 															src={group.traditional.image_url}
 															alt={group.traditional.name}
-															className={`w-full h-full object-cover transition-all duration-200 ${
-																!isItemAvailable(group.traditional) ? 'grayscale opacity-60' : ''
-															}`}
+															className={`w-full h-full object-cover transition-all duration-200 ${!isItemAvailable(group.traditional) ? 'grayscale opacity-60' : ''
+																}`}
 															onError={(e) => {
 																(e.target as HTMLImageElement).src = "/placeholder.svg"
 															}}
@@ -333,68 +330,46 @@ export function MenuGrid() {
 												{/* Item Content - 75% */}
 												<div className="flex-1 flex flex-col justify-between min-h-0">
 													{/* Title Section */}
-													<div className="mb-1">
-														<div className="flex items-start justify-between">
-															<h4 className={`font-bold text-base sm:text-lg leading-tight ${
-																isItemAvailable(group.traditional) ? 'text-stone-800' : 'text-stone-500'
-															}`}>
+													<div className="mb-3">
+														<div className="flex items-start justify-between mb-1">
+															<h4 className={`font-bold text-base sm:text-lg leading-tight ${isItemAvailable(group.traditional) ? 'text-stone-800' : 'text-stone-500'
+																}`}>
 																{group.traditional.name}
 															</h4>
-															{/* Sale Badge - Future feature */}
-															{/* {group.traditional.onSale && (
-																<Badge className="ml-2 bg-red-500 text-white text-xs animate-pulse">
-																	SALE
-																</Badge>
-															)} */}
+															{/* Out of stock badge in top right */}
+															{!isItemAvailable(group.traditional) && (
+																<span className="text-xs text-red-600 font-medium bg-red-50 px-2 py-1 rounded-md border border-red-200 ml-2 whitespace-nowrap">
+																	Out of Stock
+																</span>
+															)}
 														</div>
-														{!isItemAvailable(group.traditional) && (
-															<span className="text-xs text-red-600 font-medium">Out of Stock</span>
-														)}
+
+														{/* Description */}
+														<p className={`text-sm leading-relaxed text-left ${isItemAvailable(group.traditional) ? 'text-stone-600' : 'text-stone-400'
+															}`}>
+															{group.traditional.description}
+														</p>
 													</div>
-													
-													{/* Description */}
-													<p className={`text-sm leading-relaxed mb-3 text-left ${
-														isItemAvailable(group.traditional) ? 'text-stone-600' : 'text-stone-400'
-													}`}>
-														{group.traditional.description}
-													</p>
-													
-													{/* Price Section with Sale Support */}
+
+													{/* Price Section */}
 													<div className="mb-3">
 														<div className="flex items-center gap-2">
-															{/* Regular Price or Sale Price */}
-															<span className={`font-bold text-lg ${
-																isItemAvailable(group.traditional) ? 'text-stone-800' : 'text-stone-500'
-															}`}>
+															<span className={`font-bold text-lg ${isItemAvailable(group.traditional) ? 'text-stone-800' : 'text-stone-500'
+																}`}>
 																R{group.traditional.price}
 															</span>
-															
-															{/* Original Price (crossed out during sale) - Future feature */}
-															{/* {group.traditional.originalPrice && group.traditional.originalPrice > group.traditional.price && (
-																<span className="text-sm text-stone-400 line-through">
-																	R{group.traditional.originalPrice}
-																</span>
-															)} */}
-															
-															{/* Discount Percentage - Future feature */}
-															{/* {group.traditional.discountPercent && (
-																<Badge className="bg-green-500 text-white text-xs">
-																	{group.traditional.discountPercent}% OFF
-																</Badge>
-															)} */}
 														</div>
 													</div>
-													
+
 													{/* Button */}
 													<Button
 														onClick={() => handleAddToCart(group, "traditional")}
 														size="sm"
 														disabled={!isItemAvailable(group.traditional)}
-														className={`w-full text-sm font-medium shadow-lg transition-all duration-200 ${
-															isItemAvailable(group.traditional)
+														className={`w-full text-sm font-medium shadow-lg transition-all duration-200 ${isItemAvailable(group.traditional)
 																? 'bg-stone-700 hover:bg-stone-800 text-white hover:shadow-xl hover:scale-[1.02]'
 																: 'bg-stone-300 text-stone-500 cursor-not-allowed'
-														}`}
+															}`}
 													>
 														<Plus className="w-4 h-4 mr-2" />
 														{isItemAvailable(group.traditional) ? 'Add to Cart' : 'Out of Stock'}
@@ -410,27 +385,24 @@ export function MenuGrid() {
 									</div>
 
 									{/* Combo Item Card with Enhanced Layout */}
-									<div className={`relative backdrop-blur-sm rounded-xl p-3 sm:p-4 border shadow-lg overflow-hidden transition-all duration-200 ${
-										isItemAvailable(group.combo) 
-											? 'bg-white/85 border-stone-200/60 hover:shadow-xl' 
+									<div className={`relative backdrop-blur-sm rounded-xl p-3 sm:p-4 border shadow-lg overflow-hidden transition-all duration-200 ${isItemAvailable(group.combo)
+											? 'bg-white/85 border-stone-200/60 hover:shadow-xl'
 											: 'bg-stone-100/60 border-stone-300/40'
-									}`}>
+										}`}>
 										<div className="absolute inset-0 bg-gradient-to-br from-white/50 via-transparent to-transparent rounded-xl"></div>
 										<div className="relative">
 											<div className="flex space-x-4">
 												{/* Item Image - 25% */}
-												<div className={`w-1/4 aspect-square rounded-lg overflow-hidden border-2 shadow-md flex-shrink-0 ${
-													isItemAvailable(group.combo) 
-														? 'border-white/90 bg-stone-50' 
+												<div className={`w-1/4 aspect-square rounded-lg overflow-hidden border-2 shadow-md flex-shrink-0 ${isItemAvailable(group.combo)
+														? 'border-white/90 bg-stone-50'
 														: 'border-stone-300/60 bg-stone-200/60'
-												}`}>
+													}`}>
 													{group.combo.image_url ? (
 														<img
 															src={group.combo.image_url}
 															alt={group.combo.name}
-															className={`w-full h-full object-cover transition-all duration-200 ${
-																!isItemAvailable(group.combo) ? 'grayscale opacity-60' : ''
-															}`}
+															className={`w-full h-full object-cover transition-all duration-200 ${!isItemAvailable(group.combo) ? 'grayscale opacity-60' : ''
+																}`}
 															onError={(e) => {
 																(e.target as HTMLImageElement).src = "/placeholder.svg"
 															}}
@@ -447,9 +419,8 @@ export function MenuGrid() {
 													{/* Title Section */}
 													<div className="mb-1">
 														<div className="flex items-start justify-between">
-															<h4 className={`font-bold text-base sm:text-lg leading-tight ${
-																isItemAvailable(group.combo) ? 'text-stone-800' : 'text-stone-500'
-															}`}>
+															<h4 className={`font-bold text-base sm:text-lg leading-tight ${isItemAvailable(group.combo) ? 'text-stone-800' : 'text-stone-500'
+																}`}>
 																{group.combo.name}
 															</h4>
 															{/* Sale Badge - Future feature */}
@@ -463,31 +434,29 @@ export function MenuGrid() {
 															<span className="text-xs text-red-600 font-medium">Out of Stock</span>
 														)}
 													</div>
-													
+
 													{/* Description */}
-													<p className={`text-sm leading-relaxed mb-3 text-left ${
-														isItemAvailable(group.combo) ? 'text-stone-600' : 'text-stone-400'
-													}`}>
+													<p className={`text-sm leading-relaxed mb-3 text-left ${isItemAvailable(group.combo) ? 'text-stone-600' : 'text-stone-400'
+														}`}>
 														{group.combo.description}
 													</p>
-													
+
 													{/* Price Section with Sale Support */}
 													<div className="mb-3">
 														<div className="flex items-center gap-2">
 															{/* Regular Price or Sale Price */}
-															<span className={`font-bold text-lg ${
-																isItemAvailable(group.combo) ? 'text-stone-800' : 'text-stone-500'
-															}`}>
+															<span className={`font-bold text-lg ${isItemAvailable(group.combo) ? 'text-stone-800' : 'text-stone-500'
+																}`}>
 																R{group.combo.price}
 															</span>
-															
+
 															{/* Original Price (crossed out during sale) - Future feature */}
 															{/* {group.combo.originalPrice && group.combo.originalPrice > group.combo.price && (
 																<span className="text-sm text-stone-400 line-through">
 																	R{group.combo.originalPrice}
 																</span>
 															)} */}
-															
+
 															{/* Discount Percentage - Future feature */}
 															{/* {group.combo.discountPercent && (
 																<Badge className="bg-green-500 text-white text-xs">
@@ -496,17 +465,16 @@ export function MenuGrid() {
 															)} */}
 														</div>
 													</div>
-													
+
 													{/* Button */}
 													<Button
 														onClick={() => handleAddToCart(group, "combo")}
 														size="sm"
 														disabled={!isItemAvailable(group.combo)}
-														className={`w-full text-sm font-medium shadow-lg transition-all duration-200 ${
-															isItemAvailable(group.combo)
+														className={`w-full text-sm font-medium shadow-lg transition-all duration-200 ${isItemAvailable(group.combo)
 																? 'bg-stone-700 hover:bg-stone-800 text-white hover:shadow-xl hover:scale-[1.02]'
 																: 'bg-stone-300 text-stone-500 cursor-not-allowed'
-														}`}
+															}`}
 													>
 														<Plus className="w-4 h-4 mr-2" />
 														{isItemAvailable(group.combo) ? 'Add to Cart' : 'Out of Stock'}
@@ -527,22 +495,22 @@ export function MenuGrid() {
 				))}
 			</div >
 
-	{/* Cart Button */ }
-{
-	totalItems > 0 && (
-		<div className="fixed bottom-4 sm:bottom-6 right-4 sm:right-6 bg-stone-800 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-full shadow-xl border-2 border-white backdrop-blur-sm z-50">
-			<button
-				onClick={() => setCartOpen(true)}
-				className="flex items-center space-x-2 hover:opacity-80 transition-opacity"
-			>
-				<ShoppingCartIcon className="w-4 h-4" />
-				<span className="font-semibold text-sm sm:text-base">Cart: {totalItems} items</span>
-			</button>
-		</div>
-	)
-}
+			{/* Cart Button */}
+			{
+				totalItems > 0 && (
+					<div className="fixed bottom-4 sm:bottom-6 right-4 sm:right-6 bg-stone-800 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-full shadow-xl border-2 border-white backdrop-blur-sm z-50">
+						<button
+							onClick={() => setCartOpen(true)}
+							className="flex items-center space-x-2 hover:opacity-80 transition-opacity"
+						>
+							<ShoppingCartIcon className="w-4 h-4" />
+							<span className="font-semibold text-sm sm:text-base">Cart: {totalItems} items</span>
+						</button>
+					</div>
+				)
+			}
 
-<ShoppingCart isOpen={state.isOpen} onClose={() => setCartOpen(false)} />
+			<ShoppingCart isOpen={state.isOpen} onClose={() => setCartOpen(false)} />
 		</div >
 	)
 }

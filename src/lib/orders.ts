@@ -38,7 +38,7 @@ export async function createOrder(orderData: OrderData) {
 
     if (orderError) throw orderError
 
-    // 2. Rest of your existing order items logic...
+    // 2. Get menu item IDs by matching names/prices (since CartItem might not have menu_item_id)
     const orderItemsPromises = orderData.items.map(async (item) => {
       const { data: menuItem } = await supabase
         .from('menu_items')
