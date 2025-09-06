@@ -4,7 +4,7 @@ import { ProtectedRoute } from '@/components/auth/protected-route'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/lib/contexts/auth-context'
 import { useRouter, usePathname } from 'next/navigation'
-import { LogOut, User, Package, History, Settings, AlertCircle, UtensilsCrossed } from 'lucide-react'
+import { LogOut, User, Package, History, Settings, AlertCircle, UtensilsCrossed, MessageSquare } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 
@@ -38,10 +38,11 @@ function AccountLayoutContent({ children }: { children: React.ReactNode }) {
     }
 
     const navItems = [
-        { href: '/', label: 'Menu', icon: UtensilsCrossed },
+        { href: '/', label: 'Discover', icon: UtensilsCrossed },
         { href: '/account', label: 'Profile', icon: User },
-        { href: '/account/orders', label: 'Orders', icon: Package },
+        { href: '/account/orders', label: 'Orders & Bookings', icon: Package },
         { href: '/account/history', label: 'History', icon: History },
+        { href: '/account/reviews', label: 'Reviews', icon: MessageSquare },
         { href: '/account/settings', label: 'Settings', icon: Settings },
     ]
 
@@ -83,7 +84,7 @@ function AccountLayoutContent({ children }: { children: React.ReactNode }) {
                                     />
                                 </div>
                                 <div className="hidden sm:block">
-                                    <h2 className="text-lg font-bold text-stone-800">My Account</h2>
+                                    <h2 className="text-lg font-bold text-stone-800">LocalHub Account</h2>
                                     <p className="text-xs text-stone-600">Welcome, {getDisplayName()}</p>
                                 </div>
                             </Link>

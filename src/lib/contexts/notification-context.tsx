@@ -1,0 +1,73 @@
+"use client"
+
+import { createContext, useContext, useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { onMessageListener } from '@/lib/firebase'
+import { NotificationToast, NotificationData } from '@/components/notifications/notification-toast'
+
+interface NotificationContextType {
+  showNotification: (notification: NotificationData) => void
+}
+
+const NotificationContext = createContext<NotificationContextType | undefined>(undefined)
+
+export function NotificationProvider({ children }: { children: React.ReactNode }) {
+  const [currentNotification, setCurrentNotification] = useState<NotificationData | null>(null)
+  const router = useRouter()
+
+  useEffect(() => {
+    // Only listen for notifications if permission is granted
+    if (typeof window !== 'undefined' && Notification.permission === 'granted') {
+      onMessageListener()
+        .then((payload) => {
+          console.log('Received foreground message:', payload)
+          
+          const notification: NotificationData = {
+            title: payload.notification?.title || 'New Notification',
+            body: payload.notification?.body || '',
+            url: payload.data?.url,
+            icon: payload.notification?.icon
+          }
+          
+          setCurrentNotification(notification)
+        })
+        .catch((err) => console.log('Failed to listen for messages:', err))
+    }
+  }, [])
+
+  const showNotification = (notification: NotificationData) => {
+    setCurrentNotification(notification)
+  }
+
+  const handleNotificationClose = () => {
+    setCurrentNotification(null)
+  }
+
+  const handleNotificationAction = (url: string) => {
+    router.push(url)
+    setCurrentNotification(null)
+  }
+
+  const value = {
+    showNotification
+  }
+
+  return (
+    <NotificationContext.Provider value={value}>
+      {children}
+      <NotificationToast
+        notification={currentNotification}
+        onClose={handleNotificationClose}
+        onAction={handleNotificationAction}
+      />
+    </NotificationContext.Provider>
+  )
+}
+
+export function useNotification() {
+  const context = useContext(NotificationContext)
+  if (context === undefined) {
+    throw new Error('useNotification must be used within a NotificationProvider')
+  }
+  return context
+}

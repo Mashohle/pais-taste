@@ -19,6 +19,7 @@ import {
   AlertTriangle,
 } from "lucide-react"
 import { useAuth } from '@/lib/contexts/auth-context'
+import { PushNotifications } from '@/components/notifications/push-notifications'
 
 interface SettingsTabProps {
   profile: any
@@ -191,6 +192,16 @@ export default function SettingsTab({
                 onCheckedChange={(checked) => setNotificationSettings(prev => ({ ...prev, order_updates: checked }))}
                 disabled={updating}
               />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label htmlFor="push-notifications">Push Notifications</Label>
+                <p className="text-sm text-stone-500">
+                  Enable browser push notifications for real-time updates
+                </p>
+              </div>
+              <PushNotifications />
             </div>
           </div>
         </CardContent>
