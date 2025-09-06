@@ -28,7 +28,7 @@ export interface Business {
   is_active: boolean
   is_verified: boolean
   setup_completed: boolean
-  settings: Record<string, any>
+  settings: Record<string, unknown>
   created_at: string
   updated_at: string
   // Joined category data
@@ -46,7 +46,7 @@ export interface BusinessUser {
   business_id: string
   user_id: string
   role: 'owner' | 'admin' | 'staff' | 'viewer'
-  permissions: Record<string, any>
+  permissions: Record<string, unknown>
   is_active: boolean
   created_at: string
   updated_at: string

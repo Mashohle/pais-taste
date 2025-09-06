@@ -137,7 +137,7 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
             <div className="min-h-screen bg-gradient-to-br from-stone-50 to-stone-100 flex items-center justify-center">
                 <div className="text-center">
                     <h2 className="text-xl font-bold text-stone-800 mb-4">No Business Access</h2>
-                    <p className="text-stone-600 mb-4">You don't have access to any businesses.</p>
+                    <p className="text-stone-600 mb-4">You don&apos;t have access to any businesses.</p>
                     <Button onClick={() => router.push('/onboarding')} variant="outline">
                         Create a Business
                     </Button>

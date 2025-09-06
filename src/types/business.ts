@@ -105,7 +105,7 @@ export interface BusinessSettings {
   operating_hours?: BusinessHours[]
   
   // Custom fields for extensibility
-  [key: string]: any
+  [key: string]: unknown
 }
 
 export interface BusinessLocation {

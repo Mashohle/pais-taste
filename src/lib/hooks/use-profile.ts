@@ -73,8 +73,8 @@ export function useProfile() {
       }
 
       setProfile(data)
-    } catch (err: any) {
-      setError(err.message || 'Failed to fetch profile')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch profile')
       console.error('Error fetching profile:', err)
     } finally {
       setLoading(false)
@@ -111,7 +111,7 @@ export function useProfile() {
       if (createError) throw createError
 
       setProfile(data)
-    } catch (err: any) {
+    } catch (err) {
       setError(err.message || 'Failed to create profile')
       throw err
     }
@@ -138,8 +138,8 @@ export function useProfile() {
 
       setProfile(data)
       return data
-    } catch (err: any) {
-      setError(err.message || 'Failed to update profile')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update profile')
       throw err
     } finally {
       setUpdating(false)
@@ -174,7 +174,7 @@ export function useProfile() {
       await updateProfile({ avatar_url: publicUrl })
 
       return publicUrl
-    } catch (err: any) {
+    } catch (err) {
       setError(err.message || 'Failed to upload avatar')
       throw err
     } finally {
@@ -206,7 +206,7 @@ export function useProfile() {
 
       // Update profile to remove avatar URL
       await updateProfile({ avatar_url: null })
-    } catch (err: any) {
+    } catch (err) {
       setError(err.message || 'Failed to delete avatar')
       throw err
     } finally {

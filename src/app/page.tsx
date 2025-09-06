@@ -332,6 +332,47 @@ export default function CustomerPortalHome() {
           )}
         </div>
 
+        {/* Business Application CTA */}
+        <Card className="bg-gradient-to-r from-indigo-50 to-purple-50 border-indigo-200 mb-12">
+          <CardContent className="p-8 text-center">
+            <div className="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <ShoppingBag className="w-8 h-8 text-indigo-600" />
+            </div>
+            <h3 className="text-2xl font-bold text-stone-800 mb-2">Join LocalHub as a Business Partner</h3>
+            <p className="text-stone-600 mb-6 max-w-2xl mx-auto">
+              Ready to grow your business? Join thousands of South African businesses already serving customers through LocalHub. 
+              Get access to new customers, manage orders efficiently, and boost your revenue.
+            </p>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+              <Link href="/apply">
+                <Button size="lg" className="bg-indigo-600 hover:bg-indigo-700">
+                  Apply as a Business
+                  <ChevronRight className="w-4 h-4 ml-2" />
+                </Button>
+              </Link>
+              <Link href="/business-info">
+                <Button variant="outline" size="lg">
+                  Learn More
+                </Button>
+              </Link>
+            </div>
+            <div className="flex items-center justify-center space-x-6 mt-6 text-sm text-stone-600">
+              <div className="flex items-center space-x-1">
+                <Star className="w-4 h-4 text-yellow-500" />
+                <span>5.5% commission only</span>
+              </div>
+              <div className="flex items-center space-x-1">
+                <Clock className="w-4 h-4 text-green-500" />
+                <span>Quick 3-day approval</span>
+              </div>
+              <div className="flex items-center space-x-1">
+                <Heart className="w-4 h-4 text-red-500" />
+                <span>Free to join</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Coming Soon Notice for Dynamic Content */}
         <Card className="bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200">
           <CardContent className="p-6 text-center">

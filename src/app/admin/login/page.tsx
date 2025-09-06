@@ -41,7 +41,7 @@ export default function AdminLogin() {
       } else {
         router.push('/admin')
       }
-    } catch (error: any) {
+    } catch (error) {
       setError('An unexpected error occurred')
       setPassword("")
     } finally {
@@ -91,7 +91,7 @@ export default function AdminLogin() {
 
           <div className="space-y-2">
             <h1 className="text-2xl font-bold text-stone-800 drop-shadow-sm">Admin Access</h1>
-            <p className="text-stone-600 text-sm">Pai's Taste Admin Dashboard</p>
+            <p className="text-stone-600 text-sm">Pai&apos;s Taste Admin Dashboard</p>
           </div>
         </CardHeader>
 

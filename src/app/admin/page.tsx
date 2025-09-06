@@ -72,7 +72,7 @@ export default function AdminDashboard() {
                         <div className="flex items-center">
                             <TrendingUp className="h-8 w-8 text-purple-600" />
                             <div className="ml-4">
-                                <p className="text-sm font-medium text-gray-600">Today's Sales</p>
+                                <p className="text-sm font-medium text-gray-600">Today&apos;s Sales</p>
                                 <p className="text-2xl font-bold">R2,450</p>
                             </div>
                         </div>
@@ -236,7 +236,7 @@ export default function AdminDashboard() {
                         <div className="flex items-center">
                             <Calendar className="h-8 w-8 text-blue-600" />
                             <div className="ml-4">
-                                <p className="text-sm font-medium text-gray-600">Today's Bookings</p>
+                                <p className="text-sm font-medium text-gray-600">Today&apos;s Bookings</p>
                                 <p className="text-2xl font-bold">18</p>
                             </div>
                         </div>

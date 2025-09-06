@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { useParams, useRouter } from "next/navigation"
+import { useState, useEffect, useCallback } from "react"
+import { useParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -92,7 +92,6 @@ const formatCurrency = (amount: number) => {
 
 export default function OrderDetailsPage() {
   const params = useParams()
-  const router = useRouter()
   const { user } = useAuth()
   const { addReorderItems, setCartOpen } = useCart()
   
@@ -103,13 +102,7 @@ export default function OrderDetailsPage() {
 
   const orderId = params.id as string
 
-  useEffect(() => {
-    if (orderId && user) {
-      fetchOrderDetails()
-    }
-  }, [orderId, user])
-
-  const fetchOrderDetails = async () => {
+  const fetchOrderDetails = useCallback(async () => {
     try {
       setLoading(true)
       setError(null)
@@ -142,13 +135,19 @@ export default function OrderDetailsPage() {
       }
 
       setOrder(data)
-    } catch (err: any) {
-      setError(err.message || 'Failed to load order details')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load order details')
       console.error('Error fetching order:', err)
     } finally {
       setLoading(false)
     }
-  }
+  }, [orderId, user])
+
+  useEffect(() => {
+    if (orderId && user) {
+      fetchOrderDetails()
+    }
+  }, [orderId, user, fetchOrderDetails])
 
   const handleReorder = async () => {
     if (!order) return
@@ -215,7 +214,7 @@ export default function OrderDetailsPage() {
               {error || 'Order Not Found'}
             </h3>
             <p className="text-red-600 mb-6">
-              The order you're looking for doesn't exist or you don't have permission to view it.
+              The order you&apos;re looking for doesn&apos;t exist or you don&apos;t have permission to view it.
             </p>
             <Link href="/account/orders">
               <Button variant="outline" className="border-red-300 text-red-700">

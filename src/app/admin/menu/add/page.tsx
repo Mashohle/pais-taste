@@ -212,7 +212,7 @@ export default function AddMenuItem() {
         <Card className="max-w-2xl mx-auto bg-gradient-to-br from-stone-100/95 via-stone-50/80 to-stone-100/60 backdrop-blur-xl border-stone-200/50 shadow-2xl">
           <CardHeader className="text-center pb-6">
             <CardTitle className="text-2xl font-bold text-stone-800">Add New Menu Item</CardTitle>
-            <p className="text-stone-600 mt-2">Create a new dish for Pai's Taste menu</p>
+            <p className="text-stone-600 mt-2">Create a new dish for Pai&apos;s Taste menu</p>
           </CardHeader>
 
           <CardContent>

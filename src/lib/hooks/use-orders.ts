@@ -77,8 +77,8 @@ export function useOrders() {
       setActiveOrders(active)
       setOrderHistory(history)
 
-    } catch (err: any) {
-      setError(err.message || 'Failed to fetch orders')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch orders')
       console.error('Error fetching orders:', err)
     } finally {
       setLoading(false)
@@ -98,7 +98,7 @@ export function useOrders() {
       if (error) throw error
       
       await fetchOrders() // Refresh orders
-    } catch (error: any) {
+    } catch (error) {
       setError(error.message || 'Failed to update order status')
       console.error('Error updating order status:', error)
       throw error
@@ -118,7 +118,7 @@ export function useOrders() {
       if (error) throw error
       
       await fetchOrders() // Refresh orders
-    } catch (error: any) {
+    } catch (error) {
       setError(error.message || 'Failed to update payment status')
       console.error('Error updating payment status:', error)
       throw error
@@ -136,7 +136,7 @@ export function useOrders() {
         quantity: item.quantity,
         unit_price: item.unit_price
       }))
-    } catch (error: any) {
+    } catch (error) {
       setError(error.message || 'Failed to reorder items')
       throw error
     }

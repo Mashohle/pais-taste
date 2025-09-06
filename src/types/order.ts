@@ -12,6 +12,7 @@ export interface OrderItem {
 export interface Order {
   id: string
   user_id: string
+  business_id?: string
   customer_name: string
   customer_phone: string
   total_amount: number

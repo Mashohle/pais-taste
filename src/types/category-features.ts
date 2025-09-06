@@ -114,7 +114,7 @@ export interface Product {
   updated_at: string
   
   // Relations
-  menu_item?: any // From menu_items table
+  menu_item?: Record<string, unknown> // From menu_items table
   category?: ProductCategory
   variants?: ProductVariant[]
 }
@@ -128,7 +128,7 @@ export interface ProductVariant {
   compare_at_price: number | null
   cost_price: number | null
   stock_quantity: number
-  attributes: Record<string, any>
+  attributes: Record<string, unknown>
   image_urls: string[]
   is_active: boolean
   created_at: string
@@ -180,7 +180,7 @@ export interface Service {
   updated_at: string
   
   // Relations
-  menu_item?: any // From menu_items table
+  menu_item?: Record<string, unknown> // From menu_items table
   staff?: StaffMember[]
 }
 
@@ -270,7 +270,7 @@ export interface Review {
   updated_at: string
   
   // Relations
-  order?: any // From orders table
+  order?: Record<string, unknown> // From orders table
   booking?: ServiceBooking
 }
 
@@ -290,7 +290,7 @@ export interface BusinessLocation {
   longitude: number | null
   is_primary: boolean
   is_active: boolean
-  settings: Record<string, any>
+  settings: Record<string, unknown>
   created_at: string
   updated_at: string
 }

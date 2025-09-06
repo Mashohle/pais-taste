@@ -7,8 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Calendar, Clock, User, Phone, Mail, MapPin, Plus, Search, Filter, CheckCircle, Clock as ClockIcon, AlertTriangle, XCircle } from "lucide-react"
+import { Calendar, Clock, Phone, Mail, Plus, Search, CheckCircle, Clock as ClockIcon, AlertTriangle, XCircle } from "lucide-react"
 import { useBusiness } from '@/lib/contexts/business-context'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -102,12 +101,12 @@ export default function BookingsPage() {
 
     // Only show this page for service businesses
     useEffect(() => {
-        if (currentBusiness && !['service', 'car_wash', 'salon'].includes(currentBusiness.business_categories?.id)) {
+        if (currentBusiness && currentBusiness.business_categories?.id && !['service', 'car_wash', 'salon'].includes(currentBusiness.business_categories.id)) {
             router.push('/admin')
         }
     }, [currentBusiness, router])
 
-    if (!currentBusiness || !['service', 'car_wash', 'salon'].includes(currentBusiness.business_categories?.id)) {
+    if (!currentBusiness || !currentBusiness.business_categories?.id || !['service', 'car_wash', 'salon'].includes(currentBusiness.business_categories.id)) {
         return (
             <div className="min-h-screen bg-gradient-to-br from-stone-50 to-stone-100 flex items-center justify-center">
                 <div className="text-center">
@@ -267,7 +266,7 @@ export default function BookingsPage() {
                             <div className="flex items-center">
                                 <AlertTriangle className="h-8 w-8 text-purple-600" />
                                 <div className="ml-3">
-                                    <p className="text-sm font-medium text-gray-600">Today's Revenue</p>
+                                    <p className="text-sm font-medium text-gray-600">Today&apos;s Revenue</p>
                                     <p className="text-2xl font-bold">R{stats.revenue_today.toFixed(2)}</p>
                                 </div>
                             </div>

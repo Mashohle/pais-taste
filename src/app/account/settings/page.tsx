@@ -2,7 +2,6 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { Loader2 } from "lucide-react"
 import { useAuth } from '@/lib/contexts/auth-context'
 import { useOrders } from '@/lib/hooks/use-orders'
 import SettingsTab from '@/components/account/settings'

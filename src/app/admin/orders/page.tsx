@@ -51,7 +51,7 @@ export default function OrdersPage() {
 
     // Transform database orders to match your UI interface
     const transformedOrders: Order[] = dbOrders
-        .filter(dbOrder => dbOrder.business_id === currentBusiness.id) // Filter by current business
+        .filter(dbOrder => dbOrder.business_id === currentBusiness?.id) // Filter by current business
         .map(dbOrder => ({
             id: `ORD-${dbOrder.id.slice(-3).toUpperCase()}`, // Show last 3 chars of ID
             customerName: dbOrder.customer_name,

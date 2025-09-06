@@ -149,7 +149,7 @@ export default function InventoryPage() {
     const [alerts, setAlerts] = useState(mockAlerts)
     const [activeTab, setActiveTab] = useState('inventory')
     const [isAdjustmentOpen, setIsAdjustmentOpen] = useState(false)
-    const [selectedItem, setSelectedItem] = useState<any>(null)
+    const [selectedItem, setSelectedItem] = useState<typeof mockInventory[0] | null>(null)
 
     // Only show this page for retail businesses
     useEffect(() => {
@@ -189,7 +189,7 @@ export default function InventoryPage() {
         pending_alerts: alerts.filter(a => !a.acknowledged).length
     }
 
-    const getStockStatus = (item: any) => {
+    const getStockStatus = (item: typeof mockInventory[0]) => {
         if (item.current_stock === 0) {
             return { status: 'Out of Stock', color: 'bg-red-100 text-red-800', icon: <AlertTriangle className="w-3 h-3" /> }
         } else if (item.current_stock <= item.low_stock_threshold) {
@@ -226,7 +226,7 @@ export default function InventoryPage() {
         }
     }
 
-    const handleStockAdjustment = (item: any) => {
+    const handleStockAdjustment = (item: typeof mockInventory[0]) => {
         setSelectedItem(item)
         setIsAdjustmentOpen(true)
     }

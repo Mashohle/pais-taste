@@ -119,7 +119,7 @@ export default function EditMenuItem({ params }: EditMenuItemProps) {
       <div className="min-h-screen bg-gradient-to-br from-stone-50 via-stone-100 to-stone-200 flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-stone-800 mb-4">Menu Item Not Found</h1>
-          <p className="text-stone-600 mb-6">The menu item you're looking for doesn't exist.</p>
+          <p className="text-stone-600 mb-6">The menu item you&apos;re looking for doesn&apos;t exist.</p>
           <Button onClick={() => router.push('/admin/menu')}>
             Back to Menu Management
           </Button>
@@ -319,7 +319,7 @@ export default function EditMenuItem({ params }: EditMenuItemProps) {
         <Card className="max-w-2xl mx-auto bg-gradient-to-br from-stone-100/95 via-stone-50/80 to-stone-100/60 backdrop-blur-xl border-stone-200/50 shadow-2xl">
           <CardHeader className="text-center pb-6">
             <CardTitle className="text-2xl font-bold text-stone-800">Edit Menu Item</CardTitle>
-            <p className="text-stone-600 mt-2">Update "{currentItem?.name}" for Pai's Taste menu</p>
+            <p className="text-stone-600 mt-2">Update &quot;{currentItem?.name}&quot; for Pai&apos;s Taste menu</p>
           </CardHeader>
 
           <CardContent>
