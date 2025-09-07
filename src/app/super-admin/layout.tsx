@@ -1,7 +1,8 @@
 "use client"
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
+import { useAuth } from '@/lib/contexts/auth-context'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import Link from 'next/link'
@@ -28,11 +29,61 @@ export default function SuperAdminLayout({
   const pathname = usePathname()
   const router = useRouter()
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const { user, profile, signOut } = useAuth()
   
-  // Mock super admin authentication - in real app would check proper auth
+  // SECURITY: Genuine role-based super admin authentication
+  const isSuperAdmin = user && profile && profile.role === 'super_admin'
+  
+
+  useEffect(() => {
+    // Wait for auth context to be fully loaded
+    if (user === null) {
+      // Still loading auth context
+      return
+    }
+
+    if (!user) {
+      // Not authenticated, redirect to login
+      setLoading(false)
+      router.push('/admin/login')
+      return
+    }
+
+    // Wait for profile to load for role-based access
+    if (user && profile === null) {
+      // Still waiting for profile
+      return
+    }
+
+    if (user && profile && !isSuperAdmin) {
+      // Authenticated but not super admin, redirect to regular admin
+      setLoading(false)
+      router.push('/admin')
+      return
+    }
+
+    if (user && profile && isSuperAdmin) {
+      // Super admin confirmed via profile
+      setLoading(false)
+    }
+  }, [user, profile, router, isSuperAdmin])
+
+  // Show loading state while checking authentication
+  if (loading || !user || !profile || !isSuperAdmin) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-slate-600">Verifying super admin access...</p>
+        </div>
+      </div>
+    )
+  }
+
   const superAdmin = {
-    name: "System Administrator",
-    email: "admin@localhub.co.za",
+    name: profile.full_name || user.email || "System Administrator",
+    email: user.email || "admin@localhub.co.za",
     role: "Super Admin"
   }
 
@@ -77,9 +128,16 @@ export default function SuperAdminLayout({
     },
   ]
 
-  const handleSignOut = () => {
-    // In real app, would handle proper sign out
-    router.push('/')
+  const handleSignOut = async () => {
+    // SECURITY FIX: Proper sign out with session cleanup
+    try {
+      await signOut()
+      router.push('/')
+    } catch (error) {
+      console.error('Sign out error:', error)
+      // Fallback: redirect anyway
+      router.push('/')
+    }
   }
 
   return (

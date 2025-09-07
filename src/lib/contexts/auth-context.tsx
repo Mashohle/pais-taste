@@ -77,15 +77,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .single()
 
       if (error) {
-        // If profile doesn't exist, create one
         if (error.code === 'PGRST116') {
           await createProfile(userId)
-          return
+        } else if (error.message?.includes('relation "public.profiles" does not exist')) {
+          await createProfile(userId)
+        } else {
+          throw error
         }
-        throw error
+      } else {
+        setProfile(data)
       }
-
-      setProfile(data)
     } catch (error) {
       console.error('Error fetching profile:', error)
       setProfile(null)
@@ -123,11 +124,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .select()
         .single()
 
-      if (error) throw error
+      if (error) {
+        console.log('Cannot create profile (table may not exist):', error.message)
+        // Create a minimal profile object from auth user data
+        const fallbackProfile = {
+          id: userId,
+          email: currentUser.data.user.email || '',
+          full_name: currentUser.data.user.user_metadata?.full_name || '',
+          phone: currentUser.data.user.user_metadata?.phone || '',
+          // Set other fields to default values
+          preferred_pickup_location: '',
+          avatar_url: null,
+          date_of_birth: null,
+          address: null,
+          emergency_contact_name: null,
+          emergency_contact_phone: null,
+          dietary_preferences: null,
+          allergies: null,
+          marketing_emails: true,
+          sms_notifications: true,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }
+        setProfile(fallbackProfile as UserProfile)
+        return
+      }
 
       setProfile(data)
     } catch (error) {
       console.error('Error creating profile:', error)
+      setProfile(null)
     }
   }
 

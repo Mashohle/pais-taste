@@ -55,24 +55,53 @@ export function useOrders() {
           order_items (
             quantity,
             unit_price,
-            menu_items (name)
+            menu_item_id,
+            with_combo,
+            menu_items (name, business_id)
+          ),
+          businesses (
+            id,
+            name,
+            business_categories (name)
           )
         `)
         .eq('user_id', user.id) // Filter by current user
         .order('created_at', { ascending: false })
 
-      if (fetchError) throw fetchError
+      if (fetchError) {
+        if (fetchError.message?.includes('relation "public.orders" does not exist')) {
+          // Orders table doesn't exist - this is normal for empty database
+          console.log('Orders table does not exist, showing empty order history')
+          setOrders([])
+          setActiveOrders([])
+          setOrderHistory([])
+          return
+        }
+        if (fetchError.message?.includes('infinite recursion') || 
+            fetchError.message?.includes('policy') ||
+            fetchError.code === '42P17') {
+          // RLS policy issues - gracefully handle by showing empty orders
+          console.log('RLS policy issue with orders, showing empty order history')
+          setOrders([])
+          setActiveOrders([])
+          setOrderHistory([])
+          return
+        }
+        throw fetchError
+      }
 
       const allOrders = data || []
       setOrders(allOrders)
 
-      // Split into active and history
-      const active = allOrders.filter(order => 
-        ['received', 'preparing', 'ready'].includes(order.order_status)
-      )
-      const history = allOrders.filter(order => 
-        ['collected', 'completed'].includes(order.order_status)
-      )
+      // Split into active and history using configurable statuses
+      const active = allOrders.filter(order => {
+        const statusCode = order.order_status_code || order.order_status
+        return !['collected', 'completed', 'cancelled'].includes(statusCode)
+      })
+      const history = allOrders.filter(order => {
+        const statusCode = order.order_status_code || order.order_status
+        return ['collected', 'completed', 'cancelled'].includes(statusCode)
+      })
 
       setActiveOrders(active)
       setOrderHistory(history)
@@ -85,33 +114,33 @@ export function useOrders() {
     }
   }
 
-  const updateOrderStatus = async (orderId: string, status: string) => {
+  const updateOrderStatus = async (orderId: string, statusCode: string) => {
     try {
       setError(null)
       
-      const { error } = await supabase
-        .from('orders')
-        .update({ order_status: status })
-        .eq('id', orderId)
-        .eq('user_id', user?.id) // Security: only update own orders
-
-      if (error) throw error
+      // Use the new updateOrderStatus from orders.ts which handles validation
+      const { updateOrderStatus: updateStatus } = await import('@/lib/orders')
+      await updateStatus(orderId, statusCode)
       
       await fetchOrders() // Refresh orders
     } catch (error) {
-      setError(error.message || 'Failed to update order status')
+      const errorMessage = error instanceof Error ? error.message : 'Failed to update order status'
+      setError(errorMessage)
       console.error('Error updating order status:', error)
       throw error
     }
   }
 
-  const updatePaymentStatus = async (orderId: string, paymentStatus: 'paid' | 'pending') => {
+  const updatePaymentStatus = async (orderId: string, paymentStatusCode: string) => {
     try {
       setError(null)
       
       const { error } = await supabase
         .from('orders')
-        .update({ payment_status: paymentStatus })
+        .update({ 
+          payment_status: paymentStatusCode, // Backward compatibility
+          payment_status_code: paymentStatusCode // New configurable system
+        })
         .eq('id', orderId)
         .eq('user_id', user?.id) // Security: only update own orders
 
@@ -119,7 +148,8 @@ export function useOrders() {
       
       await fetchOrders() // Refresh orders
     } catch (error) {
-      setError(error.message || 'Failed to update payment status')
+      const errorMessage = error instanceof Error ? error.message : 'Failed to update payment status'
+      setError(errorMessage)
       console.error('Error updating payment status:', error)
       throw error
     }
@@ -129,15 +159,19 @@ export function useOrders() {
     try {
       const order = orders.find(o => o.id === orderId)
       if (!order) throw new Error('Order not found')
+      if (!order.business_id) throw new Error('Order missing business information')
 
-      // Return order items for cart integration
+      // Return order items for cart integration with business_id
       return order.order_items.map(item => ({
         name: item.menu_items?.name || 'Unknown Item',
         quantity: item.quantity,
-        unit_price: item.unit_price
+        unit_price: item.unit_price,
+        menu_item_id: item.menu_item_id,
+        business_id: order.business_id
       }))
     } catch (error) {
-      setError(error.message || 'Failed to reorder items')
+      const errorMessage = error instanceof Error ? error.message : 'Failed to reorder items'
+      setError(errorMessage)
       throw error
     }
   }

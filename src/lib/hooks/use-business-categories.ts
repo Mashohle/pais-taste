@@ -31,7 +31,23 @@ export function useBusinessCategories() {
         .eq('is_active', true)
         .order('sort_order', { ascending: true })
 
-      if (error) throw error
+      if (error) {
+        if (error.message?.includes('relation "public.business_categories" does not exist')) {
+          console.log('Business categories table does not exist, showing empty categories')
+          setCategories([])
+          setError(null)
+          return
+        }
+        if (error.message?.includes('infinite recursion') || 
+            error.message?.includes('policy') ||
+            error.code === '42P17') {
+          console.log('RLS policy issue with business categories, showing empty categories')
+          setCategories([])
+          setError(null)
+          return
+        }
+        throw error
+      }
       setCategories(data || [])
       setError(null)
     } catch (err) {

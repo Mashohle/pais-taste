@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { useState, useEffect } from "react"
 import { useOrders } from '@/lib/hooks/use-orders'
+import { supabase } from '@/lib/supabase'
 
 export default function OrderConfirmationPage() {
   const searchParams = useSearchParams()
@@ -14,6 +15,7 @@ export default function OrderConfirmationPage() {
   const { orders, loading } = useOrders()
   const [order, setOrder] = useState<any>(null)
   const [orderNotFound, setOrderNotFound] = useState(false)
+  const [businessData, setBusinessData] = useState<any>(null)
 
   useEffect(() => {
     if (!orderId) {
@@ -25,17 +27,44 @@ export default function OrderConfirmationPage() {
       const foundOrder = orders.find(o => o.id === orderId)
       if (foundOrder) {
         setOrder(foundOrder)
+        loadBusinessData(foundOrder.business_id)
       } else {
         setOrderNotFound(true)
       }
     }
   }, [orderId, orders, loading])
 
+  const loadBusinessData = async (businessId: string) => {
+    if (!businessId) return
+
+    try {
+      const { data: business, error } = await supabase
+        .from('businesses')
+        .select(`
+          *,
+          business_categories (
+            id,
+            name,
+            description,
+            icon,
+            color
+          )
+        `)
+        .eq('id', businessId)
+        .single()
+
+      if (error) throw error
+      setBusinessData(business)
+    } catch (error) {
+      console.error('Error loading business data:', error)
+    }
+  }
+
   const getEstimatedTime = () => {
-    if (!order) return "Processing..."
+    if (!order || !businessData) return "Processing..."
     
     const statusTimes = {
-      'received': '25-30 minutes',
+      'received': businessData.settings?.food?.estimated_prep_time || '25-30 minutes',
       'preparing': '15-20 minutes',
       'ready': 'Ready now!',
       'collected': 'Completed',
@@ -46,18 +75,23 @@ export default function OrderConfirmationPage() {
   }
 
   const getPickupAddress = () => {
-    const addresses = {
-      'Montana, Sinoville': 'Shop 12, Montana Plaza, Montana Street, Sinoville',
-      'Wonderboom': 'Wonderboom Junction, Shop 45, Wonderboom',
-      'Akasia': 'Akasia Mall, Ground Floor, Akasia'
-    }
+    if (!businessData) return order?.pickup_location || 'Location TBD'
     
-    return addresses[order?.pickup_location as keyof typeof addresses] || order?.pickup_location || 'Location TBD'
+    // Build address from business data
+    const addressParts = [
+      businessData.address_line1,
+      businessData.address_line2,
+      businessData.city,
+      businessData.state
+    ].filter(Boolean)
+    
+    return addressParts.length > 0 ? addressParts.join(', ') : (order?.pickup_location || 'Location TBD')
   }
 
   const getOrderDisplayId = () => {
-    if (!order) return "PAI-XXX"
-    return `PAI-${order.id.slice(-3).toUpperCase()}`
+    if (!order || !businessData) return "ORD-XXX"
+    const prefix = businessData.name.substring(0, 3).toUpperCase()
+    return `${prefix}-${order.id.slice(-3).toUpperCase()}`
   }
 
   // Loading state
@@ -135,7 +169,12 @@ export default function OrderConfirmationPage() {
 
               <div className="space-y-2">
                 <h1 className="text-3xl sm:text-4xl font-bold text-stone-800 drop-shadow-sm">Order Placed!</h1>
-                <p className="text-stone-600 text-lg">Your delicious South African meal is being prepared with care</p>
+                <p className="text-stone-600 text-lg">
+                  {businessData 
+                    ? `Your order from ${businessData.name} is being prepared with care`
+                    : "Your order is being prepared with care"
+                  }
+                </p>
               </div>
 
               <div className="flex items-center justify-center space-x-2 bg-white/80 backdrop-blur-sm rounded-lg p-3 border border-stone-200/60">
@@ -222,7 +261,9 @@ export default function OrderConfirmationPage() {
               <div className="bg-white/80 backdrop-blur-sm rounded-lg p-4 border border-stone-200/60">
                 <p className="text-sm text-stone-600 mb-1">Full Address</p>
                 <p className="text-stone-800">{getPickupAddress()}</p>
-                <p className="text-stone-600 text-sm mt-2">📞 +27 81 454 1020</p>
+                {businessData?.phone && (
+                  <p className="text-stone-600 text-sm mt-2">📞 {businessData.phone}</p>
+                )}
               </div>
 
               <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4">

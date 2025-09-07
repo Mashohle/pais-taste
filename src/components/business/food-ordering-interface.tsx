@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
@@ -9,6 +9,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Plus, Minus, Search, ShoppingCart, MapPin, Clock, Info, Utensils } from "lucide-react"
+import { useCart } from '@/lib/contexts/cart-context'
+import { supabase } from '@/lib/supabase'
+// import { toast } from "sonner" // Removed - dependency not installed
 
 // Mock menu data for the food business
 const mockMenu = [
@@ -103,86 +106,138 @@ interface FoodOrderingProps {
 export default function FoodOrderingInterface({ business }: FoodOrderingProps) {
   const [selectedCategory, setSelectedCategory] = useState('All')
   const [searchTerm, setSearchTerm] = useState('')
-  const [cart, setCart] = useState<CartItem[]>([])
   const [showCheckout, setShowCheckout] = useState(false)
   const [deliveryAddress, setDeliveryAddress] = useState('')
   const [orderType, setOrderType] = useState<'delivery' | 'pickup'>('delivery')
+  const [menuItems, setMenuItems] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  
+  const { 
+    state: cartState, 
+    addItem, 
+    updateQuantity, 
+    validateBusinessCompatibility,
+    setBusiness,
+    getBusinessContext,
+    clearCart
+  } = useCart()
+
+  // Load menu items from database
+  useEffect(() => {
+    const loadMenuItems = async () => {
+      if (!business?.id) return
+      
+      try {
+        const { data, error } = await supabase
+          .from('menu_items')
+          .select('*')
+          .eq('business_id', business.id)
+          .eq('is_available', true)
+          .order('category', { ascending: true })
+
+        if (error) {
+          console.error('Error loading menu items:', error)
+          return
+        }
+
+        setMenuItems(data || mockMenu) // Fallback to mock data for now
+      } catch (error) {
+        console.error('Error loading menu items:', error)
+        setMenuItems(mockMenu) // Fallback to mock data
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadMenuItems()
+    
+    // Set business context in cart
+    if (business?.id && business?.name) {
+      setBusiness(business.id, business.name)
+    }
+  }, [business, setBusiness])
 
   // Filter menu items
   const filteredMenu = useMemo(() => {
-    return mockMenu.filter(item => {
+    return menuItems.filter(item => {
       const matchesCategory = selectedCategory === 'All' || item.category === selectedCategory
       const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          item.description.toLowerCase().includes(searchTerm.toLowerCase())
-      return matchesCategory && matchesSearch && item.available
+                          item.description?.toLowerCase().includes(searchTerm.toLowerCase())
+      return matchesCategory && matchesSearch && (item.is_available !== false)
     })
-  }, [selectedCategory, searchTerm])
+  }, [menuItems, selectedCategory, searchTerm])
 
-  // Cart calculations
-  const cartTotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0)
+  // Cart calculations using global cart state
+  const cartTotal = cartState.items.reduce((sum, item) => sum + (item.price * item.quantity), 0)
   const deliveryFee = orderType === 'delivery' ? business.delivery_fee : 0
   const orderTotal = cartTotal + deliveryFee
 
-  const addToCart = (menuItem: any) => {
-    setCart(prevCart => {
-      const existingItem = prevCart.find(item => item.id === menuItem.id)
-      if (existingItem) {
-        return prevCart.map(item =>
-          item.id === menuItem.id
-            ? { ...item, quantity: item.quantity + 1 }
-            : item
-        )
-      } else {
-        return [...prevCart, {
-          id: menuItem.id,
-          name: menuItem.name,
-          price: menuItem.price,
-          quantity: 1
-        }]
+  const handleAddToCart = (menuItem: any) => {
+    try {
+      // Check business compatibility before adding
+      if (!validateBusinessCompatibility(business.id)) {
+        // toast.error("Cannot mix items from different businesses. Please clear your cart first.")
+        return
       }
-    })
+
+      const cartItem = {
+        id: menuItem.id,
+        name: menuItem.name,
+        price: menuItem.price,
+        type: 'traditional' as const,
+        business_id: business.id,
+        menu_item_id: menuItem.id
+      }
+      
+      addItem(cartItem)
+      // toast.success(`${menuItem.name} added to cart`)
+    } catch (error: any) {
+      // toast.error(error.message)
+    }
   }
 
-  const removeFromCart = (itemId: string) => {
-    setCart(prevCart => {
-      return prevCart.reduce((acc, item) => {
-        if (item.id === itemId) {
-          if (item.quantity > 1) {
-            acc.push({ ...item, quantity: item.quantity - 1 })
-          }
-          // If quantity is 1, don't add it back (remove completely)
-        } else {
-          acc.push(item)
-        }
-        return acc
-      }, [] as CartItem[])
-    })
+  const handleUpdateQuantity = (itemId: string, newQuantity: number) => {
+    try {
+      updateQuantity(itemId, newQuantity)
+      if (newQuantity === 0) {
+        // toast.success("Item removed from cart")
+      }
+    } catch (error: any) {
+      // toast.error(error.message)
+    }
   }
 
-  const getItemQuantity = (itemId: string) => {
-    const cartItem = cart.find(item => item.id === itemId)
-    return cartItem ? cartItem.quantity : 0
+  const getCartItemQuantity = (menuItemId: string): number => {
+    const cartItem = cartState.items.find(item => item.id === menuItemId)
+    return cartItem?.quantity || 0
   }
 
   const handleCheckout = () => {
-    if (cartTotal < business.minimum_order) {
-      alert(`Minimum order amount is R${business.minimum_order}`)
+    if (cartState.items.length === 0) {
+      // toast.error("Your cart is empty")
       return
     }
-    setShowCheckout(true)
+    
+    if (cartTotal < (business.minimum_order || 0)) {
+      // toast.error(`Minimum order amount is R${business.minimum_order}`)
+      return
+    }
+    
+    // Redirect to checkout page with business context
+    window.location.href = '/checkout'
   }
 
   const handlePlaceOrder = () => {
     // TODO: Integrate with actual ordering system
     console.log('Order placed:', {
       business: business.id,
-      items: cart,
+      items: cartState.items,
       orderType,
       deliveryAddress,
       total: orderTotal
     })
     alert('Order placed successfully! You will receive a confirmation shortly.')
-    setCart([])
+    clearCart()
     setShowCheckout(false)
   }
 
@@ -260,7 +315,7 @@ export default function FoodOrderingInterface({ business }: FoodOrderingProps) {
                         </div>
                         {item.dietary_info.length > 0 && (
                           <div className="flex gap-1">
-                            {item.dietary_info.map((info, index) => (
+                            {item.dietary_info.map((info: string, index: number) => (
                               <Badge key={index} variant="outline" className="text-xs">
                                 {info}
                               </Badge>
@@ -271,10 +326,10 @@ export default function FoodOrderingInterface({ business }: FoodOrderingProps) {
                       
                       {/* Add to Cart Controls */}
                       <div className="flex items-center gap-2">
-                        {getItemQuantity(item.id) === 0 ? (
+                        {getCartItemQuantity(item.id) === 0 ? (
                           <Button
                             size="sm"
-                            onClick={() => addToCart(item)}
+                            onClick={() => handleAddToCart(item)}
                             className="bg-orange-600 hover:bg-orange-700 text-white"
                           >
                             <Plus className="w-4 h-4 mr-1" />
@@ -285,17 +340,17 @@ export default function FoodOrderingInterface({ business }: FoodOrderingProps) {
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={() => removeFromCart(item.id)}
+                              onClick={() => handleUpdateQuantity(item.id, getCartItemQuantity(item.id) - 1)}
                             >
                               <Minus className="w-4 h-4" />
                             </Button>
                             <span className="font-medium min-w-[2rem] text-center">
-                              {getItemQuantity(item.id)}
+                              {getCartItemQuantity(item.id)}
                             </span>
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={() => addToCart(item)}
+                              onClick={() => handleAddToCart(item)}
                             >
                               <Plus className="w-4 h-4" />
                             </Button>
@@ -327,7 +382,7 @@ export default function FoodOrderingInterface({ business }: FoodOrderingProps) {
                 Your Order
               </h3>
 
-              {cart.length === 0 ? (
+              {cartState.items.length === 0 ? (
                 <div className="text-center py-8">
                   <ShoppingCart className="w-12 h-12 text-gray-400 mx-auto mb-2" />
                   <p className="text-gray-600 text-sm">Your cart is empty</p>
@@ -352,7 +407,7 @@ export default function FoodOrderingInterface({ business }: FoodOrderingProps) {
 
                   {/* Cart Items */}
                   <div className="space-y-2">
-                    {cart.map(item => (
+                    {cartState.items.map(item => (
                       <div key={item.id} className="flex items-center justify-between text-sm">
                         <div className="flex-1">
                           <span className="font-medium">{item.quantity}x {item.name}</span>
@@ -469,7 +524,7 @@ export default function FoodOrderingInterface({ business }: FoodOrderingProps) {
             <div className="bg-gray-50 rounded-lg p-4">
               <h4 className="font-medium mb-2">Order Summary</h4>
               <div className="space-y-1 text-sm">
-                {cart.map(item => (
+                {cartState.items.map(item => (
                   <div key={item.id} className="flex justify-between">
                     <span>{item.quantity}x {item.name}</span>
                     <span>R{(item.price * item.quantity).toFixed(2)}</span>

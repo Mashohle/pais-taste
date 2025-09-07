@@ -69,6 +69,17 @@ export function useProfile() {
           await createProfile()
           return
         }
+        if (profileError.message?.includes('relation "public.profiles" does not exist')) {
+          await createProfile()
+          return
+        }
+        if (profileError.message?.includes('infinite recursion') || 
+            profileError.message?.includes('policy') ||
+            profileError.code === '42P17') {
+          console.log('RLS policy issue with profiles, creating fallback profile')
+          await createProfile()
+          return
+        }
         throw profileError
       }
 

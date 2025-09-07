@@ -128,7 +128,7 @@ export default function RetailOrderingInterface({ business }: RetailOrderingProp
 
   // Filter and sort products
   const filteredProducts = useMemo(() => {
-    let filtered = mockProducts.filter(product => {
+    const filtered = mockProducts.filter(product => {
       const matchesCategory = selectedCategory === 'All' || product.category === selectedCategory
       const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           product.description.toLowerCase().includes(searchTerm.toLowerCase()) ||

@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
 import { useAuth } from '@/lib/contexts/auth-context'
-import { useBusiness } from '@/lib/contexts/business-context'
+import { BusinessProvider, useBusiness } from '@/lib/contexts/business-context'
 import { DynamicIcon } from '@/lib/utils/icon-mapper'
 import { useRouter, usePathname } from 'next/navigation'
 import { LogOut, LayoutDashboard, UtensilsCrossed, Plus, ShoppingBag, Calendar, Users, Settings, ChevronDown } from 'lucide-react'
@@ -26,7 +26,9 @@ export default function AdminLayout({
 
     return (
         <ProtectedRoute>
-            <AdminLayoutContent>{children}</AdminLayoutContent>
+            <BusinessProvider>
+                <AdminLayoutContent>{children}</AdminLayoutContent>
+            </BusinessProvider>
         </ProtectedRoute>
     )
 }

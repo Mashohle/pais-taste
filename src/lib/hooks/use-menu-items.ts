@@ -1,6 +1,7 @@
 // lib/hooks/use-menu-items.ts
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
+import { useBusiness } from '@/lib/contexts/business-context'
 
 interface MenuItem {
   id: string
@@ -21,8 +22,16 @@ export function useMenuItems(forAdmin: boolean = false) {
   const [items, setItems] = useState<MenuItem[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const { currentBusiness } = useBusiness()
 
   useEffect(() => {
+    // Only fetch if we have a business context
+    if (!currentBusiness?.id) {
+      setItems([])
+      setLoading(false)
+      return
+    }
+    
     fetchMenuItems()
     
     // Set up real-time subscription
@@ -37,13 +46,20 @@ export function useMenuItems(forAdmin: boolean = false) {
     return () => {
       subscription.unsubscribe()
     }
-  }, [forAdmin])
+  }, [forAdmin, currentBusiness?.id])
 
   async function fetchMenuItems() {
     try {
+      // SECURITY FIX: Always filter by current business to prevent cross-tenant access
+      if (!currentBusiness?.id) {
+        setItems([])
+        return
+      }
+
       let query = supabase
         .from('menu_items')
         .select('*')
+        .eq('business_id', currentBusiness.id) // CRITICAL: Filter by business
 
       if (!forAdmin) {
         // For customers: only show published items
@@ -73,10 +89,16 @@ export function useMenuItems(forAdmin: boolean = false) {
         throw new Error('Authentication required')
       }
 
+      // SECURITY FIX: Only allow updating items from current business
+      if (!currentBusiness?.id) {
+        throw new Error('Business context required')
+      }
+
       const { error } = await supabase
         .from('menu_items')
         .update(updates)
         .eq('id', id)
+        .eq('business_id', currentBusiness.id) // CRITICAL: Prevent cross-tenant updates
 
       if (error) throw error
       fetchMenuItems() // Refresh the list
@@ -95,6 +117,11 @@ export function useMenuItems(forAdmin: boolean = false) {
         throw new Error('Authentication required')
       }
 
+      // SECURITY FIX: Only allow deleting items from current business
+      if (!currentBusiness?.id) {
+        throw new Error('Business context required')
+      }
+
       // First, delete the image from storage if it exists
       const item = items.find(i => i.id === id)
       if (item?.image_url) {
@@ -105,6 +132,7 @@ export function useMenuItems(forAdmin: boolean = false) {
         .from('menu_items')
         .delete()
         .eq('id', id)
+        .eq('business_id', currentBusiness.id) // CRITICAL: Prevent cross-tenant deletes
 
       if (error) throw error
       fetchMenuItems() // Refresh the list
@@ -123,9 +151,19 @@ export function useMenuItems(forAdmin: boolean = false) {
         throw new Error('Authentication required')
       }
 
+      // SECURITY FIX: Ensure new items are created with current business_id
+      if (!currentBusiness?.id) {
+        throw new Error('Business context required')
+      }
+
+      const menuItemWithBusiness = {
+        ...menuItem,
+        business_id: currentBusiness.id // CRITICAL: Always set business_id
+      }
+
       const { data, error } = await supabase
         .from('menu_items')
-        .insert([menuItem])
+        .insert([menuItemWithBusiness])
         .select()
         .single()
 

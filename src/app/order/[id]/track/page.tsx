@@ -12,32 +12,57 @@ import { supabase } from "@/lib/supabase"
 import { useAuth } from "@/lib/contexts/auth-context"
 import { Order } from "@/types/order"
 
-const orderStages = [
-  {
-    key: "received" as const,
-    label: "Order Received",
-    icon: CheckCircle,
-    description: "Your order has been confirmed",
-  },
-  {
-    key: "preparing" as const,
-    label: "Preparing",
-    icon: ChefHat,
-    description: "Our chefs are preparing your meal",
-  },
-  {
-    key: "ready" as const,
-    label: "Ready for Pickup",
-    icon: Package,
-    description: "Your order is ready for collection",
-  },
-  {
-    key: "completed" as const,
-    label: "Completed",
-    icon: CheckCircle,
-    description: "Order has been collected",
-  },
-]
+const getOrderStages = (businessType: string = 'food') => {
+  const stageDescriptions = {
+    food: {
+      received: "Your order has been confirmed",
+      preparing: "Our chefs are preparing your meal",
+      ready: "Your order is ready for collection",
+      completed: "Order has been collected"
+    },
+    retail: {
+      received: "Your order has been confirmed",
+      preparing: "We're picking your items",
+      ready: "Your order is ready for pickup",
+      completed: "Order has been collected"
+    },
+    service: {
+      received: "Your booking has been confirmed",
+      preparing: "Preparing for your appointment",
+      ready: "Ready for your service",
+      completed: "Service completed"
+    }
+  }
+
+  const descriptions = stageDescriptions[businessType as keyof typeof stageDescriptions] || stageDescriptions.food
+
+  return [
+    {
+      key: "received" as const,
+      label: businessType === 'service' ? "Booking Confirmed" : "Order Received",
+      icon: CheckCircle,
+      description: descriptions.received,
+    },
+    {
+      key: "preparing" as const,
+      label: businessType === 'service' ? "Preparing" : "Preparing",
+      icon: ChefHat,
+      description: descriptions.preparing,
+    },
+    {
+      key: "ready" as const,
+      label: businessType === 'service' ? "Ready for Service" : "Ready for Pickup",
+      icon: Package,
+      description: descriptions.ready,
+    },
+    {
+      key: "completed" as const,
+      label: "Completed",
+      icon: CheckCircle,
+      description: descriptions.completed,
+    },
+  ]
+}
 
 interface OrderTrackingPageProps {
   params: Promise<{
@@ -53,6 +78,7 @@ export default function OrderTrackingPage({ params }: OrderTrackingPageProps) {
   const [order, setOrder] = useState<Order | null>(null)
   const [orderNotFound, setOrderNotFound] = useState(false)
   const [currentTime, setCurrentTime] = useState(new Date())
+  const [businessData, setBusinessData] = useState<any>(null)
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -72,6 +98,7 @@ export default function OrderTrackingPage({ params }: OrderTrackingPageProps) {
       if (foundOrder) {
         setOrder(foundOrder)
         setOrderNotFound(false)
+        loadBusinessData(foundOrder.business_id)
       } else if (!loading) {
         // Only set not found if we're done loading and still no order
         setOrderNotFound(true)
@@ -79,15 +106,43 @@ export default function OrderTrackingPage({ params }: OrderTrackingPageProps) {
     }
   }, [resolvedParams.id, orders, loading])
 
+  const loadBusinessData = async (businessId: string) => {
+    if (!businessId) return
+
+    try {
+      const { data: business, error } = await supabase
+        .from('businesses')
+        .select(`
+          *,
+          business_categories (
+            id,
+            name,
+            description,
+            icon,
+            color
+          )
+        `)
+        .eq('id', businessId)
+        .single()
+
+      if (error) throw error
+      setBusinessData(business)
+    } catch (error) {
+      console.error('Error loading business data:', error)
+    }
+  }
+
   const getCurrentStageIndex = () => {
-    if (!order) return 0
+    if (!order || !businessData) return 0
+    
+    const stages = getOrderStages(businessData.business_categories?.name?.toLowerCase())
     
     // Map 'ready' and 'collected' to the "Ready for Pickup" stage (index 2)
     if (order.order_status === 'ready' || order.order_status === 'collected') {
       return 2
     }
     
-    return orderStages.findIndex((stage) => stage.key === order.order_status)
+    return stages.findIndex((stage) => stage.key === order.order_status)
   }
 
   const isStageCompleted = (stageIndex: number) => {
@@ -131,13 +186,19 @@ export default function OrderTrackingPage({ params }: OrderTrackingPageProps) {
   const getPickupAddress = () => {
     if (!order) return ''
     
-    const addresses = {
-      'Montana, Sinoville': 'Shop 12, Montana Plaza, Montana Street, Sinoville',
-      'Wonderboom': 'Wonderboom Junction, Shop 45, Wonderboom',
-      'Akasia': 'Akasia Mall, Ground Floor, Akasia'
+    if (businessData) {
+      // Build address from business data
+      const addressParts = [
+        businessData.address_line1,
+        businessData.address_line2,
+        businessData.city,
+        businessData.state
+      ].filter(Boolean)
+      
+      return addressParts.length > 0 ? addressParts.join(', ') : order.pickup_location
     }
     
-    return addresses[order.pickup_location as keyof typeof addresses] || order.pickup_location
+    return order.pickup_location || 'Location TBD'
   }
 
   const getStatusTimestamp = () => {
@@ -327,11 +388,11 @@ export default function OrderTrackingPage({ params }: OrderTrackingPageProps) {
               <div className="absolute left-6 top-0 bottom-0 w-0.5 bg-stone-300"></div>
               <div
                 className="absolute left-6 top-0 w-0.5 bg-emerald-500 transition-all duration-1000"
-                style={{ height: `${(getCurrentStageIndex() / (orderStages.length - 1)) * 100}%` }}
+                style={{ height: `${(getCurrentStageIndex() / (getOrderStages(businessData?.business_categories?.name?.toLowerCase()).length - 1)) * 100}%` }}
               ></div>
 
               <div className="space-y-6">
-                {orderStages.map((stage, index) => {
+                {getOrderStages(businessData?.business_categories?.name?.toLowerCase()).map((stage, index) => {
                   const Icon = stage.icon
                   const completed = isStageCompleted(index)
                   const current = isCurrentStage(index)
@@ -412,7 +473,7 @@ export default function OrderTrackingPage({ params }: OrderTrackingPageProps) {
                   <p>• Payment required upon collection ({order.payment_method === 'cash_on_pickup' ? 'Cash' : 'Card'})</p>
                 )}
                 <p>• Free parking available on-site</p>
-                <p>• Look for the "Pai's Taste" signage</p>
+                <p>• Look for the "{businessData?.name}" signage</p>
               </div>
             </CardContent>
           </Card>
@@ -431,10 +492,10 @@ export default function OrderTrackingPage({ params }: OrderTrackingPageProps) {
                   <div>
                     <p className="text-xs text-stone-600">Restaurant Phone</p>
                     <a
-                      href="tel:+27814541020"
+                      href={`tel:${businessData?.phone}`}
                       className="font-semibold text-stone-800 hover:text-emerald-600 transition-colors"
                     >
-                      +27 81 454 1020
+                      {businessData?.phone}
                     </a>
                   </div>
                 </div>
@@ -444,7 +505,7 @@ export default function OrderTrackingPage({ params }: OrderTrackingPageProps) {
                   <div>
                     <p className="text-xs text-stone-600">WhatsApp</p>
                     <a
-                      href="https://wa.me/27814541020"
+                      href={`https://wa.me/${businessData?.phone?.replace(/\D/g, '')}`}
                       className="font-semibold text-green-600 hover:text-green-700 transition-colors"
                       target="_blank"
                       rel="noopener noreferrer"
@@ -464,13 +525,15 @@ export default function OrderTrackingPage({ params }: OrderTrackingPageProps) {
         </div>
 
         <div className="mt-6 flex flex-col sm:flex-row gap-3">
-          <Button
-            className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg"
-            onClick={() => (window.location.href = "tel:+27814541020")}
-          >
-            <Phone className="w-4 h-4 mr-2" />
-            Call Restaurant
-          </Button>
+          {businessData?.phone && (
+            <Button
+              className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg"
+              onClick={() => (window.location.href = `tel:${businessData.phone}`)}
+            >
+              <Phone className="w-4 h-4 mr-2" />
+              Call {businessData.business_categories?.name === 'food' ? 'Restaurant' : 'Business'}
+            </Button>
+          )}
 
           {user && order.user_id === user.id ? (
             <Link href="/account/orders" className="flex-1">

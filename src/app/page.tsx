@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Search, MapPin, Clock, Star, ChevronRight, Utensils, ShoppingBag, Wrench, Car, Scissors, Home, Filter, Menu, User, Heart, ShoppingCart } from "lucide-react"
 import Link from 'next/link'
 import { DynamicIcon } from '@/lib/utils/icon-mapper'
+import { useAuth } from '@/lib/contexts/auth-context'
 
 // Dynamic Content API Response Interface (to be consumed from super admin portal)
 interface DynamicScreenContent {
@@ -92,6 +93,7 @@ export default function CustomerPortalHome() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [dynamicContent, setDynamicContent] = useState<DynamicScreenContent | null>(null)
   const [isLoadingDynamicContent, setIsLoadingDynamicContent] = useState(true)
+  const { user } = useAuth()
 
   // Simulate fetching dynamic content from super admin portal
   useEffect(() => {
@@ -178,6 +180,12 @@ export default function CustomerPortalHome() {
             </div>
             
             <div className="flex items-center space-x-4">
+              <Link href="/directory">
+                <Button variant="ghost" size="sm">
+                  <Search className="w-4 h-4 mr-2" />
+                  Directory
+                </Button>
+              </Link>
               <Button variant="ghost" size="sm">
                 <Heart className="w-4 h-4 mr-2" />
                 Favorites
@@ -186,10 +194,12 @@ export default function CustomerPortalHome() {
                 <ShoppingCart className="w-4 h-4 mr-2" />
                 Orders
               </Button>
-              <Button variant="outline" size="sm">
-                <User className="w-4 h-4 mr-2" />
-                Sign In
-              </Button>
+              <Link href={user ? "/account" : "/auth"}>
+                <Button variant="outline" size="sm">
+                  <User className="w-4 h-4 mr-2" />
+                  {user ? "Account" : "Sign In"}
+                </Button>
+              </Link>
             </div>
           </div>
         </div>

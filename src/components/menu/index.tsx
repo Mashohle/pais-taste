@@ -33,7 +33,7 @@ interface ProcessedGroup {
 
 export function MenuGrid() {
 	const { items, loading, error } = useMenuItems()
-	const { state, addItem, setCartOpen } = useCart()
+	const { state, addItem, setCartOpen, getBusinessContext } = useCart()
 	const [processedGroups, setProcessedGroups] = useState<ProcessedGroup[]>([])
 
 	// Process menu items into groups whenever items change
@@ -142,11 +142,14 @@ export function MenuGrid() {
 			return
 		}
 
+		const businessContext = getBusinessContext()
+		
 		addItem({
 			id: `${group.id}-${type}`,
 			name: item.name,
 			price: item.price,
-			type: type
+			type: type,
+			business_id: businessContext.business_id || ''
 		})
 	}
 

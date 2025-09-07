@@ -17,6 +17,7 @@ export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true)
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [isRedirecting, setIsRedirecting] = useState(false)
   const [showForgotPassword, setShowForgotPassword] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
@@ -35,6 +36,7 @@ export default function AuthPage() {
   // Redirect if already logged in
   useEffect(() => {
     if (user) {
+      setIsRedirecting(true)
       router.push('/account')
     }
   }, [user, router])
@@ -118,6 +120,20 @@ export default function AuthPage() {
     } finally {
       setIsLoading(false)
     }
+  }
+
+  // Show redirecting state if user is already logged in
+  if (isRedirecting) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-stone-50 via-stone-100 to-stone-200 flex items-center justify-center p-4">
+        <Card className="w-full max-w-md">
+          <CardContent className="flex flex-col items-center justify-center p-8">
+            <div className="w-8 h-8 border-4 border-stone-300 border-t-stone-600 rounded-full animate-spin mb-4"></div>
+            <p className="text-stone-600 text-center">You're already signed in! Redirecting to your account...</p>
+          </CardContent>
+        </Card>
+      </div>
+    )
   }
 
   return (

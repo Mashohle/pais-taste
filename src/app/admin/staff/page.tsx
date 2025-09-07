@@ -166,7 +166,7 @@ export default function StaffPage() {
         average_rating: (staff.reduce((sum, s) => sum + s.rating, 0) / staff.length).toFixed(1)
     }
 
-    function getTodayAvailability(staffMember: any) {
+    function getTodayAvailability(staffMember: typeof mockStaff[0]) {
         const today = new Date().toLocaleDateString('en', { weekday: 'long' }).toLowerCase()
         return staffMember.availability[today]?.available || false
     }
@@ -251,7 +251,7 @@ export default function StaffPage() {
                             <div className="flex items-center">
                                 <Calendar className="h-8 w-8 text-purple-600" />
                                 <div className="ml-3">
-                                    <p className="text-sm font-medium text-gray-600">Today's Bookings</p>
+                                    <p className="text-sm font-medium text-gray-600">Today&apos;s Bookings</p>
                                     <p className="text-2xl font-bold">{stats.total_bookings_today}</p>
                                 </div>
                             </div>

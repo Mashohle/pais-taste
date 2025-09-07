@@ -1,12 +1,14 @@
 "use client"
 
 import type React from "react"
-import { useCart } from '@/lib/contexts/cart-context'
 import { useAuth } from '@/lib/contexts/auth-context'
 import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useState, useEffect } from 'react'
 
 import { createOrder } from '@/lib/orders'
+import { useCheckout } from '@/lib/hooks/use-checkout'
+import { useCart } from '@/lib/contexts/cart-context'
+import { BusinessErrorDisplay } from '@/components/business/business-error-boundary'
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -19,20 +21,25 @@ import Link from "next/link"
 import Image from 'next/image'
 
 export default function CheckoutPage() {
-    const { state, clearCart } = useCart()
     const { user, profile } = useAuth()
     const router = useRouter()
+    
+    // Use checkout hook for all business and cart data
+    const {
+        business,
+        cartItems,
+        subtotal,
+        total,
+        hasItems,
+        isLoading,
+        hasError,
+        error,
+        businessContext,
+        isEmpty
+    } = useCheckout()
 
-    // Only redirect if cart is empty on initial load (not after clearing cart)
-    useEffect(() => {
-        if (state.items.length === 0 && typeof window !== 'undefined') {
-            // Only redirect if we're not coming from a successful order
-            const urlParams = new URLSearchParams(window.location.search)
-            if (!urlParams.has('success')) {
-                router.push('/')
-            }
-        }
-    }, [])
+    // Import clearCart from cart context
+    const { clearCart } = useCart()
 
     const [formData, setFormData] = useState({
         fullName: "",
@@ -57,12 +64,25 @@ export default function CheckoutPage() {
         }
     }, [user, profile])
 
-    const orderItems = state.items
-    const subtotal = orderItems.reduce((sum, item) => sum + item.price * item.quantity, 0)
-    const total = subtotal
+    // Handle loading state
+    if (isLoading) {
+        return (
+            <div className="min-h-screen bg-stone-50 flex items-center justify-center">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-stone-600 mx-auto mb-4"></div>
+                    <p className="text-stone-700">Loading checkout...</p>
+                </div>
+            </div>
+        )
+    }
+
+    // Handle error state
+    if (hasError && error) {
+        return <BusinessErrorDisplay error={error} />
+    }
 
     // Early return for empty cart
-    if (state.items.length === 0) {
+    if (isEmpty) {
         return (
             <div className="min-h-screen bg-stone-50 flex items-center justify-center">
                 <div className="text-center">
@@ -104,15 +124,22 @@ export default function CheckoutPage() {
             try {
                 setIsSubmitting(true)
                 
+                if (!businessContext.business_id) {
+                    alert('No business context found. Please return to the menu and try again.')
+                    setIsSubmitting(false)
+                    return
+                }
+                
                 const order = await createOrder({
                     customer_name: formData.fullName,
                     customer_phone: formData.phoneNumber,
                     pickup_location: formData.pickupLocation,
                     special_instructions: formData.specialInstructions,
                     total_amount: total,
-                    items: orderItems,
+                    items: cartItems,
                     payment_method: formData.paymentMethod as 'online' | 'cash_on_pickup',
-                    user_id: user?.id // Include user ID if logged in
+                    user_id: user?.id, // Include user ID if logged in
+                    business_id: businessContext.business_id // Include business_id
                 })
 
                 // Clear cart
@@ -121,8 +148,8 @@ export default function CheckoutPage() {
                 // Wait a moment for the order to be saved
                 await new Promise(resolve => setTimeout(resolve, 1000))
                 
-                // Navigate to tracking
-                router.push(`/order/${order.id}/track`)
+                // Navigate to confirmation page
+                router.push(`/order/${order.id}/confirmation`)
 
             } catch (error) {
                 console.error('Order submission failed:', error)
@@ -169,16 +196,38 @@ export default function CheckoutPage() {
                         Back to Menu
                     </Link>
                     <div className="text-center">
-                        <Image
-                            src="/logo.svg"
-                            alt="Pai's Taste Food Special"
-                            width={200}
-                            height={145}
-                            className="mx-auto mb-4"
-                        />
-                        <p className="text-stone-600 text-sm sm:text-base">
-                            Complete your order for traditional South African cuisine
-                        </p>
+                        {business ? (
+                            <>
+                                <div className="w-48 h-32 mx-auto mb-4 bg-gradient-to-r from-stone-200 to-stone-300 rounded-2xl flex items-center justify-center">
+                                    {business.logo_url ? (
+                                        <Image
+                                            src={business.logo_url}
+                                            alt={business.name}
+                                            width={200}
+                                            height={128}
+                                            className="max-w-full max-h-full object-contain rounded-2xl"
+                                        />
+                                    ) : (
+                                        <div className="text-stone-600 text-2xl font-bold">
+                                            {business.name.charAt(0)}
+                                        </div>
+                                    )}
+                                </div>
+                                <h1 className="text-xl font-bold text-stone-800 mb-2">{business.name}</h1>
+                                <p className="text-stone-600 text-sm sm:text-base">
+                                    Complete your order for {business.description || business.business_categories?.name}
+                                </p>
+                            </>
+                        ) : (
+                            <>
+                                <div className="w-48 h-32 mx-auto mb-4 bg-gradient-to-r from-stone-200 to-stone-300 rounded-2xl flex items-center justify-center">
+                                    <div className="text-stone-600 text-2xl font-bold">?</div>
+                                </div>
+                                <p className="text-stone-600 text-sm sm:text-base">
+                                    Complete your order
+                                </p>
+                            </>
+                        )}
                     </div>
                 </div>
 
@@ -253,9 +302,25 @@ export default function CheckoutPage() {
                                             <SelectValue placeholder="Select pickup location" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="montana">Montana</SelectItem>
-                                            <SelectItem value="sinoville">Sinoville</SelectItem>
-                                            <SelectItem value="annlin">Annlin</SelectItem>
+                                            {business ? (
+                                                <>
+                                                    {/* Primary business location */}
+                                                    {business.city && (
+                                                        <SelectItem value={business.city}>
+                                                            {[business.city, business.province].filter(Boolean).join(', ')}
+                                                        </SelectItem>
+                                                    )}
+                                                    
+                                                    {/* Additional locations if available in settings */}
+                                                    {business.settings?.food?.locations?.map((location: any, index: number) => (
+                                                        <SelectItem key={index} value={location.name}>
+                                                            {location.name}
+                                                        </SelectItem>
+                                                    ))}
+                                                </>
+                                            ) : (
+                                                <SelectItem value="" disabled>Loading locations...</SelectItem>
+                                            )}
                                         </SelectContent>
                                     </Select>
                                     {errors.pickupLocation && <p className="text-red-500 text-sm">{errors.pickupLocation}</p>}
@@ -334,7 +399,7 @@ export default function CheckoutPage() {
                             <h2 className="text-xl sm:text-2xl font-bold text-stone-800 mb-6">Order Summary</h2>
 
                             <div className="space-y-4 mb-6">
-                                {orderItems.map((item) => (
+                                {cartItems.map((item) => (
                                     <div
                                         key={item.id}
                                         className="relative bg-white/85 backdrop-blur-sm rounded-xl p-3 sm:p-4 border border-stone-200/60 shadow-lg"

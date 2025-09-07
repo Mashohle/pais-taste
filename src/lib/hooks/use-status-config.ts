@@ -100,7 +100,14 @@ export function useStatusConfig(statusType: 'order' | 'booking' | 'payment') {
                 .order('display_order')
 
             if (businessError && businessError.code !== 'PGRST116') { // PGRST116 is "relation does not exist"
-                throw businessError
+                if (businessError.message?.includes('infinite recursion') || 
+                    businessError.message?.includes('policy') ||
+                    businessError.code === '42P17') {
+                    console.log('RLS policy issue with status_configs, using default statuses')
+                    // Continue to use default statuses
+                } else {
+                    throw businessError
+                }
             }
 
             // If no business-specific statuses or table doesn't exist, use defaults

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -13,6 +13,8 @@ import { Separator } from "@/components/ui/separator"
 import { Search, MapPin, Clock, Star, ChevronRight, Filter, Map, List, SlidersHorizontal, X, Heart, Phone, Globe, Navigation } from "lucide-react"
 import Link from 'next/link'
 import { DynamicIcon } from '@/lib/utils/icon-mapper'
+import { useBusinessSwitching } from '@/lib/hooks/use-business-switching'
+import { useBusinessDirectory } from '@/lib/hooks/use-business-directory'
 
 interface Business {
   id: string
@@ -131,7 +133,7 @@ const mockBusinesses: Business[] = [
       thursday: { open: '09:00', close: '20:00', closed: false },
       friday: { open: '09:00', close: '21:00', closed: false },
       saturday: { open: '08:00', close: '17:00', closed: false },
-      sunday: { open: null, close: null, closed: true }
+      sunday: { open: '00:00', close: '00:00', closed: true }
     },
     estimated_time: '60-90 min',
     delivery_fee: 0,
@@ -179,15 +181,7 @@ const mockBusinesses: Business[] = [
   }
 ]
 
-const categories = [
-  { id: 'all', name: 'All Categories', icon: 'grid-3x3', color: 'bg-gray-100 text-gray-700' },
-  { id: 'food', name: 'Food & Dining', icon: 'utensils', color: 'bg-orange-100 text-orange-700' },
-  { id: 'retail', name: 'Shopping', icon: 'shopping-bag', color: 'bg-blue-100 text-blue-700' },
-  { id: 'service', name: 'Services', icon: 'wrench', color: 'bg-green-100 text-green-700' },
-  { id: 'car_wash', name: 'Car Care', icon: 'car', color: 'bg-purple-100 text-purple-700' },
-  { id: 'salon', name: 'Beauty', icon: 'scissors', color: 'bg-pink-100 text-pink-700' },
-  { id: 'home', name: 'Home Services', icon: 'home', color: 'bg-indigo-100 text-indigo-700' }
-]
+// Categories are now loaded from the database via the hook
 
 const provinces = [
   'All Provinces',
@@ -203,7 +197,27 @@ const provinces = [
 ]
 
 export default function BusinessDirectory() {
-  const [businesses, setBusinesses] = useState<Business[]>(mockBusinesses)
+  // Use custom hooks
+  const { 
+    businesses,
+    categories,
+    cities,
+    isLoading,
+    hasError,
+    error,
+    getFilteredBusinesses
+  } = useBusinessDirectory()
+  
+  const { 
+    switchToBusinessType,
+    getBusinessTypeFromCategory,
+    getBusinessTypeIcon,
+    getBusinessTypeColor,
+    shouldWarnAboutBusinessSwitch,
+    isSwitching
+  } = useBusinessSwitching()
+
+  // Filter states
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('all')
   const [selectedProvince, setSelectedProvince] = useState('All Provinces')
@@ -218,44 +232,25 @@ export default function BusinessDirectory() {
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('grid')
   const [showFilters, setShowFilters] = useState(false)
 
-  const filteredBusinesses = businesses.filter(business => {
-    const matchesSearch = business.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         business.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         business.features.some(f => f.toLowerCase().includes(searchTerm.toLowerCase()))
-    
-    const matchesCategory = selectedCategory === 'all' || business.category === selectedCategory
-    const matchesProvince = selectedProvince === 'All Provinces' || business.province === selectedProvince
-    const matchesCity = !selectedCity || business.city.toLowerCase().includes(selectedCity.toLowerCase())
-    const matchesPriceRange = priceRange.length === 0 || priceRange.includes(business.price_range)
-    const matchesRating = business.rating >= minRating[0]
-    const matchesDistance = !business.distance || business.distance <= maxDistance[0]
-    const matchesOpenNow = !openNow || business.is_open
-    const matchesFeatured = !featuredOnly || business.featured
-    const matchesVerified = !verifiedOnly || business.verified
-    
-    return matchesSearch && matchesCategory && matchesProvince && matchesCity && 
-           matchesPriceRange && matchesRating && matchesDistance && 
-           matchesOpenNow && matchesFeatured && matchesVerified
-  })
+  // Get filtered businesses using the current filter state
+  const currentFilters = {
+    searchTerm,
+    selectedCategory,
+    selectedProvince,
+    selectedCity,
+    priceRange,
+    minRating,
+    maxDistance,
+    openNow,
+    featuredOnly,
+    verifiedOnly,
+    sortBy
+  }
 
-  // Sort businesses
-  const sortedBusinesses = [...filteredBusinesses].sort((a, b) => {
-    switch (sortBy) {
-      case 'rating':
-        return b.rating - a.rating
-      case 'distance':
-        return (a.distance || 0) - (b.distance || 0)
-      case 'price_low':
-        return a.price_range.length - b.price_range.length
-      case 'price_high':
-        return b.price_range.length - a.price_range.length
-      case 'newest':
-        return b.review_count - a.review_count // Using review count as proxy for newness
-      case 'relevance':
-      default:
-        return (b.featured ? 1 : 0) - (a.featured ? 1 : 0)
-    }
-  })
+  
+  const sortedBusinesses = getFilteredBusinesses(currentFilters)
+
+  // All filtering and sorting is now handled by the hook
 
   const clearFilters = () => {
     setSearchTerm('')
@@ -293,7 +288,7 @@ export default function BusinessDirectory() {
     }
   }
 
-  const cities = Array.from(new Set(businesses.map(b => b.city)))
+  // Cities are now provided by the hook
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-stone-50 to-stone-100">
@@ -397,8 +392,14 @@ export default function BusinessDirectory() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
+                      <SelectItem key="all" value="all">
+                        <div className="flex items-center gap-2">
+                          <DynamicIcon name="grid-3x3" className="w-4 h-4" />
+                          All Categories
+                        </div>
+                      </SelectItem>
                       {categories.map(category => (
-                        <SelectItem key={category.id} value={category.id}>
+                        <SelectItem key={category.id} value={category.name?.toLowerCase() || category.id}>
                           <div className="flex items-center gap-2">
                             <DynamicIcon name={category.icon} className="w-4 h-4" />
                             {category.name}
@@ -570,11 +571,19 @@ export default function BusinessDirectory() {
             </div>
 
             {/* Business Listings */}
-            <div className={viewMode === 'grid' 
-              ? "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6" 
-              : "space-y-4"
-            }>
-              {sortedBusinesses.map((business) => (
+            {isLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="text-center">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-stone-600 mx-auto mb-4"></div>
+                  <p className="text-stone-700">Loading businesses...</p>
+                </div>
+              </div>
+            ) : (
+              <div className={viewMode === 'grid' 
+                ? "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6" 
+                : "space-y-4"
+              }>
+                {sortedBusinesses.map((business) => (
                 <Card key={business.id} className="hover:shadow-lg transition-shadow">
                   <CardContent className="p-0">
                     <div className={viewMode === 'grid' ? '' : 'flex'}>
@@ -639,16 +648,21 @@ export default function BusinessDirectory() {
                           </div>
                         </div>
                         
-                        {/* Features */}
+                        {/* Business Type & Features */}
                         <div className="flex flex-wrap gap-1 mb-3">
-                          {business.features.slice(0, 3).map((feature, index) => (
+                          <Badge 
+                            className={`text-xs border ${getBusinessTypeColor(getBusinessTypeFromCategory(business.category_name))}`}
+                          >
+                            {getBusinessTypeIcon(getBusinessTypeFromCategory(business.category_name))} {business.category_name}
+                          </Badge>
+                          {(business.features || []).slice(0, 2).map((feature, index) => (
                             <Badge key={index} variant="outline" className="text-xs">
                               {feature}
                             </Badge>
                           ))}
-                          {business.features.length > 3 && (
+                          {(business.features || []).length > 2 && (
                             <Badge variant="outline" className="text-xs">
-                              +{business.features.length - 3} more
+                              +{(business.features || []).length - 2} more
                             </Badge>
                           )}
                         </div>
@@ -660,7 +674,7 @@ export default function BusinessDirectory() {
                             </Badge>
                             <div className="flex items-center space-x-1 text-sm text-stone-600">
                               <Clock className="w-3 h-3" />
-                              <span>{business.estimated_time}</span>
+                              <span>{business.hours}</span>
                             </div>
                           </div>
                           
@@ -675,28 +689,51 @@ export default function BusinessDirectory() {
                                 <Globe className="w-4 h-4" />
                               </Button>
                             )}
-                            <Link href={`/business/${business.id}`}>
-                              <Button size="sm">
-                                View
-                                <ChevronRight className="w-4 h-4 ml-1" />
-                              </Button>
-                            </Link>
+                            <Button 
+                              size="sm" 
+                              disabled={isSwitching}
+                              onClick={async () => {
+                                const success = await switchToBusinessType(
+                                  business.id,
+                                  business.name,
+                                  {
+                                    confirmSwitch: shouldWarnAboutBusinessSwitch(business.id),
+                                    redirectTo: `/business/${business.id}`,
+                                    showNotification: false
+                                  }
+                                )
+                                // If user cancelled the switch, don't navigate
+                                if (!success && shouldWarnAboutBusinessSwitch(business.id)) {
+                                  return
+                                }
+                              }}
+                            >
+                              {isSwitching ? (
+                                <>Loading...</>
+                              ) : (
+                                <>
+                                  View
+                                  <ChevronRight className="w-4 h-4 ml-1" />
+                                </>
+                              )}
+                            </Button>
                           </div>
                         </div>
                         
-                        {business.delivery_fee > 0 && (
+                        {(business.delivery_fee || 0) > 0 && (
                           <div className="mt-2 text-xs text-stone-500">
-                            Delivery: R{business.delivery_fee} • Min order: R{business.minimum_order}
+                            Delivery: R{business.delivery_fee || 0} • Min order: R{business.minimum_order || 0}
                           </div>
                         )}
                       </div>
                     </div>
                   </CardContent>
                 </Card>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
             
-            {sortedBusinesses.length === 0 && (
+            {!isLoading && sortedBusinesses.length === 0 && (
               <div className="text-center py-12">
                 <div className="w-16 h-16 bg-stone-200 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Search className="w-8 h-8 text-stone-400" />

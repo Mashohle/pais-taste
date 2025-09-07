@@ -118,7 +118,7 @@ export default function ProductsPage() {
         featured: products.filter(p => p.is_featured).length
     }
 
-    const getStockStatus = (product: any) => {
+    const getStockStatus = (product: typeof mockProducts[0]) => {
         if (product.stock_quantity === 0) {
             return { status: 'Out of Stock', color: 'bg-red-100 text-red-800', icon: <AlertCircle className="w-3 h-3" /> }
         } else if (product.stock_quantity <= product.low_stock_threshold) {
@@ -128,7 +128,7 @@ export default function ProductsPage() {
         }
     }
 
-    const getMarginPercentage = (product: any) => {
+    const getMarginPercentage = (product: typeof mockProducts[0]) => {
         return ((product.price - product.cost_price) / product.price * 100).toFixed(1)
     }
 

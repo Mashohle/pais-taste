@@ -160,10 +160,17 @@ export function BusinessProvider({ children, initialBusinessSlug }: BusinessProv
         .eq('user_id', user.id)
         .eq('is_active', true)
 
-      if (error) throw error
+      if (error) {
+        // This is normal for regular customers who don't own businesses
+        console.log('No business access for user (expected for customers):', error.message || 'Table may not exist')
+        setUserBusinesses([])
+        return
+      }
 
       const businesses = businessUsers?.map(bu => bu.businesses).filter(Boolean) || []
       setUserBusinesses(businesses as Business[])
+      
+      console.log('Fetched businesses:', { businessUsers, businesses }) // Debug log
       
       // Set current business role if we have a current business
       if (currentBusiness) {
