@@ -1,12 +1,15 @@
 // public/firebase-messaging-sw.js
+// Firebase temporarily disabled
+
+/*
 importScripts('https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js')
 importScripts('https://www.gstatic.com/firebasejs/10.13.0/firebase-messaging-compat.js')
 
 const firebaseConfig = {
   apiKey: "AIzaSyBxHcaFKOzgV8-TGmJWb8v4r5V1VBGnAk4",
-  authDomain: "pais-taste.firebaseapp.com",
-  projectId: "pais-taste",
-  storageBucket: "pais-taste.firebasestorage.app",
+  authDomain: "sidehusl.firebaseapp.com",
+  projectId: "sidehusl",
+  storageBucket: "sidehusl.firebasestorage.app",
   messagingSenderId: "525997717992",
   appId: "1:525997717992:web:562c39e74b9e3da2c7cc5d",
   measurementId: "G-WRM81KJFY6"
@@ -15,7 +18,9 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig)
 
 const messaging = firebase.messaging()
+*/
 
+/*
 // Handle background messages
 messaging.onBackgroundMessage(function(payload) {
   console.log('Received background message ', payload)
@@ -53,3 +58,7 @@ self.addEventListener('notificationclick', function(event) {
     })
   )
 })
+*/
+
+// Firebase messaging disabled
+console.log('Firebase messaging service worker is disabled')

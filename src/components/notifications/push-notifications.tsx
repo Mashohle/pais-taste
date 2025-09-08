@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useAuth } from '@/lib/contexts/auth-context'
-import { requestForToken, onMessageListener } from '@/lib/firebase'
+// import { requestForToken, onMessageListener } from '@/lib/firebase' // Firebase disabled
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
 import { Bell, BellOff } from 'lucide-react'
@@ -22,46 +22,18 @@ export function PushNotifications() {
   }, [])
 
   useEffect(() => {
-    if (permission === 'granted' && user) {
-      // Get the token and save it to user profile
-      requestForToken().then(setToken)
-    }
+    // Firebase messaging disabled
+    console.log('Firebase messaging is disabled - not requesting token')
   }, [permission, user])
 
   useEffect(() => {
-    // Listen for foreground messages
-    if (permission === 'granted') {
-      onMessageListener()
-        .then((payload) => {
-          console.log('Received foreground message: ', payload)
-          // You can show a toast notification here
-        })
-        .catch((err: unknown) => console.log('failed: ', err))
-    }
+    // Firebase messaging disabled
+    console.log('Firebase messaging is disabled - not listening for messages')
   }, [permission])
 
   const requestPermission = async () => {
-    if (!isSupported) {
-      alert('Push notifications are not supported in this browser.')
-      return
-    }
-
-    try {
-      const permission = await Notification.requestPermission()
-      setPermission(permission as NotificationPermission)
-      
-      if (permission === 'granted') {
-        const token = await requestForToken()
-        setToken(token)
-        
-        // Save token to user profile in your database
-        if (token && user) {
-          await saveTokenToDatabase(token)
-        }
-      }
-    } catch (error) {
-      console.error('Error requesting notification permission:', error)
-    }
+    console.log('Firebase messaging is disabled - notification requests disabled')
+    alert('Push notifications are temporarily disabled.')
   }
 
   const saveTokenToDatabase = async (token: string): Promise<void> => {

@@ -8,8 +8,8 @@ import { NotificationProvider } from '@/lib/contexts/notification-context'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-	title: "Pai's Taste Food Special",
-	description: 'Order traditional South African food for pickup',
+	title: "SideHusl",
+	description: 'Multi-tenant platform for local businesses to manage orders and operations',
 }
 
 export default function RootLayout({

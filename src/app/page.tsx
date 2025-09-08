@@ -31,7 +31,7 @@ interface DynamicScreenContent {
 const mockBusinesses = [
   {
     id: '1',
-    name: "Pai's Taste Food Special",
+    name: "SideHusl Food Special",
     category: 'food',
     category_name: 'Food & Dining',
     description: 'Authentic South African traditional cuisine',
@@ -172,7 +172,7 @@ export default function CustomerPortalHome() {
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-4">
               <div className="text-2xl font-bold bg-gradient-to-r from-stone-600 to-stone-800 bg-clip-text text-transparent">
-                LocalHub
+                SideHusl
               </div>
               <Badge variant="secondary" className="text-xs">
                 Customer Portal
@@ -348,9 +348,9 @@ export default function CustomerPortalHome() {
             <div className="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <ShoppingBag className="w-8 h-8 text-indigo-600" />
             </div>
-            <h3 className="text-2xl font-bold text-stone-800 mb-2">Join LocalHub as a Business Partner</h3>
+            <h3 className="text-2xl font-bold text-stone-800 mb-2">Join SideHusl as a Business Partner</h3>
             <p className="text-stone-600 mb-6 max-w-2xl mx-auto">
-              Ready to grow your business? Join thousands of South African businesses already serving customers through LocalHub. 
+              Ready to grow your business? Join thousands of South African businesses already serving customers through SideHusl. 
               Get access to new customers, manage orders efficiently, and boost your revenue.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">

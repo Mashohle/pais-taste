@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { onMessageListener } from '@/lib/firebase'
+// import { onMessageListener } from '@/lib/firebase' // Firebase disabled
 import { NotificationToast, NotificationData } from '@/components/notifications/notification-toast'
 
 interface NotificationContextType {
@@ -16,23 +16,8 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   const router = useRouter()
 
   useEffect(() => {
-    // Only listen for notifications if permission is granted
-    if (typeof window !== 'undefined' && Notification.permission === 'granted') {
-      onMessageListener()
-        .then((payload) => {
-          console.log('Received foreground message:', payload)
-          
-          const notification: NotificationData = {
-            title: payload.notification?.title || 'New Notification',
-            body: payload.notification?.body || '',
-            url: payload.data?.url,
-            icon: payload.notification?.icon
-          }
-          
-          setCurrentNotification(notification)
-        })
-        .catch((err) => console.log('Failed to listen for messages:', err))
-    }
+    // Firebase messaging disabled
+    console.log('Firebase messaging is disabled - not listening for messages')
   }, [])
 
   const showNotification = (notification: NotificationData) => {
