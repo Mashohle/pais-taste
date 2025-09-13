@@ -52,7 +52,7 @@ export default function SuperAdminDashboard() {
     {
       id: '1',
       type: 'business_application',
-      business: 'Mama Zulu&apos;s Kitchen',
+      business: 'Mama Zulu\'s Kitchen',
       category: 'Food',
       action: 'Applied for approval - Soweto location',
       time: '2 hours ago',
@@ -88,7 +88,7 @@ export default function SuperAdminDashboard() {
 
   const topBusinesses = [
     {
-      name: 'Pai&apos;s Taste Food Special',
+      name: 'Pai\'s Taste Food Special',
       category: 'Food',
       location: 'Montana, Pretoria',
       revenue: 154200, // R154,200

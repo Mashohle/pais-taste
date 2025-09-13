@@ -18,7 +18,8 @@ import {
   Menu,
   X,
   LogOut,
-  Crown
+  Crown,
+  FileText
 } from 'lucide-react'
 
 export default function SuperAdminLayout({
@@ -95,11 +96,17 @@ export default function SuperAdminLayout({
       description: 'Platform overview and key metrics'
     },
     { 
+      href: '/super-admin/applications', 
+      label: 'Applications', 
+      icon: FileText,
+      description: 'Review pending business applications',
+      badge: '3' // Pending approvals
+    },
+    { 
       href: '/super-admin/businesses', 
       label: 'Businesses', 
       icon: Building2,
-      description: 'Manage business accounts and approvals',
-      badge: '3' // Pending approvals
+      description: 'Manage active business accounts'
     },
     { 
       href: '/super-admin/users', 
@@ -160,8 +167,8 @@ export default function SuperAdminLayout({
                 <Crown className="w-5 h-5 text-white" />
               </div>
               <div className="hidden sm:block">
-                <h1 className="text-xl font-bold text-slate-900">LocalHub</h1>
-                <p className="text-xs text-slate-600">Super Admin Portal</p>
+                <h1 className="text-xl font-bold bg-gradient-to-r from-stone-600 to-stone-800 bg-clip-text text-transparent">sideHusl</h1>
+                <p className="text-xs text-stone-600">Super Admin Portal</p>
               </div>
             </Link>
           </div>
