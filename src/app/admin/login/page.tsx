@@ -1,53 +1,27 @@
 "use client"
 
 import type React from "react"
-import { useState, useEffect } from "react"
-import { useRouter } from 'next/navigation'
 import { Lock, Eye, EyeOff, Mail } from "lucide-react"
+import Link from 'next/link'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import Image from 'next/image'
-import { useAuth } from '@/lib/contexts/auth-context'
+import { useAdminLogin } from '@/lib/hooks/use-admin-login'
 
 export default function AdminLogin() {
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [showPassword, setShowPassword] = useState(false)
-  const [error, setError] = useState("")
-  const [isLoading, setIsLoading] = useState(false)
-  const router = useRouter()
-  const { signIn, user } = useAuth()
-
-  // Redirect if already logged in
-  useEffect(() => {
-    if (user) {
-      router.push('/admin')
-    }
-  }, [user, router])
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError("")
-    setIsLoading(true)
-
-    try {
-      const { error } = await signIn(email, password)
-
-      if (error) {
-        setError(error.message)
-        setPassword("") // Clear password on error
-      } else {
-        router.push('/admin')
-      }
-    } catch (error) {
-      setError('An unexpected error occurred')
-      setPassword("")
-    } finally {
-      setIsLoading(false)
-    }
-  }
+  const {
+    email,
+    password,
+    showPassword,
+    error,
+    isLoading,
+    updateField,
+    togglePasswordVisibility,
+    handleSubmit,
+    canSubmit
+  } = useAdminLogin()
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-stone-50 via-stone-100 to-stone-200 flex items-center justify-center p-4 relative overflow-hidden">
@@ -81,7 +55,7 @@ export default function AdminLogin() {
             <div className="w-32 h-32 bg-gradient-to-br from-stone-200 via-stone-100 to-stone-300 rounded-full flex items-center justify-center shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-110 ring-4 ring-stone-200/50">
               <Image
                 src="/logo.svg"
-                alt="Pai's Taste Food Special"
+                alt="SideHusl"
                 width={120}
                 height={87}
                 className="scale-75"
@@ -91,7 +65,7 @@ export default function AdminLogin() {
 
           <div className="space-y-2">
             <h1 className="text-2xl font-bold text-stone-800 drop-shadow-sm">Admin Access</h1>
-            <p className="text-stone-600 text-sm">Pai&apos;s Taste Admin Dashboard</p>
+            <p className="text-stone-600 text-sm">SideHusl Admin Dashboard</p>
           </div>
         </CardHeader>
 
@@ -107,9 +81,9 @@ export default function AdminLogin() {
                   <Input
                     id="email"
                     type="email"
-                    placeholder="admin@paistaste.com"
+                    placeholder="admin@sidehusl.com"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    onChange={(e) => updateField('email', e.target.value)}
                     className="pl-12 h-14 bg-gradient-to-r from-white/90 to-stone-50/80 border-2 border-stone-300 focus:border-stone-500 focus:ring-4 focus:ring-stone-500/20 shadow-inner hover:shadow-lg transition-all duration-300 hover:border-stone-400"
                     required
                     autoFocus
@@ -129,14 +103,14 @@ export default function AdminLogin() {
                     type={showPassword ? "text" : "password"}
                     placeholder="Enter your password"
                     value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    onChange={(e) => updateField('password', e.target.value)}
                     className="pl-12 pr-12 h-14 bg-gradient-to-r from-white/90 to-stone-50/80 border-2 border-stone-300 focus:border-stone-500 focus:ring-4 focus:ring-stone-500/20 shadow-inner hover:shadow-lg transition-all duration-300 hover:border-stone-400"
                     required
                     disabled={isLoading}
                   />
                   <button
                     type="button"
-                    onClick={() => setShowPassword(!showPassword)}
+                    onClick={togglePasswordVisibility}
                     className="absolute right-4 top-1/2 transform -translate-y-1/2 text-stone-500 hover:text-stone-700 transition-all duration-200 hover:scale-110"
                     disabled={isLoading}
                   >
@@ -154,7 +128,7 @@ export default function AdminLogin() {
 
             <Button
               type="submit"
-              disabled={isLoading || !email || !password}
+              disabled={!canSubmit}
               className="w-full h-14 text-lg font-semibold bg-gradient-to-r from-stone-600 via-stone-700 to-stone-800 hover:from-stone-700 hover:via-stone-800 hover:to-stone-900 text-white shadow-xl hover:shadow-2xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-[1.02] active:scale-[0.98] ring-2 ring-stone-300/30 hover:ring-stone-400/50"
             >
               {isLoading ? (
@@ -168,12 +142,24 @@ export default function AdminLogin() {
             </Button>
           </form>
 
-          <div className="text-center text-xs text-stone-500 space-y-1 bg-gradient-to-r from-stone-50/50 to-stone-100/50 rounded-lg p-3 border border-stone-200/50">
+          <div className="text-center text-xs text-stone-500 space-y-2 bg-gradient-to-r from-stone-50/50 to-stone-100/50 rounded-lg p-3 border border-stone-200/50">
             <p className="flex items-center justify-center space-x-1">
               <span>🔒</span>
               <span className="font-medium">Secure Admin Access</span>
             </p>
-            <p>For authorized restaurant staff only</p>
+            <p>For authorized business staff only</p>
+            <div className="pt-2 border-t border-stone-200/50">
+              <p className="text-stone-400">
+                Need different access?{' '}
+                <Link href="/super-admin/login" className="text-stone-600 hover:text-stone-800 font-medium">
+                  Super Admin Portal
+                </Link>
+                {' • '}
+                <Link href="/" className="text-stone-600 hover:text-stone-800 font-medium">
+                  Customer Portal
+                </Link>
+              </p>
+            </div>
           </div>
         </CardContent>
       </Card>

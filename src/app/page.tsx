@@ -194,7 +194,7 @@ export default function CustomerPortalHome() {
                 <ShoppingCart className="w-4 h-4 mr-2" />
                 Orders
               </Button>
-              <Link href={user ? "/account" : "/auth"}>
+              <Link href={user ? "/account" : "/login"}>
                 <Button variant="outline" size="sm">
                   <User className="w-4 h-4 mr-2" />
                   {user ? "Account" : "Sign In"}

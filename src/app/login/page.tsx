@@ -7,120 +7,29 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Eye, EyeOff, Mail, Phone, User, Lock, ArrowLeft } from "lucide-react"
-import { useState, useEffect } from "react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
-import { useAuth } from '@/lib/contexts/auth-context'
 import Image from 'next/image'
+import { useCustomerAuth } from '@/lib/hooks/use-customer-auth'
 
 export default function AuthPage() {
-  const [isLogin, setIsLogin] = useState(true)
-  const [showPassword, setShowPassword] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
-  const [isRedirecting, setIsRedirecting] = useState(false)
-  const [showForgotPassword, setShowForgotPassword] = useState(false)
-  const [error, setError] = useState('')
-  const [success, setSuccess] = useState('')
-  
-  // Form data
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    password: ''
-  })
-
-  const router = useRouter()
-  const { user, signIn, signUp, resetPassword, signInWithOAuth } = useAuth()
-
-  // Redirect if already logged in
-  useEffect(() => {
-    if (user) {
-      setIsRedirecting(true)
-      router.push('/account')
-    }
-  }, [user, router])
-
-  const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }))
-    setError('') // Clear errors when user types
-  }
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
-    setError('')
-    setSuccess('')
-
-    try {
-      if (isLogin) {
-        // Login with existing auth context
-        const { error } = await signIn(formData.email, formData.password)
-        
-        if (error) {
-          setError(error.message)
-        } else {
-          router.push('/account')
-        }
-      } else {
-        // Sign up
-        const { error, user } = await signUp(formData.email, formData.password, {
-          full_name: formData.name,
-          phone: formData.phone,
-        })
-
-        if (error) {
-          setError(error.message)
-        } else if (user) {
-          setSuccess('Account created! Please check your email to verify your account.')
-          // Clear form
-          setFormData({ name: '', email: '', phone: '', password: '' })
-        }
-      }
-    } catch (err: any) {
-      setError('An unexpected error occurred. Please try again.')
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  const handleForgotPassword = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
-    setError('')
-    setSuccess('')
-
-    try {
-      const { error } = await resetPassword(formData.email)
-
-      if (error) {
-        setError(error.message)
-      } else {
-        setSuccess('Password reset link sent! Check your email.')
-      }
-    } catch (err: any) {
-      setError('Failed to send reset email. Please try again.')
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  const handleSocialLogin = async (provider: 'google' | 'facebook') => {
-    setIsLoading(true)
-    setError('')
-
-    try {
-      const { error } = await signInWithOAuth(provider)
-
-      if (error) {
-        setError(error.message)
-      }
-    } catch (err: any) {
-      setError('Social login failed. Please try again.')
-    } finally {
-      setIsLoading(false)
-    }
-  }
+  const {
+    formData,
+    isLogin,
+    showPassword,
+    isLoading,
+    isRedirecting,
+    showForgotPassword,
+    error,
+    success,
+    updateFormData,
+    toggleAuthMode,
+    togglePasswordVisibility,
+    toggleForgotPassword,
+    handleSubmit,
+    handleForgotPassword,
+    handleSocialLogin,
+    canSubmit
+  } = useCustomerAuth()
 
   // Show redirecting state if user is already logged in
   if (isRedirecting) {
@@ -180,7 +89,7 @@ export default function AuthPage() {
                 <div className="w-32 h-32 bg-gradient-to-br from-stone-200 via-stone-100 to-stone-300 rounded-full flex items-center justify-center shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-110 ring-4 ring-stone-200/50">
                   <Image
                     src="/logo.svg"
-                    alt="Pai's Taste Food Special"
+                    alt="SideHusl"
                     width={120}
                     height={87}
                     className="scale-75"
@@ -229,7 +138,7 @@ export default function AuthPage() {
                           placeholder="Enter your full name"
                           className="pl-12 h-14 bg-gradient-to-r from-white/90 to-stone-50/80 border-2 border-stone-300 focus:border-stone-500 focus:ring-4 focus:ring-stone-500/20 shadow-inner hover:shadow-lg transition-all duration-300 hover:border-stone-400"
                           value={formData.name}
-                          onChange={(e) => handleInputChange('name', e.target.value)}
+                          onChange={(e) => updateFormData('name', e.target.value)}
                           required
                           disabled={isLoading}
                         />
@@ -249,7 +158,7 @@ export default function AuthPage() {
                         placeholder="Enter your email"
                         className="pl-12 h-14 bg-gradient-to-r from-white/90 to-stone-50/80 border-2 border-stone-300 focus:border-stone-500 focus:ring-4 focus:ring-stone-500/20 shadow-inner hover:shadow-lg transition-all duration-300 hover:border-stone-400"
                         value={formData.email}
-                        onChange={(e) => handleInputChange('email', e.target.value)}
+                        onChange={(e) => updateFormData('email', e.target.value)}
                         required
                         disabled={isLoading}
                       />
@@ -269,7 +178,7 @@ export default function AuthPage() {
                           placeholder="+27 81 234 5678"
                           className="pl-12 h-14 bg-gradient-to-r from-white/90 to-stone-50/80 border-2 border-stone-300 focus:border-stone-500 focus:ring-4 focus:ring-stone-500/20 shadow-inner hover:shadow-lg transition-all duration-300 hover:border-stone-400"
                           value={formData.phone}
-                          onChange={(e) => handleInputChange('phone', e.target.value)}
+                          onChange={(e) => updateFormData('phone', e.target.value)}
                           required
                           disabled={isLoading}
                         />
@@ -289,14 +198,14 @@ export default function AuthPage() {
                         placeholder="Enter your password"
                         className="pl-12 pr-12 h-14 bg-gradient-to-r from-white/90 to-stone-50/80 border-2 border-stone-300 focus:border-stone-500 focus:ring-4 focus:ring-stone-500/20 shadow-inner hover:shadow-lg transition-all duration-300 hover:border-stone-400"
                         value={formData.password}
-                        onChange={(e) => handleInputChange('password', e.target.value)}
+                        onChange={(e) => updateFormData('password', e.target.value)}
                         required
                         disabled={isLoading}
                         minLength={6}
                       />
                       <button
                         type="button"
-                        onClick={() => setShowPassword(!showPassword)}
+                        onClick={togglePasswordVisibility}
                         className="absolute right-4 top-1/2 transform -translate-y-1/2 text-stone-500 hover:text-stone-700 transition-all duration-200 hover:scale-110"
                         disabled={isLoading}
                       >
@@ -310,7 +219,7 @@ export default function AuthPage() {
                   <div className="text-right">
                     <button
                       type="button"
-                      onClick={() => setShowForgotPassword(true)}
+                      onClick={() => toggleForgotPassword()}
                       className="text-sm text-stone-600 hover:text-stone-800 transition-colors"
                       disabled={isLoading}
                     >
@@ -394,12 +303,7 @@ export default function AuthPage() {
                   {isLogin ? "Don't have an account?" : "Already have an account?"}
                   <button
                     type="button"
-                    onClick={() => {
-                      setIsLogin(!isLogin)
-                      setError('')
-                      setSuccess('')
-                      setFormData({ name: '', email: '', phone: '', password: '' })
-                    }}
+                    onClick={toggleAuthMode}
                     className="ml-1 text-stone-800 hover:text-stone-900 font-medium transition-colors"
                     disabled={isLoading}
                   >
@@ -453,7 +357,7 @@ export default function AuthPage() {
                       placeholder="Enter your email"
                       className="pl-12 h-14 bg-gradient-to-r from-white/90 to-stone-50/80 border-2 border-stone-300 focus:border-stone-500 focus:ring-4 focus:ring-stone-500/20 shadow-inner hover:shadow-lg transition-all duration-300 hover:border-stone-400"
                       value={formData.email}
-                      onChange={(e) => handleInputChange('email', e.target.value)}
+                      onChange={(e) => updateFormData('email', e.target.value)}
                       required
                       disabled={isLoading}
                     />
@@ -479,11 +383,7 @@ export default function AuthPage() {
               <div className="text-center pt-4">
                 <button
                   type="button"
-                  onClick={() => {
-                    setShowForgotPassword(false)
-                    setError('')
-                    setSuccess('')
-                  }}
+                  onClick={toggleForgotPassword}
                   className="text-sm text-stone-600 hover:text-stone-800 transition-colors"
                   disabled={isLoading}
                 >

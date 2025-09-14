@@ -77,14 +77,14 @@ function AccountLayoutContent({ children }: { children: React.ReactNode }) {
                                 <div className="w-12 h-12 bg-gradient-to-br from-stone-200 via-stone-100 to-stone-300 rounded-full flex items-center justify-center shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-110 ring-4 ring-stone-200/50">
                                     <Image
                                         src="/logo.svg"
-                                        alt="Pai's Taste Food Special"
+                                        alt="SideHusl"
                                         width={120}
                                         height={87}
                                         className="scale-75"
                                     />
                                 </div>
                                 <div className="hidden sm:block">
-                                    <h2 className="text-lg font-bold text-stone-800">LocalHub Account</h2>
+                                    <h2 className="text-lg font-bold text-stone-800">SideHusl Account</h2>
                                     <p className="text-xs text-stone-600">Welcome, {getDisplayName()}</p>
                                 </div>
                             </Link>

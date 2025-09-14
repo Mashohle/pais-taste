@@ -1,18 +1,19 @@
 "use client"
 
+import { SuperAdminGuard } from '@/components/auth/super-admin-guard'
+import { useSuperAdminAuth } from '@/lib/hooks/use-super-admin-auth'
 import { useState, useEffect } from 'react'
-import { useRouter, usePathname } from 'next/navigation'
-import { useAuth } from '@/lib/contexts/auth-context'
+import { usePathname } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import Link from 'next/link'
-import { 
-  LayoutDashboard, 
-  Building2, 
-  Users, 
-  BarChart3, 
-  Settings, 
-  Shield, 
+import {
+  LayoutDashboard,
+  Building2,
+  Users,
+  BarChart3,
+  Settings,
+  Shield,
   Bell,
   Search,
   Menu,
@@ -28,79 +29,52 @@ export default function SuperAdminLayout({
   children: React.ReactNode
 }) {
   const pathname = usePathname()
-  const router = useRouter()
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [loading, setLoading] = useState(true)
-  const { user, profile, signOut } = useAuth()
-  
-  // SECURITY: Genuine role-based super admin authentication
-  const isSuperAdmin = user && profile && profile.role === 'super_admin'
-  
+  const [pendingApplicationsCount, setPendingApplicationsCount] = useState(0)
+  const { user, profile, signOut } = useSuperAdminAuth()
 
+  // Fetch pending applications count
   useEffect(() => {
-    // Wait for auth context to be fully loaded
-    if (user === null) {
-      // Still loading auth context
-      return
+    const fetchPendingCount = async () => {
+      try {
+        const response = await fetch('/api/applications')
+        if (response.ok) {
+          const applications = await response.json()
+          const pendingCount = applications.filter((app: any) => app.status === 'pending').length
+          setPendingApplicationsCount(pendingCount)
+        }
+      } catch (error) {
+        console.error('Failed to fetch applications:', error)
+      }
     }
 
-    if (!user) {
-      // Not authenticated, redirect to login
-      setLoading(false)
-      router.push('/admin/login')
-      return
-    }
+    fetchPendingCount()
+  }, [])
 
-    // Wait for profile to load for role-based access
-    if (user && profile === null) {
-      // Still waiting for profile
-      return
-    }
-
-    if (user && profile && !isSuperAdmin) {
-      // Authenticated but not super admin, redirect to regular admin
-      setLoading(false)
-      router.push('/admin')
-      return
-    }
-
-    if (user && profile && isSuperAdmin) {
-      // Super admin confirmed via profile
-      setLoading(false)
-    }
-  }, [user, profile, router, isSuperAdmin])
-
-  // Show loading state while checking authentication
-  if (loading || !user || !profile || !isSuperAdmin) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-slate-600">Verifying super admin access...</p>
-        </div>
-      </div>
-    )
+  // Don't render layout for login page
+  if (pathname === '/super-admin/login') {
+    return <>{children}</>
   }
 
   const superAdmin = {
-    name: profile.full_name || user.email || "System Administrator",
-    email: user.email || "admin@localhub.co.za",
+    name: profile?.full_name || user?.email || "System Administrator",
+    email: user?.email || "admin@sidehusl.com",
     role: "Super Admin"
   }
 
   const navItems = [
-    { 
-      href: '/super-admin', 
-      label: 'Dashboard', 
+    {
+      href: '/super-admin',
+      label: 'Dashboard',
       icon: LayoutDashboard,
       description: 'Platform overview and key metrics'
     },
-    { 
-      href: '/super-admin/applications', 
-      label: 'Applications', 
+    {
+      href: '/super-admin/applications',
+      label: 'Applications',
       icon: FileText,
       description: 'Review pending business applications',
-      badge: '3' // Pending approvals
+      badge: pendingApplicationsCount > 0 ? pendingApplicationsCount.toString() : undefined
     },
     { 
       href: '/super-admin/businesses', 
@@ -120,12 +94,11 @@ export default function SuperAdminLayout({
       icon: BarChart3,
       description: 'Platform performance and insights'
     },
-    { 
-      href: '/super-admin/moderation', 
-      label: 'Moderation', 
+    {
+      href: '/super-admin/moderation',
+      label: 'Moderation',
       icon: Shield,
-      description: 'Review disputes and content moderation',
-      badge: '2' // Active disputes
+      description: 'Review disputes and content moderation'
     },
     { 
       href: '/super-admin/settings', 
@@ -136,19 +109,13 @@ export default function SuperAdminLayout({
   ]
 
   const handleSignOut = async () => {
-    // SECURITY FIX: Proper sign out with session cleanup
-    try {
-      await signOut()
-      router.push('/')
-    } catch (error) {
-      console.error('Sign out error:', error)
-      // Fallback: redirect anyway
-      router.push('/')
-    }
+    await signOut()
+    window.location.href = '/'
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+    <SuperAdminGuard>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
       {/* Header */}
       <header className="bg-white/90 backdrop-blur-md border-b border-slate-200 sticky top-0 z-50">
         <div className="flex items-center justify-between px-4 sm:px-6 lg:px-8 h-16">
@@ -167,7 +134,7 @@ export default function SuperAdminLayout({
                 <Crown className="w-5 h-5 text-white" />
               </div>
               <div className="hidden sm:block">
-                <h1 className="text-xl font-bold bg-gradient-to-r from-stone-600 to-stone-800 bg-clip-text text-transparent">sideHusl</h1>
+                <h1 className="text-xl font-bold bg-gradient-to-r from-stone-600 to-stone-800 bg-clip-text text-transparent">SideHusl</h1>
                 <p className="text-xs text-stone-600">Super Admin Portal</p>
               </div>
             </Link>
@@ -288,6 +255,7 @@ export default function SuperAdminLayout({
           {children}
         </main>
       </div>
-    </div>
+      </div>
+    </SuperAdminGuard>
   )
 }

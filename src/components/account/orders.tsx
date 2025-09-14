@@ -17,7 +17,7 @@ const mockUniversalOrders = [
   {
     id: '1',
     business_id: '1',
-    business_name: "Pai's Taste Food Special",
+    business_name: "SideHusl Food Special",
     business_category: 'food',
     business_phone: '+27 81 454 1020',
     type: 'order' as const,

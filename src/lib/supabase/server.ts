@@ -4,13 +4,20 @@ import { cookies } from 'next/headers'
 export async function createClient() {
   const cookieStore = await cookies()
 
+  // Debug: List all cookies
+  const allCookies = cookieStore.getAll()
+  console.log('Server client - All cookies:', allCookies.map(c => c.name))
+  console.log('Server client - Auth cookies:', allCookies.filter(c => c.name.startsWith('sb-')).map(c => `${c.name}: ${c.value?.substring(0, 20)}...`))
+
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
         get(name: string) {
-          return cookieStore.get(name)?.value
+          const value = cookieStore.get(name)?.value
+          console.log(`Server client - Getting cookie ${name}:`, value ? `${value.substring(0, 20)}...` : 'undefined')
+          return value
         },
         set(name: string, value: string, options: CookieOptions) {
           try {

@@ -132,6 +132,7 @@ export default function BusinessApplicationsPage() {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'same-origin', // Include cookies
         body: JSON.stringify({
           approval_notes: approvalNotes
         })
@@ -143,11 +144,13 @@ export default function BusinessApplicationsPage() {
         setApprovalNotes('')
         alert('Application approved successfully!')
       } else {
-        throw new Error('Failed to approve application')
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to approve application')
       }
     } catch (error) {
       console.error('Error approving application:', error)
-      alert('Failed to approve application')
+      const errorMessage = error instanceof Error ? error.message : 'Failed to approve application'
+      alert(`Failed to approve application: ${errorMessage}`)
     } finally {
       setActionLoading(false)
     }

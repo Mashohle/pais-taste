@@ -1,6 +1,6 @@
 "use client"
 
-import { ProtectedRoute } from '@/components/auth/protected-route'
+import { RoleProtectedRoute } from '@/components/auth/role-protected-route'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
@@ -25,11 +25,15 @@ export default function AdminLayout({
     }
 
     return (
-        <ProtectedRoute>
+        <RoleProtectedRoute 
+            requiredRole="business_admin"
+            loginRedirect="/admin/login"
+            permissionDeniedRedirect="/super-admin/login?error=wrong_portal"
+        >
             <BusinessProvider>
                 <AdminLayoutContent>{children}</AdminLayoutContent>
             </BusinessProvider>
-        </ProtectedRoute>
+        </RoleProtectedRoute>
     )
 }
 
