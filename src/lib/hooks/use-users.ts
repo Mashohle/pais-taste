@@ -7,7 +7,7 @@ export interface UserProfile {
   email: string
   full_name: string | null
   phone: string | null
-  role: string
+  role_id: string
   preferred_pickup_location: string | null
   avatar_url: string | null
   date_of_birth: string | null
@@ -74,7 +74,7 @@ export function useUsers(options: UseUsersOptions = {}) {
         user.phone?.includes(searchTerm)
 
       // Role filter
-      const matchesRole = roleFilter === 'all' || user.role === roleFilter
+      const matchesRole = roleFilter === 'all' || user.role_id === roleFilter
 
       // Status filter - you can extend this based on your needs
       const matchesStatus = statusFilter === 'all' ||
@@ -99,10 +99,10 @@ export function useUsers(options: UseUsersOptions = {}) {
   // Statistics
   const stats = useMemo(() => ({
     total: users.length,
-    customers: users.filter(u => u.role === 'customer').length,
-    businessAdmins: users.filter(u => u.role === 'business_admin').length,
-    businessOwners: users.filter(u => u.role === 'business_owner').length,
-    superAdmins: users.filter(u => u.role === 'super_admin').length,
+    customers: users.filter(u => u.role_id === 'customer').length,
+    businessAdmins: users.filter(u => u.role_id === 'business-admin').length,
+    businessOwners: users.filter(u => u.role_id === 'business-owner').length,
+    superAdmins: users.filter(u => u.role_id === 'super-admin').length,
     completeProfiles: users.filter(u => isProfileComplete(u)).length,
     incompleteProfiles: users.filter(u => !isProfileComplete(u)).length,
     marketingOptIn: users.filter(u => u.marketing_emails).length,
@@ -110,18 +110,18 @@ export function useUsers(options: UseUsersOptions = {}) {
   }), [users])
 
   // Helper functions
-  const getRoleBadge = (role: string) => {
-    switch (role) {
-      case 'super_admin':
+  const getRoleBadge = (role_id: string) => {
+    switch (role_id) {
+      case 'super-admin':
         return { variant: 'destructive' as const, text: 'Super Admin', icon: 'Crown' }
-      case 'business_owner':
+      case 'business-owner':
         return { variant: 'default' as const, text: 'Business Owner', icon: 'Building2' }
-      case 'business_admin':
+      case 'business-admin':
         return { variant: 'secondary' as const, text: 'Business Admin', icon: 'UserCog' }
       case 'customer':
         return { variant: 'outline' as const, text: 'Customer', icon: 'User' }
       default:
-        return { variant: 'outline' as const, text: role, icon: 'User' }
+        return { variant: 'outline' as const, text: role_id, icon: 'User' }
     }
   }
 

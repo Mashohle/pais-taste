@@ -21,7 +21,7 @@ export default function AccountLayout({
     }
 
     return (
-        <ProtectedRoute redirectTo="/auth">
+        <ProtectedRoute redirectTo="/login">
             <AccountLayoutContent>{children}</AccountLayoutContent>
         </ProtectedRoute>
     )
@@ -34,7 +34,7 @@ function AccountLayoutContent({ children }: { children: React.ReactNode }) {
 
     const handleSignOut = async () => {
         await signOut()
-        router.push('/')
+        router.push('/login')
     }
 
     const navItems = [

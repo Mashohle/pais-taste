@@ -275,7 +275,7 @@ export default function StaffPage() {
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
                     <TabsList>
                         <TabsTrigger value="list">Staff List</TabsTrigger>
-                        <TabsTrigger value="schedule">Today's Schedule</TabsTrigger>
+                        <TabsTrigger value="schedule">Today&apos;s Schedule</TabsTrigger>
                     </TabsList>
 
                     <TabsContent value="list" className="space-y-6">
@@ -454,9 +454,9 @@ export default function StaffPage() {
                     <TabsContent value="schedule" className="space-y-6">
                         <Card>
                             <CardHeader>
-                                <CardTitle>Today's Schedule</CardTitle>
+                                <CardTitle>Today&apos;s Schedule</CardTitle>
                                 <CardDescription>
-                                    View today's staff assignments and bookings
+                                    View today&apos;s staff assignments and bookings
                                 </CardDescription>
                             </CardHeader>
                             <CardContent>

@@ -1,62 +1,78 @@
 "use client"
 
-import { RoleProtectedRoute } from '@/components/auth/role-protected-route'
+import { BusinessAdminGuard } from '@/components/auth/business-admin-guard'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
-import { useAuth } from '@/lib/contexts/auth-context'
-import { BusinessProvider, useBusiness } from '@/lib/contexts/business-context'
+import { useBusinessAdminAuth } from '@/lib/hooks/use-business-admin-auth'
 import { DynamicIcon } from '@/lib/utils/icon-mapper'
 import { useRouter, usePathname } from 'next/navigation'
-import { LogOut, LayoutDashboard, UtensilsCrossed, Plus, ShoppingBag, Calendar, Users, Settings, ChevronDown } from 'lucide-react'
+import { LogOut, LayoutDashboard, UtensilsCrossed, ShoppingBag, Calendar, Users, Settings } from 'lucide-react'
 import Link from 'next/link'
-import Image from 'next/image'
+import { useState, useEffect } from 'react'
 
 export default function AdminLayout({
     children,
 }: {
     children: React.ReactNode
 }) {
-    const pathname = usePathname()
-
-    // Don't protect the login page
-    if (pathname === '/admin/login') {
-        return <>{children}</>
-    }
+    console.log('📄 LAYOUT: AdminLayout called')
 
     return (
-        <RoleProtectedRoute 
-            requiredRole="business_admin"
-            loginRedirect="/admin/login"
-            permissionDeniedRedirect="/super-admin/login?error=wrong_portal"
-        >
-            <BusinessProvider>
-                <AdminLayoutContent>{children}</AdminLayoutContent>
-            </BusinessProvider>
-        </RoleProtectedRoute>
+        <BusinessAdminGuard>
+            <AdminLayoutContent>{children}</AdminLayoutContent>
+        </BusinessAdminGuard>
     )
 }
 
 function AdminLayoutContent({ children }: { children: React.ReactNode }) {
-    const { signOut, user } = useAuth()
-    const { currentBusiness, userBusinesses, switchBusiness, loading, isOwner, isAdmin, canManage } = useBusiness()
+    console.log('🔧 LAYOUT CONTENT: AdminLayoutContent called')
+
     const router = useRouter()
     const pathname = usePathname()
+
+    // ALWAYS call hooks first - React rule
+    const { signOut, user, userBusinesses, loading, error } = useBusinessAdminAuth()
+    const [currentBusinessSlug, setCurrentBusinessSlug] = useState<string>('')
+
+    // Set initial business when businesses load
+    useEffect(() => {
+        if (userBusinesses.length > 0 && !currentBusinessSlug) {
+            setCurrentBusinessSlug(userBusinesses[0].slug)
+        }
+    }, [userBusinesses, currentBusinessSlug])
+
+    // CRITICAL: If we're on login page, just return children without any auth logic
+    if (pathname === '/admin/login') {
+        console.log('🔧 LAYOUT CONTENT: Login page detected, returning children without auth')
+        return <>{children}</>
+    }
+
+    console.log('🔧 LAYOUT CONTENT: Auth state:', {
+        userCount: userBusinesses.length,
+        loading,
+        hasUser: !!user,
+        pathname
+    })
+
+    const currentBusiness = userBusinesses.find(b => b.slug === currentBusinessSlug) || userBusinesses[0]
 
     const handleSignOut = async () => {
         await signOut()
         router.push('/admin/login')
     }
 
-    const handleBusinessSwitch = async (businessSlug: string) => {
-        await switchBusiness(businessSlug)
+    const handleBusinessSwitch = (businessSlug: string) => {
+        setCurrentBusinessSlug(businessSlug)
     }
 
     // Get category-specific navigation based on current business
     const getCategoryNavigation = () => {
-        if (!currentBusiness?.business_categories) return []
+        if (!currentBusiness?.business?.business_categories) return [
+            { href: '/admin', icon: LayoutDashboard, label: 'Dashboard' }
+        ]
 
-        const category = currentBusiness.business_categories.id
+        const category = currentBusiness.business.business_categories.id
         const baseItems = [
             { href: '/admin', icon: LayoutDashboard, label: 'Dashboard' }
         ]
@@ -91,61 +107,29 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
     }
 
     const navigationItems = getCategoryNavigation()
-    
-    // Show loading state while business context is loading
-    if (loading) {
+
+    // Show loading state while business auth is loading OR when we have user but no businesses yet
+    if (loading || (user && userBusinesses.length === 0 && !error)) {
         return (
             <div className="min-h-screen bg-gradient-to-br from-stone-50 to-stone-100 flex items-center justify-center">
                 <div className="text-center">
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-stone-600 mx-auto mb-4"></div>
-                    <p className="text-stone-700">Loading business...</p>
+                    <p className="text-stone-700">Loading business access...</p>
+                    <p className="text-stone-500 text-sm mt-2">Fetching your business permissions</p>
                 </div>
             </div>
         )
     }
 
-    // Show business selection if no current business
-    if (!currentBusiness && userBusinesses.length > 0) {
-        return (
-            <div className="min-h-screen bg-gradient-to-br from-stone-50 to-stone-100 flex items-center justify-center">
-                <div className="text-center max-w-md">
-                    <h2 className="text-2xl font-bold text-stone-800 mb-4">Select Your Business</h2>
-                    <div className="space-y-3">
-                        {userBusinesses.map((business) => (
-                            <Button
-                                key={business.id}
-                                onClick={() => handleBusinessSwitch(business.slug)}
-                                className="w-full justify-start"
-                                variant="outline"
-                            >
-                                <div className="flex items-center space-x-3">
-                                    {business.business_categories && (
-                                        <DynamicIcon 
-                                            name={business.business_categories.icon} 
-                                            className="h-5 w-5" 
-                                        />
-                                    )}
-                                    <div className="text-left">
-                                        <div className="font-medium">{business.name}</div>
-                                        <div className="text-sm text-gray-500">{business.business_categories?.name}</div>
-                                    </div>
-                                </div>
-                            </Button>
-                        ))}
-                    </div>
-                </div>
-            </div>
-        )
-    }
-
-    if (!currentBusiness) {
+    // Show no business access message only if we're not loading and have confirmed no businesses
+    if (!loading && userBusinesses.length === 0) {
         return (
             <div className="min-h-screen bg-gradient-to-br from-stone-50 to-stone-100 flex items-center justify-center">
                 <div className="text-center">
                     <h2 className="text-xl font-bold text-stone-800 mb-4">No Business Access</h2>
                     <p className="text-stone-600 mb-4">You don&apos;t have access to any businesses.</p>
-                    <Button onClick={() => router.push('/onboarding')} variant="outline">
-                        Create a Business
+                    <Button onClick={() => router.push('/admin/login')} variant="outline">
+                        Back to Login
                     </Button>
                 </div>
             </div>
@@ -162,26 +146,26 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
                             {/* Logo */}
                             <div className="flex items-center space-x-4">
                                 <div className="w-10 h-10 bg-gradient-to-br from-stone-200 via-stone-100 to-stone-300 rounded-full flex items-center justify-center shadow-lg">
-                                    {currentBusiness?.business_categories && (
-                                        <DynamicIcon 
-                                            name={currentBusiness.business_categories.icon} 
-                                            className="h-5 w-5 text-stone-700" 
+                                    {currentBusiness?.business?.business_categories && (
+                                        <DynamicIcon
+                                            name={currentBusiness.business.business_categories.icon}
+                                            className="h-5 w-5 text-stone-700"
                                         />
                                     )}
                                 </div>
-                                
+
                                 {/* Business Switcher */}
                                 {userBusinesses.length > 1 && (
-                                    <Select value={currentBusiness.slug} onValueChange={handleBusinessSwitch}>
+                                    <Select value={currentBusinessSlug} onValueChange={handleBusinessSwitch}>
                                         <SelectTrigger className="w-auto min-w-[200px] border-none bg-transparent hover:bg-stone-100">
                                             <SelectValue>
                                                 <div className="flex items-center space-x-2">
                                                     <span className="font-medium text-stone-800">{currentBusiness.name}</span>
-                                                    <Badge 
-                                                        variant="secondary" 
-                                                        className={currentBusiness.business_categories?.color || 'bg-stone-200'}
+                                                    <Badge
+                                                        variant="secondary"
+                                                        className={currentBusiness.business?.business_categories?.color || 'bg-stone-200'}
                                                     >
-                                                        {currentBusiness.business_categories?.name}
+                                                        {currentBusiness.business?.business_categories?.name}
                                                     </Badge>
                                                 </div>
                                             </SelectValue>
@@ -190,15 +174,15 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
                                             {userBusinesses.map((business) => (
                                                 <SelectItem key={business.id} value={business.slug}>
                                                     <div className="flex items-center space-x-2">
-                                                        {business.business_categories && (
-                                                            <DynamicIcon 
-                                                                name={business.business_categories.icon} 
-                                                                className="h-4 w-4" 
+                                                        {business.business?.business_categories && (
+                                                            <DynamicIcon
+                                                                name={business.business.business_categories.icon}
+                                                                className="h-4 w-4"
                                                             />
                                                         )}
                                                         <span>{business.name}</span>
                                                         <Badge variant="outline" className="text-xs">
-                                                            {business.business_categories?.name}
+                                                            {business.business?.business_categories?.name}
                                                         </Badge>
                                                     </div>
                                                 </SelectItem>
@@ -206,16 +190,16 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
                                         </SelectContent>
                                     </Select>
                                 )}
-                                
+
                                 {/* Single business display */}
                                 {userBusinesses.length === 1 && (
                                     <div className="flex items-center space-x-2">
                                         <span className="font-medium text-stone-800">{currentBusiness.name}</span>
-                                        <Badge 
-                                            variant="secondary" 
-                                            className={currentBusiness.business_categories?.color || 'bg-stone-200'}
+                                        <Badge
+                                            variant="secondary"
+                                            className={currentBusiness.business?.business_categories?.color || 'bg-stone-200'}
                                         >
-                                            {currentBusiness.business_categories?.name}
+                                            {currentBusiness.business?.business_categories?.name}
                                         </Badge>
                                     </div>
                                 )}
@@ -225,14 +209,14 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
                             <div className="hidden md:flex space-x-1">
                                 {navigationItems.map((item) => {
                                     const Icon = item.icon
-                                    const isActive = pathname === item.href || 
+                                    const isActive = pathname === item.href ||
                                         (item.href !== '/admin' && pathname.startsWith(item.href))
-                                    
+
                                     return (
                                         <Link key={item.href} href={item.href}>
-                                            <Button 
-                                                variant={isActive ? "secondary" : "ghost"} 
-                                                size="sm" 
+                                            <Button
+                                                variant={isActive ? "secondary" : "ghost"}
+                                                size="sm"
                                                 className="flex items-center gap-2"
                                             >
                                                 <Icon className="w-4 h-4" />
@@ -241,12 +225,12 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
                                         </Link>
                                     )
                                 })}
-                                
+
                                 {/* Settings Link */}
                                 <Link href="/admin/settings">
-                                    <Button 
-                                        variant={pathname.startsWith('/admin/settings') ? "secondary" : "ghost"} 
-                                        size="sm" 
+                                    <Button
+                                        variant={pathname.startsWith('/admin/settings') ? "secondary" : "ghost"}
+                                        size="sm"
                                         className="flex items-center gap-2"
                                     >
                                         <Settings className="w-4 h-4" />
@@ -259,16 +243,14 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
                         {/* Right Side */}
                         <div className="flex items-center space-x-4">
                             {/* Role Badge */}
-                            {currentBusiness && (
-                                <Badge variant="outline" className="hidden sm:flex">
-                                    {isOwner ? 'Owner' : isAdmin ? 'Admin' : 'Staff'}
-                                </Badge>
-                            )}
-                            
+                            <Badge variant="outline" className="hidden sm:flex">
+                                {currentBusiness.role === 'owner' ? 'Owner' : currentBusiness.role === 'admin' ? 'Admin' : 'Staff'}
+                            </Badge>
+
                             <span className="text-sm text-stone-600 hidden sm:block">
                                 {user?.email}
                             </span>
-                            
+
                             <Button
                                 onClick={handleSignOut}
                                 variant="outline"

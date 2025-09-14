@@ -3,20 +3,19 @@
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Clock, Users, CheckCircle, AlertCircle, ChevronRight, Calendar, ShoppingBag, TrendingUp, Plus, Activity } from "lucide-react"
-import { useAuth } from '@/lib/contexts/auth-context'
-import { useBusiness } from '@/lib/contexts/business-context'
+import { useBusinessAdminAuth } from '@/lib/hooks/use-business-admin-auth'
 import { DynamicIcon } from '@/lib/utils/icon-mapper'
 import Link from 'next/link'
 
 export default function AdminDashboard() {
-    const { user } = useAuth()
-    const { currentBusiness } = useBusiness()
+    const { user, userBusinesses } = useBusinessAdminAuth()
+    const currentBusiness = userBusinesses[0] // Get the first/primary business
 
     if (!currentBusiness) {
         return null // Loading handled by layout
     }
 
-    const businessCategory = currentBusiness.business_categories
+    const businessCategory = currentBusiness.business.business_categories
 
     // Get current date for display
     const currentDate = new Date().toLocaleDateString("en-ZA", {
@@ -360,12 +359,12 @@ export default function AdminDashboard() {
                                 <h1 className="text-2xl sm:text-3xl font-bold text-stone-800 mb-1">
                                     {currentBusiness.name}
                                 </h1>
-                                <p className="text-stone-600 text-sm flex items-center">
+                                <div className="text-stone-600 text-sm flex items-center">
                                     <Badge variant="secondary" className={businessCategory?.color || 'bg-stone-200'}>
                                         {businessCategory?.name}
                                     </Badge>
                                     <span className="ml-2">Business Dashboard</span>
-                                </p>
+                                </div>
                             </div>
                         </div>
                         <div className="mt-4 sm:mt-0 text-right">

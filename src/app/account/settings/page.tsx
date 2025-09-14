@@ -16,7 +16,7 @@ export default function SettingsPage() {
     setIsLoading(true)
     try {
       await signOut()
-      router.push('/')
+      router.push('/login')
     } catch (error) {
       console.error('Error signing out:', error)
     } finally {

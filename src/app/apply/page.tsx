@@ -247,6 +247,32 @@ export default function BusinessApplication() {
           />
           <p className="text-xs text-slate-500 mt-1">Required for verification purposes</p>
         </div>
+
+        <div className="border-t pt-6">
+          <h4 className="font-medium text-slate-900 mb-4">Account Password</h4>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">Password</label>
+              <Input
+                type="password"
+                value={formData.ownerPassword}
+                onChange={(e) => updateFormData('ownerPassword', e.target.value)}
+                placeholder="Choose a secure password"
+              />
+              <p className="text-xs text-slate-500 mt-1">Minimum 6 characters</p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">Confirm Password</label>
+              <Input
+                type="password"
+                value={formData.ownerPasswordConfirm}
+                onChange={(e) => updateFormData('ownerPasswordConfirm', e.target.value)}
+                placeholder="Confirm your password"
+              />
+              <p className="text-xs text-slate-500 mt-1">Must match the password above</p>
+            </div>
+          </div>
+        </div>
       </CardContent>
     </Card>
   )

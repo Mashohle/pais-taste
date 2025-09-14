@@ -213,9 +213,9 @@ export default function UsersManagement() {
               <SelectContent>
                 <SelectItem value="all">All Roles</SelectItem>
                 <SelectItem value="customer">Customers</SelectItem>
-                <SelectItem value="business_admin">Business Admins</SelectItem>
-                <SelectItem value="business_owner">Business Owners</SelectItem>
-                <SelectItem value="super_admin">Super Admins</SelectItem>
+                <SelectItem value="business-admin">Business Admins</SelectItem>
+                <SelectItem value="business-owner">Business Owners</SelectItem>
+                <SelectItem value="super-admin">Super Admins</SelectItem>
               </SelectContent>
             </Select>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -262,7 +262,7 @@ export default function UsersManagement() {
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
                         <h3 className="font-semibold text-lg">{getDisplayName(user)}</h3>
-                        {getRoleBadgeComponent(user.role)}
+                        {getRoleBadgeComponent(user.role_id)}
                         <Badge variant={isProfileComplete(user) ? "default" : "outline"}>
                           {isProfileComplete(user) ? "Complete" : "Incomplete"}
                         </Badge>
@@ -321,7 +321,7 @@ export default function UsersManagement() {
                               <div>
                                 <h4 className="font-semibold mb-2">{getDisplayName(selectedUser)}</h4>
                                 <div className="flex items-center gap-2 mb-2">
-                                  {getRoleBadgeComponent(selectedUser.role)}
+                                  {getRoleBadgeComponent(selectedUser.role_id)}
                                   <Badge variant={isProfileComplete(selectedUser) ? "default" : "outline"}>
                                     {isProfileComplete(selectedUser) ? "Profile Complete" : "Profile Incomplete"}
                                   </Badge>

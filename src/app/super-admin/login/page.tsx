@@ -14,33 +14,19 @@ import {
   Loader2 
 } from "lucide-react"
 import Link from "next/link"
-import { useSuperAdminAuth } from '@/lib/hooks/use-super-admin-auth'
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useSuperAdminLogin } from '@/lib/hooks/use-super-admin-login'
 
 export default function SuperAdminLogin() {
-  const router = useRouter()
-  const { signIn, loading, error, user, isSuperAdmin } = useSuperAdminAuth()
-  const [formData, setFormData] = useState({
-    email: '',
-    password: ''
-  })
-  const [showPassword, setShowPassword] = useState(false)
-
-  // Redirect if already authenticated as super admin
-  useEffect(() => {
-    if (user && isSuperAdmin) {
-      router.push('/super-admin')
-    }
-  }, [user, isSuperAdmin, router])
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    const result = await signIn(formData.email, formData.password)
-    if (result.success) {
-      router.push('/super-admin')
-    }
-  }
+  const {
+    formData,
+    showPassword,
+    isLoading,
+    error,
+    updateFormData,
+    togglePasswordVisibility,
+    handleSubmit,
+    canSubmit
+  } = useSuperAdminLogin()
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-stone-50 to-stone-100 flex items-center justify-center">
@@ -91,7 +77,7 @@ export default function SuperAdminLogin() {
                     type="email"
                     placeholder="admin@sidehusl.com"
                     value={formData.email}
-                    onChange={(e) => setFormData({...formData, email: e.target.value})}
+                    onChange={(e) => updateFormData('email', e.target.value)}
                     className="pl-10 border-stone-300 focus:border-stone-500 focus:ring-stone-500"
                     required
                   />
@@ -108,13 +94,13 @@ export default function SuperAdminLogin() {
                     type={showPassword ? "text" : "password"}
                     placeholder="Enter your password"
                     value={formData.password}
-                    onChange={(e) => setFormData({...formData, password: e.target.value})}
+                    onChange={(e) => updateFormData('password', e.target.value)}
                     className="pl-10 pr-10 border-stone-300 focus:border-stone-500 focus:ring-stone-500"
                     required
                   />
                   <button
                     type="button"
-                    onClick={() => setShowPassword(!showPassword)}
+                    onClick={togglePasswordVisibility}
                     className="absolute right-3 top-3 h-4 w-4 text-stone-400 hover:text-stone-600"
                   >
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -124,10 +110,10 @@ export default function SuperAdminLogin() {
 
               <Button
                 type="submit"
-                disabled={loading || !formData.email || !formData.password}
+                disabled={!canSubmit}
                 className="w-full bg-stone-600 hover:bg-stone-700 focus:ring-stone-500"
               >
-                {loading ? (
+                {isLoading ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                     Authenticating...

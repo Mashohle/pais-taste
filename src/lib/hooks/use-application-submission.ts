@@ -17,6 +17,7 @@ interface ApplicationData {
   owner_email: string
   owner_phone?: string
   owner_id_number?: string
+  owner_password?: string
   street_address?: string
   suburb?: string
   city?: string

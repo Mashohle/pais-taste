@@ -26,12 +26,12 @@ export async function POST(
     // Verify user has super admin permissions
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
-      .select('role')
+      .select('role_id')
       .eq('id', user.id)
       .single()
 
-    if (profileError || !profile || profile.role !== 'super_admin') {
-      console.log('Permission check failed:', profileError?.message, 'Role:', profile?.role)
+    if (profileError || !profile || profile.role_id !== 'super-admin') {
+      console.log('Permission check failed:', profileError?.message, 'Role:', profile?.role_id)
       return NextResponse.json(
         { error: 'Insufficient permissions - Super admin access required' },
         { status: 403 }
@@ -118,9 +118,10 @@ export async function POST(
 
     // Try to create user account, or find existing user
     let userId = null
+    const userPassword = application.owner_password || Math.random().toString(36).slice(-12)
     const { data: authUser, error: authError } = await adminSupabase.auth.admin.createUser({
       email: application.owner_email,
-      password: Math.random().toString(36).slice(-12), // Temporary password
+      password: userPassword,
       email_confirm: true,
       user_metadata: {
         first_name: application.owner_first_name,
@@ -149,8 +150,29 @@ export async function POST(
       console.log('Created new user:', authUser.user.email)
     }
 
-    // Create business_user relationship using admin client to bypass RLS
+    // Create or update user profile with business-owner role
     if (userId) {
+      const profileData = {
+        id: userId,
+        email: application.owner_email,
+        full_name: `${application.owner_first_name} ${application.owner_last_name}`,
+        phone: application.owner_phone,
+        role_id: 'business-owner',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }
+
+      const { error: profileError } = await adminSupabase
+        .from('profiles')
+        .upsert(profileData, { onConflict: 'id' })
+
+      if (profileError) {
+        console.error('Failed to create/update profile:', profileError)
+      } else {
+        console.log('Successfully created/updated profile for business owner:', userId)
+      }
+
+      // Create business_user relationship using admin client to bypass RLS
       const { error: businessUserError } = await adminSupabase
         .from('business_users')
         .insert({

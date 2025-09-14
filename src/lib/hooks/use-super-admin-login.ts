@@ -19,8 +19,8 @@ interface SuperAdminLoginState {
 export function useSuperAdminLogin() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const { signIn, user, profile } = useAuth()
-  
+  const { user, profile, refreshProfile } = useAuth()
+
   const [state, setState] = useState<SuperAdminLoginState>({
     formData: {
       email: '',
@@ -33,8 +33,8 @@ export function useSuperAdminLogin() {
 
   // Redirect if already logged in as super admin
   useEffect(() => {
-    if (user && profile && profile.role === 'super_admin') {
-      console.log('🚀 Super admin already logged in, redirecting to dashboard')
+    if (user && profile && profile.role_id === 'super-admin') {
+      console.log('🚀 Super Admin Login: User already super admin, redirecting')
       router.push('/super-admin')
     }
   }, [user, profile, router])
@@ -45,12 +45,7 @@ export function useSuperAdminLogin() {
     if (errorParam === 'insufficient_permissions') {
       setState(prev => ({
         ...prev,
-        error: 'Access denied: Super admin permissions required. Your account does not have the necessary permissions to access this portal.'
-      }))
-    } else if (errorParam === 'wrong_portal') {
-      setState(prev => ({
-        ...prev,
-        error: 'Super admin detected: You were redirected here because your account has super admin permissions. Please use this portal instead of the business admin portal.'
+        error: 'Access denied: Super admin permissions required.'
       }))
     }
   }, [searchParams])
@@ -59,7 +54,8 @@ export function useSuperAdminLogin() {
   const updateFormData = (field: keyof SuperAdminLoginFormData, value: string) => {
     setState(prev => ({
       ...prev,
-      formData: { ...prev.formData, [field]: value }
+      formData: { ...prev.formData, [field]: value },
+      error: '' // Clear error on input
     }))
   }
 
@@ -88,16 +84,39 @@ export function useSuperAdminLogin() {
     setError('')
 
     try {
-      // Sign in the user
-      const { error: signInError } = await signIn(state.formData.email, state.formData.password)
-      
-      if (signInError) {
-        throw new Error(signInError.message || 'Login failed')
+      console.log('🔐 Super Admin Login: Attempting sign in via API')
+
+      const response = await fetch('/api/auth/sign-in', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: state.formData.email,
+          password: state.formData.password
+        })
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Login failed')
       }
 
-      // If no error, login was successful
-      // The layout component will handle the actual permission check
-      router.push('/super-admin')
+      console.log('✅ Super Admin Login: Sign in successful')
+
+      // Check if user has super admin role and redirect with proper auth sync
+      if (data.profile?.role_id === 'super-admin') {
+        console.log('🔀 Super Admin Login: Redirecting to dashboard with auth sync')
+
+        // Refresh profile to ensure auth context is in sync
+        await refreshProfile()
+
+        // Small delay to ensure auth context has updated
+        setTimeout(() => {
+          router.push('/super-admin')
+        }, 150)
+      } else {
+        throw new Error('Access denied: Super admin permissions required')
+      }
 
     } catch (err) {
       console.error('Super admin login error:', err)
@@ -113,12 +132,12 @@ export function useSuperAdminLogin() {
     showPassword: state.showPassword,
     isLoading: state.isLoading,
     error: state.error,
-    
+
     // Actions
     updateFormData,
     togglePasswordVisibility,
     handleSubmit,
-    
+
     // Computed values
     canSubmit: !state.isLoading && state.formData.email && state.formData.password
   }

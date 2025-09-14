@@ -1,8 +1,6 @@
-// lib/hooks/useProfile.ts
 "use client"
 
 import { useState, useEffect } from 'react'
-import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/contexts/auth-context'
 
 export interface UserProfile {
@@ -10,6 +8,7 @@ export interface UserProfile {
   email: string
   full_name: string | null
   phone: string | null
+  role_id: string
   preferred_pickup_location: string | null
   avatar_url: string | null
   date_of_birth: string | null
@@ -40,93 +39,10 @@ export interface ProfileUpdateData {
 }
 
 export function useProfile() {
-  const [profile, setProfile] = useState<UserProfile | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [updating, setUpdating] = useState(false)
-  const { user } = useAuth()
-
-  const fetchProfile = async () => {
-    if (!user) {
-      setProfile(null)
-      setLoading(false)
-      return
-    }
-
-    try {
-      setLoading(true)
-      setError(null)
-
-      const { data, error: profileError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single()
-
-      if (profileError) {
-        // If profile doesn't exist, create one
-        if (profileError.code === 'PGRST116') {
-          await createProfile()
-          return
-        }
-        if (profileError.message?.includes('relation "public.profiles" does not exist')) {
-          await createProfile()
-          return
-        }
-        if (profileError.message?.includes('infinite recursion') || 
-            profileError.message?.includes('policy') ||
-            profileError.code === '42P17') {
-          console.log('RLS policy issue with profiles, creating fallback profile')
-          await createProfile()
-          return
-        }
-        throw profileError
-      }
-
-      setProfile(data)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch profile')
-      console.error('Error fetching profile:', err)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const createProfile = async () => {
-    if (!user) throw new Error('No user found')
-
-    try {
-      const newProfile = {
-        id: user.id,
-        email: user.email || '',
-        full_name: user.user_metadata?.full_name || '',
-        phone: user.user_metadata?.phone || '',
-        preferred_pickup_location: '',
-        avatar_url: null,
-        date_of_birth: null,
-        address: null,
-        emergency_contact_name: null,
-        emergency_contact_phone: null,
-        dietary_preferences: null,
-        allergies: null,
-        marketing_emails: true,
-        sms_notifications: true
-      }
-
-      const { data, error: createError } = await supabase
-        .from('profiles')
-        .insert(newProfile)
-        .select()
-        .single()
-
-      if (createError) throw createError
-
-      setProfile(data)
-    } catch (err) {
-      setError(err.message || 'Failed to create profile')
-      throw err
-    }
-  }
+  const { user, profile, refreshProfile } = useAuth()
 
   const updateProfile = async (updates: ProfileUpdateData) => {
     if (!user) throw new Error('No user found')
@@ -135,22 +51,30 @@ export function useProfile() {
       setUpdating(true)
       setError(null)
 
-      const { data, error: updateError } = await supabase
-        .from('profiles')
-        .update({
-          ...updates,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', user.id)
-        .select()
-        .single()
+      console.log('🔄 Profile Hook: Updating profile via API')
 
-      if (updateError) throw updateError
+      const response = await fetch('/api/auth/profile', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates)
+      })
 
-      setProfile(data)
-      return data
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to update profile')
+      }
+
+      console.log('✅ Profile Hook: Profile updated successfully')
+
+      // Refresh the profile in auth context
+      await refreshProfile()
+
+      return data.profile
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update profile')
+      const errorMessage = err instanceof Error ? err.message : 'Failed to update profile'
+      console.error('💥 Profile Hook: Update error:', errorMessage)
+      setError(errorMessage)
       throw err
     } finally {
       setUpdating(false)
@@ -164,29 +88,32 @@ export function useProfile() {
       setUpdating(true)
       setError(null)
 
-      // Create a unique filename
-      const fileExt = file.name.split('.').pop()
-      const fileName = `${user.id}-${Math.random()}.${fileExt}`
-      const filePath = `avatars/${fileName}`
+      console.log('📸 Profile Hook: Uploading avatar via API')
 
-      // Upload file to Supabase Storage
-      const { error: uploadError } = await supabase.storage
-        .from('profile-images')
-        .upload(filePath, file)
+      const formData = new FormData()
+      formData.append('avatar', file)
 
-      if (uploadError) throw uploadError
+      const response = await fetch('/api/auth/profile/avatar', {
+        method: 'POST',
+        body: formData
+      })
 
-      // Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from('profile-images')
-        .getPublicUrl(filePath)
+      const data = await response.json()
 
-      // Update profile with new avatar URL
-      await updateProfile({ avatar_url: publicUrl })
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to upload avatar')
+      }
 
-      return publicUrl
+      console.log('✅ Profile Hook: Avatar uploaded successfully')
+
+      // Refresh the profile in auth context
+      await refreshProfile()
+
+      return data.avatar_url
     } catch (err) {
-      setError(err.message || 'Failed to upload avatar')
+      const errorMessage = err instanceof Error ? err.message : 'Failed to upload avatar'
+      console.error('💥 Profile Hook: Avatar upload error:', errorMessage)
+      setError(errorMessage)
       throw err
     } finally {
       setUpdating(false)
@@ -200,25 +127,26 @@ export function useProfile() {
       setUpdating(true)
       setError(null)
 
-      // Extract file path from URL
-      const urlParts = profile.avatar_url.split('/')
-      const fileName = urlParts[urlParts.length - 1]
-      const filePath = `avatars/${fileName}`
+      console.log('🗑️ Profile Hook: Deleting avatar via API')
 
-      // Delete from storage
-      const { error: deleteError } = await supabase.storage
-        .from('profile-images')
-        .remove([filePath])
+      const response = await fetch('/api/auth/profile/avatar', {
+        method: 'DELETE'
+      })
 
-      if (deleteError) {
-        console.warn('Failed to delete avatar from storage:', deleteError)
-        // Continue anyway to remove from profile
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to delete avatar')
       }
 
-      // Update profile to remove avatar URL
-      await updateProfile({ avatar_url: null })
+      console.log('✅ Profile Hook: Avatar deleted successfully')
+
+      // Refresh the profile in auth context
+      await refreshProfile()
     } catch (err) {
-      setError(err.message || 'Failed to delete avatar')
+      const errorMessage = err instanceof Error ? err.message : 'Failed to delete avatar'
+      console.error('💥 Profile Hook: Avatar delete error:', errorMessage)
+      setError(errorMessage)
       throw err
     } finally {
       setUpdating(false)
@@ -227,7 +155,7 @@ export function useProfile() {
 
   const getDisplayName = () => {
     if (!profile) return 'User'
-    
+
     if (profile.full_name) return profile.full_name
     if (profile.email) return profile.email.split('@')[0]
     return 'User'
@@ -235,7 +163,7 @@ export function useProfile() {
 
   const getContactInfo = () => {
     if (!profile) return { email: '', phone: '' }
-    
+
     return {
       email: profile.email || '',
       phone: profile.phone || 'Not provided'
@@ -244,7 +172,7 @@ export function useProfile() {
 
   const isProfileComplete = () => {
     if (!profile) return false
-    
+
     return !!(
       profile.full_name &&
       profile.phone &&
@@ -254,55 +182,17 @@ export function useProfile() {
 
   const getMissingFields = () => {
     if (!profile) return ['Full profile']
-    
+
     const missing: string[] = []
-    
+
     if (!profile.full_name) missing.push('Full name')
     if (!profile.phone) missing.push('Phone number')
     if (!profile.preferred_pickup_location) missing.push('Preferred pickup location')
-    
+
     return missing
   }
 
-  // Real-time subscription for profile changes
-  useEffect(() => {
-    if (!user) return
-
-    const channel = supabase
-      .channel('profile-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'profiles',
-          filter: `id=eq.${user.id}`
-        },
-        (payload) => {
-          if (payload.eventType === 'UPDATE') {
-            setProfile(payload.new as UserProfile)
-          } else if (payload.eventType === 'DELETE') {
-            setProfile(null)
-          }
-        }
-      )
-      .subscribe()
-
-    return () => {
-      supabase.removeChannel(channel)
-    }
-  }, [user?.id])
-
-  // Fetch profile on user change
-  useEffect(() => {
-    if (user) {
-      fetchProfile()
-    } else {
-      setProfile(null)
-      setLoading(false)
-    }
-  }, [user])
-
+  // Use profile from auth context instead of fetching separately
   return {
     profile,
     loading,
@@ -311,7 +201,7 @@ export function useProfile() {
     updateProfile,
     uploadAvatar,
     deleteAvatar,
-    refetch: fetchProfile,
+    refetch: refreshProfile,
     getDisplayName,
     getContactInfo,
     isProfileComplete,

@@ -13,6 +13,8 @@ interface BusinessApplicationForm {
   ownerEmail: string
   ownerPhone: string
   ownerIdNumber: string
+  ownerPassword: string
+  ownerPasswordConfirm: string
   
   // Business Address
   streetAddress: string
@@ -52,6 +54,8 @@ const initialFormState: BusinessApplicationForm = {
   ownerEmail: '',
   ownerPhone: '',
   ownerIdNumber: '',
+  ownerPassword: '',
+  ownerPasswordConfirm: '',
   
   // Business Address
   streetAddress: '',
@@ -110,6 +114,7 @@ export function useBusinessApplicationForm() {
     owner_email: formData.ownerEmail,
     owner_phone: formData.ownerPhone,
     owner_id_number: formData.ownerIdNumber,
+    owner_password: formData.ownerPassword,
     
     // Business Address
     street_address: formData.streetAddress,

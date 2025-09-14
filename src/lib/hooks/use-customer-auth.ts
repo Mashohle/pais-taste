@@ -16,7 +16,6 @@ interface CustomerAuthState {
   isLogin: boolean
   showPassword: boolean
   isLoading: boolean
-  isRedirecting: boolean
   showForgotPassword: boolean
   error: string
   success: string
@@ -24,8 +23,8 @@ interface CustomerAuthState {
 
 export function useCustomerAuth() {
   const router = useRouter()
-  const { user, signIn, signUp, resetPassword, signInWithOAuth } = useAuth()
-  
+  const { user } = useAuth()
+
   const [state, setState] = useState<CustomerAuthState>({
     formData: {
       name: '',
@@ -36,7 +35,6 @@ export function useCustomerAuth() {
     isLogin: true,
     showPassword: false,
     isLoading: false,
-    isRedirecting: false,
     showForgotPassword: false,
     error: '',
     success: ''
@@ -45,21 +43,19 @@ export function useCustomerAuth() {
   // Redirect if already logged in
   useEffect(() => {
     if (user) {
-      setState(prev => ({ ...prev, isRedirecting: true }))
       router.push('/account')
     }
   }, [user, router])
 
-  // Update form data and clear errors
   const updateFormData = (field: keyof CustomerAuthFormData, value: string) => {
     setState(prev => ({
       ...prev,
       formData: { ...prev.formData, [field]: value },
-      error: '' // Clear errors when user types
+      error: '', // Clear errors when user types
+      success: ''
     }))
   }
 
-  // Toggle between login and signup modes
   const toggleAuthMode = () => {
     setState(prev => ({
       ...prev,
@@ -70,12 +66,10 @@ export function useCustomerAuth() {
     }))
   }
 
-  // Toggle password visibility
   const togglePasswordVisibility = () => {
     setState(prev => ({ ...prev, showPassword: !prev.showPassword }))
   }
 
-  // Toggle forgot password mode
   const toggleForgotPassword = () => {
     setState(prev => ({
       ...prev,
@@ -85,17 +79,14 @@ export function useCustomerAuth() {
     }))
   }
 
-  // Set loading state
   const setLoading = (isLoading: boolean) => {
     setState(prev => ({ ...prev, isLoading }))
   }
 
-  // Set error message
   const setError = (error: string) => {
     setState(prev => ({ ...prev, error, success: '' }))
   }
 
-  // Set success message
   const setSuccess = (success: string) => {
     setState(prev => ({ ...prev, success, error: '' }))
   }
@@ -109,26 +100,43 @@ export function useCustomerAuth() {
 
     try {
       if (state.isLogin) {
-        // Login with existing auth context
-        const { error } = await signIn(state.formData.email, state.formData.password)
-        
-        if (error) {
-          setError(error.message)
-        } else {
-          router.push('/account')
-        }
-      } else {
-        // Sign up
-        const { error, user } = await signUp(state.formData.email, state.formData.password, {
-          full_name: state.formData.name,
-          phone: state.formData.phone,
+        // Login via API
+        const response = await fetch('/api/auth/sign-in', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: state.formData.email,
+            password: state.formData.password
+          })
         })
 
-        if (error) {
-          setError(error.message)
-        } else if (user) {
+        const data = await response.json()
+
+        if (!response.ok) {
+          setError(data.error || 'Login failed')
+        } else {
+          // Success - redirect will happen via useEffect when user state updates
+          console.log('✅ Customer login successful')
+        }
+      } else {
+        // Sign up via API
+        const response = await fetch('/api/auth/sign-up', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: state.formData.email,
+            password: state.formData.password,
+            full_name: state.formData.name,
+            phone: state.formData.phone
+          })
+        })
+
+        const data = await response.json()
+
+        if (!response.ok) {
+          setError(data.error || 'Sign up failed')
+        } else {
           setSuccess('Account created! Please check your email to verify your account.')
-          // Clear form
           setState(prev => ({
             ...prev,
             formData: { name: '', email: '', phone: '', password: '' }
@@ -136,7 +144,7 @@ export function useCustomerAuth() {
         }
       }
     } catch (err) {
-      setError('An unexpected error occurred. Please try again.')
+      setError('Network error. Please try again.')
     } finally {
       setLoading(false)
     }
@@ -150,15 +158,21 @@ export function useCustomerAuth() {
     setSuccess('')
 
     try {
-      const { error } = await resetPassword(state.formData.email)
+      const response = await fetch('/api/auth/reset-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: state.formData.email })
+      })
 
-      if (error) {
-        setError(error.message)
+      const data = await response.json()
+
+      if (!response.ok) {
+        setError(data.error || 'Failed to send reset email')
       } else {
         setSuccess('Password reset link sent! Check your email.')
       }
     } catch (err) {
-      setError('Failed to send reset email. Please try again.')
+      setError('Network error. Please try again.')
     } finally {
       setLoading(false)
     }
@@ -170,13 +184,21 @@ export function useCustomerAuth() {
     setError('')
 
     try {
-      const { error } = await signInWithOAuth(provider)
+      const response = await fetch('/api/auth/oauth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ provider })
+      })
 
-      if (error) {
-        setError(error.message)
+      const data = await response.json()
+
+      if (!response.ok) {
+        setError(data.error || 'Social login failed')
+      } else if (data.redirectUrl) {
+        window.location.href = data.redirectUrl
       }
     } catch (err) {
-      setError('Social login failed. Please try again.')
+      setError('Network error. Please try again.')
     } finally {
       setLoading(false)
     }
@@ -188,11 +210,10 @@ export function useCustomerAuth() {
     isLogin: state.isLogin,
     showPassword: state.showPassword,
     isLoading: state.isLoading,
-    isRedirecting: state.isRedirecting,
     showForgotPassword: state.showForgotPassword,
     error: state.error,
     success: state.success,
-    
+
     // Actions
     updateFormData,
     toggleAuthMode,
@@ -201,9 +222,14 @@ export function useCustomerAuth() {
     handleSubmit,
     handleForgotPassword,
     handleSocialLogin,
-    
+
     // Computed values
-    canSubmit: !state.isLoading && state.formData.email && state.formData.password && 
-              (state.isLogin || (state.formData.name && state.formData.phone))
+    canSubmit: !state.isLoading &&
+               state.formData.email &&
+               state.formData.password &&
+               (state.isLogin || (state.formData.name && state.formData.phone)),
+
+    // Loading state for redirects
+    isRedirecting: !!user
   }
 }

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import { useBusinessAdminAuth } from '@/lib/hooks/use-business-admin-auth'
 import { useAuth } from '@/lib/contexts/auth-context'
 
 interface AdminLoginState {
@@ -23,11 +24,12 @@ export function useAdminLogin() {
 
   const router = useRouter()
   const searchParams = useSearchParams()
-  const { signIn, user } = useAuth()
+  const { user, hasBusinessAccess } = useBusinessAdminAuth()
+  const { refreshProfile } = useAuth()
 
   // Handle form field updates
   const updateField = (field: keyof AdminLoginState, value: string | boolean) => {
-    setFormState(prev => ({ ...prev, [field]: value }))
+    setFormState(prev => ({ ...prev, [field]: value, error: '' }))
   }
 
   const setError = (error: string) => {
@@ -38,18 +40,21 @@ export function useAdminLogin() {
     setFormState(prev => ({ ...prev, isLoading }))
   }
 
-  // Redirect if already logged in
+  // Redirect if already logged in AND has business access
   useEffect(() => {
-    if (user) {
+    if (user && hasBusinessAccess) {
+      console.log('🔐 Admin Login: User already has business access, redirecting')
       router.push('/admin')
     }
-  }, [user, router])
+  }, [user, hasBusinessAccess, router])
 
   // Handle permission error messages from URL params
   useEffect(() => {
     const errorParam = searchParams.get('error')
     if (errorParam === 'insufficient_permissions') {
-      setError('Access denied: Your account does not have business admin permissions. Contact your business owner or try the Super Admin portal if you have those permissions.')
+      setError('Access denied: Your account does not have business admin permissions.')
+    } else if (errorParam === 'no_business_access') {
+      setError('No business access found. Contact your business owner to get access.')
     }
   }, [searchParams])
 
@@ -60,16 +65,42 @@ export function useAdminLogin() {
     setLoading(true)
 
     try {
-      const { error: signInError } = await signIn(formState.email, formState.password)
+      console.log('🔐 Admin Login: Attempting sign in via API')
 
-      if (signInError) {
-        setError(signInError.message)
-        updateField('password', '') // Clear password on error
+      const response = await fetch('/api/auth/sign-in', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: formState.email,
+          password: formState.password
+        })
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        setError(data.error || 'Login failed')
+        updateField('password', '')
       } else {
-        router.push('/admin')
+        console.log('✅ Admin Login: Sign in successful')
+        console.log('🔍 Admin Login: API Response:', data)
+
+        // Check if user has business access and redirect with proper auth sync
+        if (data.profile && (data.profile.role_id === 'business-owner' || data.profile.role_id === 'business-admin')) {
+          console.log('🔀 Admin Login: User has business role, redirecting with full page reload for clean state')
+          // Use window.location for clean state initialization - most reliable approach
+          window.location.href = '/admin'
+        } else {
+          console.log('❌ Admin Login: Access check failed:', {
+            hasProfile: !!data.profile,
+            roleId: data.profile?.role_id,
+            expectedRoles: ['business-owner', 'business-admin']
+          })
+          setError('Access denied: Your account does not have business admin permissions.')
+        }
       }
     } catch (err) {
-      setError('An unexpected error occurred')
+      setError('Network error. Please try again.')
       updateField('password', '')
     } finally {
       setLoading(false)
@@ -88,12 +119,12 @@ export function useAdminLogin() {
     showPassword: formState.showPassword,
     error: formState.error,
     isLoading: formState.isLoading,
-    
+
     // Actions
     updateField,
     togglePasswordVisibility,
     handleSubmit,
-    
+
     // Computed
     canSubmit: !formState.isLoading && formState.email && formState.password
   }
