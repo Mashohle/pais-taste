@@ -13,24 +13,24 @@ import { Switch } from "@/components/ui/switch"
 import { Separator } from "@/components/ui/separator"
 import { StatusManager } from "@/components/admin/status-manager"
 import { Settings, Building, Users, Bell, Palette, CreditCard, Clock, Shield, Save, Upload, MapPin } from "lucide-react"
-import { useBusiness } from '@/lib/contexts/business-context'
-import { useAuth } from '@/lib/contexts/auth-context'
+import { useBusinessAdminAuth } from '@/lib/hooks/use-business-admin-auth'
 
 export default function SettingsPage() {
-    const { currentBusiness, isOwner, isAdmin } = useBusiness()
-    const { user } = useAuth()
+    const { user, userBusinesses, currentBusiness } = useBusinessAdminAuth()
+    const isOwner = currentBusiness?.role === 'owner'
+    const isAdmin = currentBusiness?.role === 'admin' || isOwner
     const [activeTab, setActiveTab] = useState('general')
     const [saving, setSaving] = useState(false)
     
     // Business settings state
     const [businessSettings, setBusinessSettings] = useState({
         name: currentBusiness?.name || '',
-        description: currentBusiness?.description || '',
-        phone: currentBusiness?.phone || '',
-        email: currentBusiness?.email || '',
-        address: currentBusiness?.address || '',
-        website: currentBusiness?.website || '',
-        logo_url: currentBusiness?.logo_url || '',
+        description: currentBusiness?.business?.description || '',
+        phone: currentBusiness?.business?.phone || '',
+        email: currentBusiness?.business?.email || '',
+        address: currentBusiness?.business?.address || '',
+        website: currentBusiness?.business?.website || '',
+        logo_url: currentBusiness?.business?.logo_url || '',
         opening_hours: {
             monday: { open: '09:00', close: '17:00', closed: false },
             tuesday: { open: '09:00', close: '17:00', closed: false },
@@ -109,23 +109,19 @@ export default function SettingsPage() {
     ]
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-stone-50 to-stone-100">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div className="space-y-6">
+            <div className="max-w-7xl mx-auto">
                 {/* Header */}
-                <div className="bg-gradient-to-r from-stone-100/95 via-stone-50/60 to-stone-25/20 backdrop-blur-md rounded-2xl p-6 shadow-2xl border border-stone-200/50 mb-6">
-                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center">
-                        <div>
-                            <h1 className="text-2xl sm:text-3xl font-bold text-stone-800 mb-2">
-                                Business Settings
-                            </h1>
-                            <p className="text-stone-600 text-sm">Configure your business preferences and system settings</p>
-                        </div>
-                        <div className="mt-4 sm:mt-0">
-                            <Badge variant={isOwner ? "default" : "secondary"}>
-                                {isOwner ? 'Owner Access' : isAdmin ? 'Admin Access' : 'Limited Access'}
-                            </Badge>
-                        </div>
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+                    <div>
+                        <h1 className="text-2xl sm:text-3xl font-bold text-stone-800">Business Settings</h1>
+                        <p className="text-stone-600 mt-1">
+                            Configure your business preferences and system settings
+                        </p>
                     </div>
+                    <Badge variant={isOwner ? "default" : "secondary"}>
+                        {isOwner ? 'Owner Access' : isAdmin ? 'Admin Access' : 'Limited Access'}
+                    </Badge>
                 </div>
 
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
@@ -584,7 +580,7 @@ export default function SettingsPage() {
                                     </div>
                                 </div>
 
-                                {currentBusiness?.business_categories?.id !== 'food' && (
+                                {currentBusiness?.business?.business_categories?.id !== 'food' && (
                                     <>
                                         <Separator />
                                         <div>
@@ -635,7 +631,7 @@ export default function SettingsPage() {
 
                     {/* Status Management */}
                     <TabsContent value="statuses" className="space-y-6">
-                        {currentBusiness?.business_categories?.id === 'food' && (
+                        {currentBusiness?.business?.business_categories?.id === 'food' && (
                             <StatusManager 
                                 statusType="order" 
                                 title="Order Status Configuration"
@@ -643,7 +639,7 @@ export default function SettingsPage() {
                             />
                         )}
                         
-                        {currentBusiness?.business_categories?.id === 'retail' && (
+                        {currentBusiness?.business?.business_categories?.id === 'retail' && (
                             <StatusManager 
                                 statusType="order" 
                                 title="Order Status Configuration"
@@ -651,7 +647,7 @@ export default function SettingsPage() {
                             />
                         )}
                         
-                        {['service', 'car_wash', 'salon'].includes(currentBusiness?.business_categories?.id || '') && (
+                        {['service', 'car_wash', 'salon'].includes(currentBusiness?.business?.business_categories?.id || '') && (
                             <StatusManager 
                                 statusType="booking" 
                                 title="Booking Status Configuration"

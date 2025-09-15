@@ -5,15 +5,19 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Search, Filter, Edit, Trash2, Plus, Eye, EyeOff, ChevronDown, ArrowLeft, Package } from "lucide-react"
-import { useState, useEffect } from "react"
+import { Skeleton } from "@/components/ui/skeleton"
+import { Search, Filter, Edit, Trash2, Plus, Eye, EyeOff, ChevronDown, Package } from "lucide-react"
+import { useState } from "react"
 import { useRouter } from 'next/navigation'
-import { useMenuItems } from '@/lib/hooks/use-menu-items'
-import Link from "next/link"
+import { useMenuApi } from '@/lib/hooks/use-menu-api'
+import { usePageLoading } from '@/lib/hooks/use-loading-coordinator'
 
 export default function MenuManagement() {
   // Use forAdmin=true to show all items in admin
-  const { items: menuItems, loading, error, updateMenuItem, deleteMenuItem } = useMenuItems(true)
+  const { items: menuItems, loading, error, updateMenuItem, deleteMenuItem } = useMenuApi(true)
+  // Coordinate loading with minimum duration
+  const coordinatedLoading = usePageLoading(loading, 'menu')
+
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedCategory, setSelectedCategory] = useState("All Categories")
   const [isFilterOpen, setIsFilterOpen] = useState(false)
@@ -53,13 +57,82 @@ export default function MenuManagement() {
   // Get unique categories from the database
   const availableCategories = ["All Categories", ...Array.from(new Set(menuItems.map(item => item.category)))]
 
-  // Show loading state
-  if (loading) {
+  // Show loading state with skeleton
+  if (coordinatedLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-stone-50 to-stone-100 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-stone-600 mx-auto mb-4"></div>
-          <p className="text-stone-700">Loading menu items...</p>
+      <div className="space-y-6">
+        <div className="max-w-7xl mx-auto">
+          {/* Header Skeleton */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+            <div>
+              <Skeleton className="h-8 w-48 mb-2" />
+              <Skeleton className="h-4 w-64" />
+            </div>
+            <Skeleton className="h-10 w-32" />
+          </div>
+
+          {/* Search and Filter Skeleton */}
+          <div className="bg-white rounded-xl p-4 shadow-sm border border-stone-200 mb-6">
+            <div className="flex flex-col sm:flex-row gap-4">
+              <Skeleton className="h-10 flex-1" />
+              <Skeleton className="h-10 w-40" />
+            </div>
+          </div>
+
+          {/* Stats Skeleton */}
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="bg-white rounded-lg p-4 shadow-sm border border-stone-200">
+                <div className="text-center">
+                  <Skeleton className="h-8 w-12 mx-auto mb-2" />
+                  <Skeleton className="h-3 w-20 mx-auto" />
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Menu Items Skeleton */}
+          <div className="space-y-4">
+            {[...Array(3)].map((_, i) => (
+              <Card key={i} className="bg-white border border-stone-200 shadow-sm">
+                <CardHeader className="pb-3">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <Skeleton className="h-6 w-32 mb-2" />
+                      <div className="flex gap-2">
+                        <Skeleton className="h-5 w-20" />
+                        <Skeleton className="h-5 w-24" />
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Skeleton className="h-8 w-8 rounded" />
+                      <Skeleton className="h-8 w-8 rounded" />
+                      <Skeleton className="h-8 w-8 rounded-full" />
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-start space-x-4 mb-4">
+                    <Skeleton className="w-16 h-16 rounded-lg" />
+                    <div className="flex-1">
+                      <Skeleton className="h-4 w-full mb-2" />
+                      <Skeleton className="h-4 w-3/4" />
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <Skeleton className="h-6 w-20" />
+                      <Skeleton className="h-6 w-16" />
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Skeleton className="h-6 w-12" />
+                      <Skeleton className="h-6 w-12" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         </div>
       </div>
     )
@@ -81,72 +154,42 @@ export default function MenuManagement() {
   }
 
   return (
-    <div className="relative min-h-screen bg-gradient-to-br from-stone-50 to-stone-100 p-4 sm:p-6 lg:p-8">
-      {/* Decorative background - matching dashboard style */}
-      <div className="fixed right-0 top-0 h-full w-48 sm:w-64 lg:w-96 pointer-events-none overflow-hidden">
-        <div className="absolute inset-0 opacity-15">
-          <svg className="absolute top-10 right-8 w-16 h-16 text-stone-600" viewBox="0 0 100 100">
-            <circle cx="50" cy="50" r="40" fill="none" stroke="currentColor" strokeWidth="2" />
-            <circle cx="50" cy="50" r="25" fill="none" stroke="currentColor" strokeWidth="1.5" />
-            <circle cx="50" cy="50" r="10" fill="currentColor" opacity="0.4" />
-          </svg>
-          <svg className="absolute top-48 right-16 w-14 h-14 text-stone-500" viewBox="0 0 100 100">
-            <polygon points="50,10 90,90 10,90" fill="none" stroke="currentColor" strokeWidth="2" />
-            <polygon points="50,30 70,70 30,70" fill="currentColor" opacity="0.3" />
-          </svg>
-        </div>
-      </div>
-
-      <div className="relative max-w-7xl mx-auto">
-        {/* Header - matching dashboard style */}
-        <div className="relative bg-gradient-to-r from-stone-100/95 via-stone-50/60 to-stone-25/20 backdrop-blur-md rounded-2xl p-6 shadow-2xl border border-stone-200/50 mb-8">
-          <div className="absolute inset-0 bg-gradient-to-br from-white/40 via-white/20 to-transparent rounded-2xl"></div>
-          <div className="relative">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <div>
-                <div className="flex items-center gap-4 mb-2">
-                  <Link 
-                    href="/admin" 
-                    className="inline-flex items-center text-stone-600 hover:text-stone-800 transition-colors"
-                  >
-                    <ArrowLeft className="w-4 h-4 mr-2" />
-                    Back to Dashboard
-                  </Link>
-                </div>
-                <h1 className="text-2xl sm:text-3xl font-bold text-stone-800 drop-shadow-sm">Menu Management</h1>
-                <p className="text-stone-600 mt-1">
-                  Manage your traditional South African dishes • {menuItems.length} total items
-                </p>
-              </div>
-              <Button 
-                className="bg-stone-700 hover:bg-stone-800 text-white shadow-lg hover:shadow-xl transition-all duration-200"
-                onClick={() => router.push('/admin/menu/add')}
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Add New Item
-              </Button>
-            </div>
+    <div className="space-y-6">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold text-stone-800">Menu Management</h1>
+            <p className="text-stone-600 mt-1">
+              Manage your menu items • {menuItems.length} total items
+            </p>
           </div>
+          <Button
+            className="bg-stone-700 hover:bg-stone-800 text-white shadow-lg hover:shadow-xl transition-all duration-200"
+            onClick={() => router.push('/admin/menu/add')}
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Add New Item
+          </Button>
         </div>
 
-        {/* Search and Filter - stone theme */}
-        <div className="relative bg-gradient-to-r from-stone-100/95 via-stone-50/60 to-stone-25/20 backdrop-blur-md rounded-xl p-4 shadow-xl border border-stone-200/50 mb-6">
-          <div className="absolute inset-0 bg-gradient-to-br from-white/40 via-white/20 to-transparent rounded-xl"></div>
-          <div className="relative flex flex-col sm:flex-row gap-4">
+        {/* Search and Filter */}
+        <div className="bg-white rounded-xl p-4 shadow-sm border border-stone-200 mb-6">
+          <div className="flex flex-col sm:flex-row gap-4">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-stone-500 w-4 h-4" />
               <Input
                 placeholder="Search menu items..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 bg-white/80 backdrop-blur-sm border-stone-300/50 focus:border-stone-500"
+                className="pl-10 border-stone-300 focus:border-stone-500"
               />
             </div>
             <div className="relative">
               <Button
                 variant="outline"
                 onClick={() => setIsFilterOpen(!isFilterOpen)}
-                className="bg-white/80 backdrop-blur-sm border-stone-300/50 hover:bg-white/90"
+                className="border-stone-300 hover:bg-stone-50"
               >
                 <Filter className="w-4 h-4 mr-2" />
                 {selectedCategory}
@@ -172,50 +215,49 @@ export default function MenuManagement() {
           </div>
         </div>
 
-        {/* Stats - stone theme matching dashboard */}
+        {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
-          <div className="bg-gradient-to-r from-stone-100/95 via-stone-50/60 to-stone-25/20 backdrop-blur-md rounded-xl p-4 shadow-lg border border-stone-200/50">
-            <div className="relative text-center">
+          <div className="bg-white rounded-lg p-4 shadow-sm border border-stone-200">
+            <div className="text-center">
               <div className="text-2xl font-bold text-stone-800">{menuItems.length}</div>
               <div className="text-stone-600 text-sm">Total Items</div>
             </div>
           </div>
-          <div className="bg-gradient-to-r from-green-100/95 via-green-50/60 to-green-25/20 backdrop-blur-md rounded-xl p-4 shadow-lg border border-green-200/50">
-            <div className="relative text-center">
-              <div className="text-2xl font-bold text-green-800">{menuItems.filter(item => item.published).length}</div>
-              <div className="text-green-700 text-sm">Published</div>
+          <div className="bg-white rounded-lg p-4 shadow-sm border border-green-200">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-green-700">{menuItems.filter(item => item.published).length}</div>
+              <div className="text-green-600 text-sm">Published</div>
             </div>
           </div>
-          <div className="bg-gradient-to-r from-blue-100/95 via-blue-50/60 to-blue-25/20 backdrop-blur-md rounded-xl p-4 shadow-lg border border-blue-200/50">
-            <div className="relative text-center">
-              <div className="text-2xl font-bold text-blue-800">{menuItems.filter(item => item.published && item.available).length}</div>
-              <div className="text-blue-700 text-sm">In Stock</div>
+          <div className="bg-white rounded-lg p-4 shadow-sm border border-blue-200">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-blue-700">{menuItems.filter(item => item.published && item.available).length}</div>
+              <div className="text-blue-600 text-sm">In Stock</div>
             </div>
           </div>
-          <div className="bg-gradient-to-r from-red-100/95 via-red-50/60 to-red-25/20 backdrop-blur-md rounded-xl p-4 shadow-lg border border-red-200/50">
-            <div className="relative text-center">
-              <div className="text-2xl font-bold text-red-800">{menuItems.filter(item => item.published && !item.available).length}</div>
-              <div className="text-red-700 text-sm">Out of Stock</div>
+          <div className="bg-white rounded-lg p-4 shadow-sm border border-red-200">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-red-700">{menuItems.filter(item => item.published && !item.available).length}</div>
+              <div className="text-red-600 text-sm">Out of Stock</div>
             </div>
           </div>
-          <div className="bg-gradient-to-r from-amber-100/95 via-amber-50/60 to-amber-25/20 backdrop-blur-md rounded-xl p-4 shadow-lg border border-amber-200/50">
-            <div className="relative text-center">
-              <div className="text-2xl font-bold text-amber-800">{availableCategories.length - 1}</div>
-              <div className="text-amber-700 text-sm">Categories</div>
+          <div className="bg-white rounded-lg p-4 shadow-sm border border-amber-200">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-amber-700">{availableCategories.length - 1}</div>
+              <div className="text-amber-600 text-sm">Categories</div>
             </div>
           </div>
         </div>
 
-        {/* Menu Items Grid - stone theme */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {/* Menu Items List */}
+        <div className="space-y-4">
           {filteredItems.map((item) => (
             <Card
               key={item.id}
-              className="relative bg-gradient-to-br from-stone-100/95 via-stone-50/80 to-stone-100/60 backdrop-blur-xl border border-stone-200/50 shadow-2xl hover:shadow-3xl transition-all duration-300 overflow-hidden"
+              className="bg-white border border-stone-200 shadow-sm hover:shadow-md transition-all duration-200"
             >
-              <div className="absolute inset-0 bg-gradient-to-br from-white/40 via-white/20 to-transparent"></div>
 
-              <CardHeader className="relative pb-3">
+              <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <CardTitle className="text-lg font-semibold text-stone-800 mb-1">{item.name}</CardTitle>
@@ -237,10 +279,22 @@ export default function MenuManagement() {
                     </div>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <Badge className="bg-stone-700 text-white">R{item.price}</Badge>
-                    {item.combo_price && (
-                      <Badge className="bg-blue-700 text-white">R{item.combo_price}</Badge>
-                    )}
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="border-stone-300 hover:bg-stone-50"
+                      onClick={() => router.push(`/admin/menu/edit/${item.id}`)}
+                    >
+                      <Edit className="w-3 h-3" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleDeleteItem(item.id, item.name)}
+                      className="bg-white/80 backdrop-blur-sm border-red-300/50 hover:bg-red-50/90 text-red-600 hover:text-red-700"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </Button>
                     <button
                       onClick={() => togglePublishedStatus(item.id, item.published)}
                       className={`p-1 rounded-full transition-colors ${
@@ -256,9 +310,9 @@ export default function MenuManagement() {
                 </div>
               </CardHeader>
 
-              <CardContent className="relative">
+              <CardContent>
                 <div className="flex items-start space-x-4 mb-4">
-                  <div className="w-16 h-16 rounded-lg overflow-hidden border-2 border-white/90 shadow-lg flex-shrink-0 bg-stone-50">
+                  <div className="w-16 h-16 rounded-lg overflow-hidden border border-stone-200 flex-shrink-0 bg-stone-50">
                     {item.image_url ? (
                       <img
                         src={item.image_url}
@@ -309,22 +363,10 @@ export default function MenuManagement() {
                     )}
                   </div>
                   <div className="flex items-center space-x-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="bg-white/80 backdrop-blur-sm border-stone-300/50 hover:bg-white/90"
-                      onClick={() => router.push(`/admin/menu/edit/${item.id}`)}
-                    >
-                      <Edit className="w-3 h-3" />
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleDeleteItem(item.id, item.name)}
-                      className="bg-white/80 backdrop-blur-sm border-red-300/50 hover:bg-red-50/90 text-red-600 hover:text-red-700"
-                    >
-                      <Trash2 className="w-3 h-3" />
-                    </Button>
+                    <Badge className="bg-stone-700 text-white">R{item.price}</Badge>
+                    {item.combo_price && (
+                      <Badge className="bg-blue-700 text-white">R{item.combo_price}</Badge>
+                    )}
                   </div>
                 </div>
               </CardContent>
@@ -332,24 +374,21 @@ export default function MenuManagement() {
           ))}
         </div>
 
-        {/* No Results State - stone theme */}
+        {/* No Results State */}
         {filteredItems.length === 0 && (
           <div className="text-center py-12">
-            <div className="relative bg-gradient-to-r from-stone-100/95 via-stone-50/60 to-stone-25/20 backdrop-blur-md rounded-xl p-8 shadow-xl border border-stone-200/50">
-              <div className="absolute inset-0 bg-gradient-to-br from-white/40 via-white/20 to-transparent rounded-xl"></div>
-              <div className="relative">
-                <p className="text-stone-600 text-lg">No menu items found matching your criteria.</p>
-                <p className="text-stone-500 text-sm mt-2">Try adjusting your search or filter settings.</p>
-                {menuItems.length === 0 && (
-                  <Button 
-                    className="mt-4 bg-stone-700 hover:bg-stone-800 text-white"
-                    onClick={() => router.push('/admin/menu/add')}
-                  >
-                    <Plus className="w-4 h-4 mr-2" />
-                    Add Your First Menu Item
-                  </Button>
-                )}
-              </div>
+            <div className="bg-white rounded-xl p-8 shadow-sm border border-stone-200">
+              <p className="text-stone-600 text-lg">No menu items found matching your criteria.</p>
+              <p className="text-stone-500 text-sm mt-2">Try adjusting your search or filter settings.</p>
+              {menuItems.length === 0 && (
+                <Button
+                  className="mt-4 bg-stone-700 hover:bg-stone-800 text-white"
+                  onClick={() => router.push('/admin/menu/add')}
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Your First Menu Item
+                </Button>
+              )}
             </div>
           </div>
         )}

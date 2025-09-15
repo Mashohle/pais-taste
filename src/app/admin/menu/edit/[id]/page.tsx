@@ -14,7 +14,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
 import { Badge } from "@/components/ui/badge"
-import { useMenuItems } from '@/lib/hooks/use-menu-items'
+import { useMenuApi } from '@/lib/hooks/use-menu-api'
 
 interface FormData {
   name: string
@@ -38,7 +38,7 @@ interface EditMenuItemProps {
 
 export default function EditMenuItem({ params }: EditMenuItemProps) {
   const router = useRouter()
-  const { items: existingItems, updateMenuItem, uploadMenuItemImage, deleteMenuItemImage } = useMenuItems(true)
+  const { items: existingItems, updateMenuItem, uploadMenuItemImage, deleteMenuItemImage } = useMenuApi(true)
   const resolvedParams = use(params)
   
   const [formData, setFormData] = useState<FormData>({
@@ -105,7 +105,7 @@ export default function EditMenuItem({ params }: EditMenuItemProps) {
 
   if (loadingItem) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-stone-50 via-stone-100 to-stone-200 flex items-center justify-center">
+      <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-stone-600 mx-auto mb-4"></div>
           <p className="text-stone-700">Loading menu item...</p>
@@ -116,7 +116,7 @@ export default function EditMenuItem({ params }: EditMenuItemProps) {
 
   if (itemNotFound) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-stone-50 via-stone-100 to-stone-200 flex items-center justify-center">
+      <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-stone-800 mb-4">Menu Item Not Found</h1>
           <p className="text-stone-600 mb-6">The menu item you&apos;re looking for doesn&apos;t exist.</p>
@@ -295,15 +295,8 @@ export default function EditMenuItem({ params }: EditMenuItemProps) {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-stone-50 via-stone-100 to-stone-200 relative overflow-hidden">
-      <div className="absolute inset-0 opacity-[0.03]">
-        <div className="absolute top-20 right-10 w-32 h-32 border-2 border-stone-400 rounded-full"></div>
-        <div className="absolute top-40 right-32 w-16 h-16 border border-stone-400 rotate-45"></div>
-        <div className="absolute bottom-32 right-20 w-24 h-24 border border-stone-400 rounded-lg rotate-12"></div>
-        <div className="absolute top-60 right-8 w-8 h-8 bg-stone-400 rounded-full"></div>
-      </div>
-
-      <div className="container mx-auto px-4 py-6 relative z-10">
+    <div className="min-h-screen bg-white">
+      <div className="container mx-auto px-4 py-6">
         <div className="flex items-center gap-4 mb-6">
           <Button
             variant="ghost"
@@ -316,7 +309,7 @@ export default function EditMenuItem({ params }: EditMenuItemProps) {
           </Button>
         </div>
 
-        <Card className="max-w-2xl mx-auto bg-gradient-to-br from-stone-100/95 via-stone-50/80 to-stone-100/60 backdrop-blur-xl border-stone-200/50 shadow-2xl">
+        <Card className="max-w-2xl mx-auto bg-white border border-gray-200 shadow-sm">
           <CardHeader className="text-center pb-6">
             <CardTitle className="text-2xl font-bold text-stone-800">Edit Menu Item</CardTitle>
             <p className="text-stone-600 mt-2">Update &quot;{currentItem?.name}&quot; for Pai&apos;s Taste menu</p>

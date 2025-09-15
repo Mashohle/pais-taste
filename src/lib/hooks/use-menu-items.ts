@@ -1,7 +1,7 @@
 // lib/hooks/use-menu-items.ts
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
-import { useBusiness } from '@/lib/contexts/business-context'
+import { useBusinessAdminAuth } from '@/lib/hooks/use-business-admin-auth'
 
 interface MenuItem {
   id: string
@@ -22,11 +22,11 @@ export function useMenuItems(forAdmin: boolean = false) {
   const [items, setItems] = useState<MenuItem[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const { currentBusiness } = useBusiness()
+  const { currentBusiness } = useBusinessAdminAuth()
 
   useEffect(() => {
     // Only fetch if we have a business context
-    if (!currentBusiness?.id) {
+    if (!currentBusiness?.business?.id) {
       setItems([])
       setLoading(false)
       return
@@ -46,12 +46,12 @@ export function useMenuItems(forAdmin: boolean = false) {
     return () => {
       subscription.unsubscribe()
     }
-  }, [forAdmin, currentBusiness?.id])
+  }, [forAdmin, currentBusiness?.business?.id])
 
   async function fetchMenuItems() {
     try {
       // SECURITY FIX: Always filter by current business to prevent cross-tenant access
-      if (!currentBusiness?.id) {
+      if (!currentBusiness?.business?.id) {
         setItems([])
         return
       }
@@ -90,7 +90,7 @@ export function useMenuItems(forAdmin: boolean = false) {
       }
 
       // SECURITY FIX: Only allow updating items from current business
-      if (!currentBusiness?.id) {
+      if (!currentBusiness?.business?.id) {
         throw new Error('Business context required')
       }
 
@@ -118,7 +118,7 @@ export function useMenuItems(forAdmin: boolean = false) {
       }
 
       // SECURITY FIX: Only allow deleting items from current business
-      if (!currentBusiness?.id) {
+      if (!currentBusiness?.business?.id) {
         throw new Error('Business context required')
       }
 
@@ -152,7 +152,7 @@ export function useMenuItems(forAdmin: boolean = false) {
       }
 
       // SECURITY FIX: Ensure new items are created with current business_id
-      if (!currentBusiness?.id) {
+      if (!currentBusiness?.business?.id) {
         throw new Error('Business context required')
       }
 

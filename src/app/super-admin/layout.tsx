@@ -20,7 +20,8 @@ import {
   X,
   LogOut,
   Crown,
-  FileText
+  FileText,
+  User
 } from 'lucide-react'
 
 export default function SuperAdminLayout({
@@ -164,10 +165,11 @@ export default function SuperAdminLayout({
 
             {/* Admin Profile */}
             <div className="flex items-center space-x-3">
-              <div className="hidden sm:block text-right">
-                <p className="text-sm font-medium text-slate-900">{superAdmin.name}</p>
-                <p className="text-xs text-slate-600">{superAdmin.role}</p>
+              {/* User Avatar */}
+              <div className="w-8 h-8 bg-gradient-to-br from-indigo-400 to-purple-500 rounded-full flex items-center justify-center">
+                <User className="w-4 h-4 text-white" />
               </div>
+
               <Button
                 onClick={handleSignOut}
                 variant="outline"

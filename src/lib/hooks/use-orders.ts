@@ -14,14 +14,14 @@ export function useOrders() {
   useEffect(() => {
     if (user) {
       fetchOrders()
-      
+
       // Real-time subscription - filter by user
       const subscription = supabase
         .channel('user-orders')
         .on('postgres_changes',
-          { 
-            event: '*', 
-            schema: 'public', 
+          {
+            event: '*',
+            schema: 'public',
             table: 'orders',
             filter: `user_id=eq.${user.id}` // Only listen to current user's orders
           },
@@ -47,6 +47,7 @@ export function useOrders() {
     try {
       setLoading(true)
       setError(null)
+
 
       const { data, error: fetchError } = await supabase
         .from('orders')

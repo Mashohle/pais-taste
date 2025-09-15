@@ -28,6 +28,7 @@ export function useBusinessAdminAuth() {
   const { user, profile, session, loading: authLoading, profileLoading, signOut } = useAuth()
 
   const [userBusinesses, setUserBusinesses] = useState<UserBusiness[]>([])
+  const [currentBusiness, setCurrentBusiness] = useState<UserBusiness | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -53,7 +54,16 @@ export function useBusinessAdminAuth() {
       const data = await response.json()
       console.log('✅ Business Admin: Found', data.businesses?.length || 0, 'businesses')
 
-      setUserBusinesses(data.businesses || [])
+      const businesses = data.businesses || []
+      setUserBusinesses(businesses)
+
+      // Set first business as current if no current business is set
+      if (businesses.length > 0 && !currentBusiness) {
+        console.log('🏢 Setting current business to:', businesses[0].name)
+        setCurrentBusiness(businesses[0])
+      } else if (businesses.length === 0) {
+        console.log('❌ No businesses found for user')
+      }
 
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch businesses'
@@ -97,6 +107,7 @@ export function useBusinessAdminAuth() {
 
     // Business-specific data
     userBusinesses,
+    currentBusiness,
 
     // Loading states
     loading: authLoading || profileLoading || loading,
@@ -109,6 +120,7 @@ export function useBusinessAdminAuth() {
 
     // Actions
     signOut,
-    refetch: fetchUserBusinesses
+    refetch: fetchUserBusinesses,
+    setCurrentBusiness
   }
 }

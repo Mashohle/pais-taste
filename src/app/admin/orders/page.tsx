@@ -2,12 +2,12 @@
 
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { Skeleton } from "@/components/ui/skeleton"
 import { Clock, Users, CheckCircle, AlertCircle, Phone, MapPin, CreditCard, Banknote, ChevronRight, X } from "lucide-react"
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useOrders } from '@/lib/hooks/use-orders'
-import { useAuth } from '@/lib/contexts/auth-context'
-import { useBusiness } from '@/lib/contexts/business-context'
+import { useBusinessAdminAuth } from '@/lib/hooks/use-business-admin-auth'
 
 // Interface to match your existing UI structure
 interface Order {
@@ -25,20 +25,19 @@ interface Order {
 
 export default function OrdersPage() {
     const { orders: dbOrders, loading, updateOrderStatus, updatePaymentStatus } = useOrders()
-    const { user } = useAuth()
-    const { currentBusiness } = useBusiness()
+    const { user, currentBusiness } = useBusinessAdminAuth()
     const router = useRouter()
     const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
     const [isModalOpen, setIsModalOpen] = useState(false)
 
     // Only show this page for food businesses, redirect others
     useEffect(() => {
-        if (currentBusiness && currentBusiness.business_categories?.id !== 'food') {
+        if (currentBusiness && currentBusiness.business?.business_categories?.id !== 'food') {
             router.push('/admin')
         }
     }, [currentBusiness, router])
 
-    if (!currentBusiness || currentBusiness.business_categories?.id !== 'food') {
+    if (!currentBusiness || currentBusiness.business?.business_categories?.id !== 'food') {
         return (
             <div className="min-h-screen bg-gradient-to-br from-stone-50 to-stone-100 flex items-center justify-center">
                 <div className="text-center">
@@ -51,7 +50,7 @@ export default function OrdersPage() {
 
     // Transform database orders to match your UI interface
     const transformedOrders: Order[] = dbOrders
-        .filter(dbOrder => dbOrder.business_id === currentBusiness?.id) // Filter by current business
+        .filter(dbOrder => dbOrder.business_id === currentBusiness?.business?.id) // Filter by current business
         .map(dbOrder => ({
             id: `ORD-${dbOrder.id.slice(-3).toUpperCase()}`, // Show last 3 chars of ID
             customerName: dbOrder.customer_name,
@@ -223,112 +222,151 @@ export default function OrdersPage() {
         day: "numeric",
     })
 
-    // Show loading state
+    // Show loading state with skeleton
     if (loading) {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-stone-50 to-stone-100 flex items-center justify-center">
-                <div className="text-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-stone-600 mx-auto mb-4"></div>
-                    <p className="text-stone-700">Loading orders...</p>
+            <div className="space-y-6">
+                <div className="max-w-7xl mx-auto">
+                    {/* Header Skeleton */}
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+                        <div>
+                            <Skeleton className="h-8 w-64 mb-2" />
+                            <Skeleton className="h-4 w-48" />
+                        </div>
+                    </div>
+
+                    {/* Statistics Cards Skeleton */}
+                    <div className="grid grid-cols-2 lg:grid-cols-7 gap-4 mb-6">
+                        {[...Array(7)].map((_, i) => (
+                            <div key={i} className="bg-white rounded-lg p-4 shadow-sm border border-stone-200">
+                                <div className="text-center">
+                                    <Skeleton className="h-8 w-12 mx-auto mb-2" />
+                                    <Skeleton className="h-3 w-16 mx-auto" />
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* Order Columns Skeleton */}
+                    <div className="space-y-4">
+                        {/* Column Headers */}
+                        <div className="flex gap-2 mb-4">
+                            {['Received', 'Preparing', 'Ready', 'Collected', 'Completed'].map((status) => (
+                                <div key={status} className="flex-1">
+                                    <div className="bg-white rounded-lg p-3 shadow-sm border border-stone-200">
+                                        <div className="flex items-center justify-between mb-2">
+                                            <Skeleton className="h-5 w-20" />
+                                            <Skeleton className="h-5 w-5 rounded-full" />
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* Order Cards Skeleton */}
+                        <div className="flex gap-4">
+                            {[...Array(5)].map((_, colIndex) => (
+                                <div key={colIndex} className="flex-1 space-y-3">
+                                    {[...Array(2)].map((_, cardIndex) => (
+                                        <div key={cardIndex} className="bg-white rounded-lg p-4 shadow-sm border border-stone-200">
+                                            <div className="space-y-3">
+                                                <div className="flex justify-between items-start">
+                                                    <Skeleton className="h-5 w-16" />
+                                                    <Skeleton className="h-4 w-12" />
+                                                </div>
+                                                <Skeleton className="h-4 w-24" />
+                                                <div className="space-y-1">
+                                                    <Skeleton className="h-3 w-full" />
+                                                    <Skeleton className="h-3 w-3/4" />
+                                                </div>
+                                                <div className="flex justify-between items-center pt-2">
+                                                    <Skeleton className="h-5 w-16" />
+                                                    <Skeleton className="h-8 w-20 rounded" />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
                 </div>
             </div>
         )
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-stone-50 to-stone-100 relative overflow-hidden">
-            {/* Decorative background patterns */}
-            <div className="fixed right-0 top-0 h-full w-48 sm:w-64 lg:w-96 pointer-events-none overflow-hidden">
-                <div className="absolute inset-0 opacity-15">
-                    <svg className="absolute top-10 right-8 w-16 h-16 text-stone-600" viewBox="0 0 100 100">
-                        <circle cx="50" cy="50" r="40" fill="none" stroke="currentColor" strokeWidth="2" />
-                        <circle cx="50" cy="50" r="25" fill="none" stroke="currentColor" strokeWidth="1.5" />
-                        <circle cx="50" cy="50" r="10" fill="currentColor" opacity="0.4" />
-                    </svg>
-                    <svg className="absolute top-48 right-16 w-14 h-14 text-stone-500" viewBox="0 0 100 100">
-                        <polygon points="50,10 90,90 10,90" fill="none" stroke="currentColor" strokeWidth="2" />
-                        <polygon points="50,30 70,70 30,70" fill="currentColor" opacity="0.3" />
-                    </svg>
-                </div>
-            </div>
-
-            <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div className="space-y-6">
+            <div className="max-w-7xl mx-auto">
                 {/* Header */}
-                <div className="bg-gradient-to-r from-stone-100/95 via-stone-50/60 to-stone-25/20 backdrop-blur-md rounded-2xl p-6 shadow-2xl border border-stone-200/50 mb-6">
-                    <div className="absolute inset-0 bg-gradient-to-br from-white/40 via-white/20 to-transparent rounded-2xl"></div>
-                    <div className="relative flex flex-col sm:flex-row justify-between items-start sm:items-center">
-                        <div>
-                            <h1 className="text-2xl sm:text-3xl font-bold text-stone-800 mb-2">{currentBusiness.name} - Kitchen Dashboard</h1>
-                            <p className="text-stone-600 text-sm">Food Orders Management</p>
-                        </div>
-                        <div className="mt-4 sm:mt-0 flex items-center gap-4">
-                            <div className="text-right">
-                                <p className="text-stone-700 font-semibold">{currentDate}</p>
-                                <p className="text-stone-500 text-xs mt-1">Logged in as: {user?.email}</p>
-                            </div>
-                        </div>
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+                    <div>
+                        <h1 className="text-2xl sm:text-3xl font-bold text-stone-800">{currentBusiness.name} - Kitchen Dashboard</h1>
+                        <p className="text-stone-600 mt-1">
+                            Food Orders Management • {currentDate}
+                        </p>
                     </div>
                 </div>
 
                 {/* Statistics Cards */}
                 <div className="grid grid-cols-2 lg:grid-cols-7 gap-4 mb-6">
-                    <div className="bg-gradient-to-r from-stone-100/95 via-stone-50/60 to-stone-25/20 backdrop-blur-md rounded-xl p-4 shadow-lg border border-stone-200/50">
-                        <div className="relative text-center">
+                    <div className="bg-white rounded-lg p-4 shadow-sm border border-stone-200">
+                        <div className="text-center">
                             <div className="text-2xl font-bold text-stone-800">{stats.total}</div>
                             <div className="text-stone-600 text-sm">Total</div>
                         </div>
                     </div>
 
-                    <div className="bg-gradient-to-r from-amber-100/95 via-amber-50/60 to-amber-25/20 backdrop-blur-md rounded-xl p-4 shadow-lg border border-amber-200/50">
-                        <div className="relative text-center">
-                            <div className="text-2xl font-bold text-amber-800">{stats.received}</div>
-                            <div className="text-amber-700 text-sm">Received</div>
+                    <div className="bg-white rounded-lg p-4 shadow-sm border border-amber-200">
+                        <div className="text-center">
+                            <div className="text-2xl font-bold text-amber-700">{stats.received}</div>
+                            <div className="text-amber-600 text-sm">Received</div>
                         </div>
                     </div>
 
-                    <div className="bg-gradient-to-r from-blue-100/95 via-blue-50/60 to-blue-25/20 backdrop-blur-md rounded-xl p-4 shadow-lg border border-blue-200/50">
-                        <div className="relative text-center">
-                            <div className="text-2xl font-bold text-blue-800">{stats.preparing}</div>
-                            <div className="text-blue-700 text-sm">Preparing</div>
+                    <div className="bg-white rounded-lg p-4 shadow-sm border border-blue-200">
+                        <div className="text-center">
+                            <div className="text-2xl font-bold text-blue-700">{stats.preparing}</div>
+                            <div className="text-blue-600 text-sm">Preparing</div>
                         </div>
                     </div>
 
-                    <div className="bg-gradient-to-r from-green-100/95 via-green-50/60 to-green-25/20 backdrop-blur-md rounded-xl p-4 shadow-lg border border-green-200/50">
-                        <div className="relative text-center">
-                            <div className="text-2xl font-bold text-green-800">{stats.ready}</div>
-                            <div className="text-green-700 text-sm">Ready</div>
+                    <div className="bg-white rounded-lg p-4 shadow-sm border border-green-200">
+                        <div className="text-center">
+                            <div className="text-2xl font-bold text-green-700">{stats.ready}</div>
+                            <div className="text-green-600 text-sm">Ready</div>
                         </div>
                     </div>
 
-                    <div className="bg-gradient-to-r from-purple-100/95 via-purple-50/60 to-purple-25/20 backdrop-blur-md rounded-xl p-4 shadow-lg border border-purple-200/50">
-                        <div className="relative text-center">
-                            <div className="text-2xl font-bold text-purple-800">{stats.collected}</div>
-                            <div className="text-purple-700 text-sm">Collected</div>
+                    <div className="bg-white rounded-lg p-4 shadow-sm border border-purple-200">
+                        <div className="text-center">
+                            <div className="text-2xl font-bold text-purple-700">{stats.collected}</div>
+                            <div className="text-purple-600 text-sm">Collected</div>
                         </div>
                     </div>
 
-                    <div className="bg-gradient-to-r from-stone-100/95 via-stone-50/60 to-stone-25/20 backdrop-blur-md rounded-xl p-4 shadow-lg border border-stone-200/50">
-                        <div className="relative text-center">
+                    <div className="bg-white rounded-lg p-4 shadow-sm border border-stone-200">
+                        <div className="text-center">
                             <div className="text-2xl font-bold text-stone-800">{stats.completed}</div>
-                            <div className="text-stone-700 text-sm">Completed</div>
+                            <div className="text-stone-600 text-sm">Completed</div>
                         </div>
                     </div>
 
-                    <div className="bg-gradient-to-r from-red-100/95 via-red-50/60 to-red-25/20 backdrop-blur-md rounded-xl p-4 shadow-lg border border-red-200/50">
-                        <div className="relative text-center">
-                            <div className="text-2xl font-bold text-red-800">{stats.unpaid}</div>
-                            <div className="text-red-700 text-sm">Unpaid</div>
+                    <div className="bg-white rounded-lg p-4 shadow-sm border border-red-200">
+                        <div className="text-center">
+                            <div className="text-2xl font-bold text-red-700">{stats.unpaid}</div>
+                            <div className="text-red-600 text-sm">Unpaid</div>
                         </div>
                     </div>
                 </div>
 
-                {/* Orders Dashboard - Kanban Layout */}
+                {/* Orders Dashboard - Vertical Kanban Layout */}
                 <div className="space-y-6">
                     <h2 className="text-xl font-bold text-stone-800">Orders Dashboard</h2>
 
-                    <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+                    <div className="space-y-4">
                         {/* Received Orders Column */}
-                        <div className="bg-gradient-to-r from-amber-100/95 via-amber-50/60 to-amber-25/20 backdrop-blur-md rounded-2xl p-4 shadow-lg border border-amber-200/50">
+                        <div className="bg-white rounded-xl p-4 shadow-sm border border-amber-200">
                             <div className="flex items-center justify-between mb-4">
                                 <h3 className="font-bold text-amber-800 flex items-center">
                                     <AlertCircle className="w-5 h-5 mr-2" />
@@ -336,7 +374,7 @@ export default function OrdersPage() {
                                 </h3>
                                 <Badge className="bg-amber-200 text-amber-800">{getOrdersByStatus("received").length}</Badge>
                             </div>
-                            <div className="space-y-3 max-h-96 overflow-y-auto">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 max-h-96 overflow-y-auto">
                                 {getOrdersByStatus("received").map((order) => (
                                     <div
                                         key={order.id}
@@ -362,7 +400,7 @@ export default function OrdersPage() {
                                     </div>
                                 ))}
                                 {getOrdersByStatus("received").length === 0 && (
-                                    <div className="text-center py-8 text-amber-600">
+                                    <div className="col-span-full text-center py-8 text-amber-600">
                                         <AlertCircle className="w-8 h-8 mx-auto mb-2 opacity-50" />
                                         <p className="text-sm">No received orders</p>
                                     </div>
@@ -371,7 +409,7 @@ export default function OrdersPage() {
                         </div>
 
                         {/* Preparing Orders Column */}
-                        <div className="bg-gradient-to-r from-blue-100/95 via-blue-50/60 to-blue-25/20 backdrop-blur-md rounded-2xl p-4 shadow-lg border border-blue-200/50">
+                        <div className="bg-white rounded-xl p-4 shadow-sm border border-blue-200">
                             <div className="flex items-center justify-between mb-4">
                                 <h3 className="font-bold text-blue-800 flex items-center">
                                     <Clock className="w-5 h-5 mr-2" />
@@ -379,7 +417,7 @@ export default function OrdersPage() {
                                 </h3>
                                 <Badge className="bg-blue-200 text-blue-800">{getOrdersByStatus("preparing").length}</Badge>
                             </div>
-                            <div className="space-y-3 max-h-96 overflow-y-auto">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 max-h-96 overflow-y-auto">
                                 {getOrdersByStatus("preparing").map((order) => (
                                     <div
                                         key={order.id}
@@ -405,7 +443,7 @@ export default function OrdersPage() {
                                     </div>
                                 ))}
                                 {getOrdersByStatus("preparing").length === 0 && (
-                                    <div className="text-center py-8 text-blue-600">
+                                    <div className="col-span-full text-center py-8 text-blue-600">
                                         <Clock className="w-8 h-8 mx-auto mb-2 opacity-50" />
                                         <p className="text-sm">No orders being prepared</p>
                                     </div>
@@ -414,7 +452,7 @@ export default function OrdersPage() {
                         </div>
 
                         {/* Ready Orders Column */}
-                        <div className="bg-gradient-to-r from-green-100/95 via-green-50/60 to-green-25/20 backdrop-blur-md rounded-2xl p-4 shadow-lg border border-green-200/50">
+                        <div className="bg-white rounded-xl p-4 shadow-sm border border-green-200">
                             <div className="flex items-center justify-between mb-4">
                                 <h3 className="font-bold text-green-800 flex items-center">
                                     <CheckCircle className="w-5 h-5 mr-2" />
@@ -422,7 +460,7 @@ export default function OrdersPage() {
                                 </h3>
                                 <Badge className="bg-green-200 text-green-800">{getOrdersByStatus("ready").length}</Badge>
                             </div>
-                            <div className="space-y-3 max-h-96 overflow-y-auto">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 max-h-96 overflow-y-auto">
                                 {getOrdersByStatus("ready").map((order) => (
                                     <div
                                         key={order.id}
@@ -454,7 +492,7 @@ export default function OrdersPage() {
                                     </div>
                                 ))}
                                 {getOrdersByStatus("ready").length === 0 && (
-                                    <div className="text-center py-8 text-green-600">
+                                    <div className="col-span-full text-center py-8 text-green-600">
                                         <CheckCircle className="w-8 h-8 mx-auto mb-2 opacity-50" />
                                         <p className="text-sm">No orders ready</p>
                                     </div>
@@ -463,7 +501,7 @@ export default function OrdersPage() {
                         </div>
 
                         {/* Collected Orders Column */}
-                        <div className="bg-gradient-to-r from-purple-100/95 via-purple-50/60 to-purple-25/20 backdrop-blur-md rounded-2xl p-4 shadow-lg border border-purple-200/50">
+                        <div className="bg-white rounded-xl p-4 shadow-sm border border-purple-200">
                             <div className="flex items-center justify-between mb-4">
                                 <h3 className="font-bold text-purple-800 flex items-center">
                                     <CheckCircle className="w-5 h-5 mr-2" />
@@ -471,7 +509,7 @@ export default function OrdersPage() {
                                 </h3>
                                 <Badge className="bg-purple-200 text-purple-800">{getOrdersByStatus("collected").length}</Badge>
                             </div>
-                            <div className="space-y-3 max-h-96 overflow-y-auto">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 max-h-96 overflow-y-auto">
                                 {getOrdersByStatus("collected").map((order) => (
                                     <div
                                         key={order.id}
@@ -497,7 +535,7 @@ export default function OrdersPage() {
                                     </div>
                                 ))}
                                 {getOrdersByStatus("collected").length === 0 && (
-                                    <div className="text-center py-8 text-purple-600">
+                                    <div className="col-span-full text-center py-8 text-purple-600">
                                         <CheckCircle className="w-8 h-8 mx-auto mb-2 opacity-50" />
                                         <p className="text-sm">No collected orders</p>
                                     </div>
@@ -506,7 +544,7 @@ export default function OrdersPage() {
                         </div>
 
                         {/* Completed Orders Column */}
-                        <div className="bg-gradient-to-r from-stone-100/95 via-stone-50/60 to-stone-25/20 backdrop-blur-md rounded-2xl p-4 shadow-lg border border-stone-200/50">
+                        <div className="bg-white rounded-xl p-4 shadow-sm border border-stone-200">
                             <div className="flex items-center justify-between mb-4">
                                 <h3 className="font-bold text-stone-800 flex items-center">
                                     <CheckCircle className="w-5 h-5 mr-2" />
@@ -514,7 +552,7 @@ export default function OrdersPage() {
                                 </h3>
                                 <Badge className="bg-stone-200 text-stone-800">{getOrdersByStatus("completed").length}</Badge>
                             </div>
-                            <div className="space-y-3 max-h-96 overflow-y-auto">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 max-h-96 overflow-y-auto">
                                 {getOrdersByStatus("completed").map((order) => (
                                     <div
                                         key={order.id}
@@ -540,7 +578,7 @@ export default function OrdersPage() {
                                     </div>
                                 ))}
                                 {getOrdersByStatus("completed").length === 0 && (
-                                    <div className="text-center py-8 text-stone-600">
+                                    <div className="col-span-full text-center py-8 text-stone-600">
                                         <CheckCircle className="w-8 h-8 mx-auto mb-2 opacity-50" />
                                         <p className="text-sm">No completed orders</p>
                                     </div>

@@ -162,7 +162,7 @@ export function StatusManager({ statusType, title, description }: StatusManagerP
                         <CardDescription>{description}</CardDescription>
                         {error && (
                             <div className="text-sm text-amber-600 mt-2">
-                                Note: Using default statuses. {error}
+                                Note: Using default statuses (customization saved locally)
                             </div>
                         )}
                     </div>
