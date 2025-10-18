@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+// Removed problematic Select component
 import { Separator } from "@/components/ui/separator"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Plus, Minus, Search, ShoppingCart, MapPin, Clock, Info, Utensils } from "lucide-react"
@@ -122,40 +122,22 @@ export default function FoodOrderingInterface({ business }: FoodOrderingProps) {
     clearCart
   } = useCart()
 
-  // Load menu items from database
+  // Use menu items from business prop or fallback to mock data
   useEffect(() => {
-    const loadMenuItems = async () => {
-      if (!business?.id) return
-      
-      try {
-        const { data, error } = await supabase
-          .from('menu_items')
-          .select('*')
-          .eq('business_id', business.id)
-          .eq('is_available', true)
-          .order('category', { ascending: true })
-
-        if (error) {
-          console.error('Error loading menu items:', error)
-          return
-        }
-
-        setMenuItems(data || mockMenu) // Fallback to mock data for now
-      } catch (error) {
-        console.error('Error loading menu items:', error)
-        setMenuItems(mockMenu) // Fallback to mock data
-      } finally {
-        setLoading(false)
-      }
+    if (business?.menu_items && business.menu_items.length > 0) {
+      setMenuItems(business.menu_items)
+    } else {
+      setMenuItems(mockMenu) // Fallback to mock data
     }
+    setLoading(false)
+  }, [business?.menu_items])
 
-    loadMenuItems()
-    
-    // Set business context in cart
+  // Set business context in cart
+  useEffect(() => {
     if (business?.id && business?.name) {
       setBusiness(business.id, business.name)
     }
-  }, [business, setBusiness])
+  }, [business?.id, business?.name])
 
   // Filter menu items
   const filteredMenu = useMemo(() => {
@@ -242,177 +224,201 @@ export default function FoodOrderingInterface({ business }: FoodOrderingProps) {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Search & Filters */}
-      <Card className="p-4">
+      <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
         <div className="flex flex-col md:flex-row gap-4">
           <div className="flex-1">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
               <Input
                 placeholder="Search menu items..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
+                className="pl-12 h-12 text-lg border-gray-200 focus:border-blue-500"
               />
             </div>
           </div>
-          <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {categories.map(category => (
-                <SelectItem key={category} value={category}>
-                  {category}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <select
+            value={selectedCategory}
+            onChange={(e) => setSelectedCategory(e.target.value)}
+            className="w-[200px] h-12 text-lg border border-gray-200 rounded-md px-3 bg-white focus:border-blue-500 focus:outline-none"
+          >
+            {categories.map(category => (
+              <option key={category} value={category}>
+                {category}
+              </option>
+            ))}
+          </select>
         </div>
-      </Card>
+      </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Menu Items */}
-        <div className="lg:col-span-2 space-y-4">
-          <h3 className="text-xl font-semibold text-stone-800">
-            {selectedCategory === 'All' ? 'Menu' : selectedCategory}
-          </h3>
-          
-          {filteredMenu.map(item => (
-            <Card key={item.id} className="overflow-hidden hover:shadow-md transition-shadow">
-              <CardContent className="p-0">
-                <div className="flex">
-                  {/* Item Image Placeholder */}
-                  <div className="w-24 h-24 bg-gradient-to-r from-orange-200 to-orange-300 flex items-center justify-center">
-                    <Utensils className="w-8 h-8 text-orange-600" />
+      <div className="grid grid-cols-1 xl:grid-cols-4 gap-8">
+        {/* Menu Items - Takes up more space */}
+        <div className="xl:col-span-3 space-y-6">
+          <div className="flex items-center justify-between">
+            <h3 className="text-2xl font-bold text-gray-900">
+              {selectedCategory === 'All' ? 'Our Menu' : selectedCategory}
+            </h3>
+            <Badge variant="outline" className="text-sm px-3 py-1">
+              {filteredMenu.length} items
+            </Badge>
+          </div>
+
+          {/* Grid Layout for Menu Items */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {filteredMenu.map(item => (
+              <Card key={item.id} className="group hover:shadow-lg transition-all duration-300 border-0 shadow-md overflow-hidden">
+                <CardContent className="p-0">
+                  {/* Item Image */}
+                  <div className="h-48 bg-gradient-to-br from-orange-100 to-orange-200 flex items-center justify-center relative overflow-hidden">
+                    {item.image_url ? (
+                      <img
+                        src={item.image_url}
+                        alt={item.name}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                    ) : (
+                      <Utensils className="w-16 h-16 text-orange-400" />
+                    )}
+                    {item.popular && (
+                      <Badge className="absolute top-3 left-3 bg-red-500 text-white text-xs px-2 py-1">
+                        Popular
+                      </Badge>
+                    )}
                   </div>
-                  
+
                   {/* Item Details */}
-                  <div className="flex-1 p-4">
-                    <div className="flex items-start justify-between mb-2">
-                      <div>
-                        <h4 className="font-semibold text-stone-800 flex items-center gap-2">
-                          {item.name}
-                          {item.popular && (
-                            <Badge className="text-xs bg-orange-500 text-white">Popular</Badge>
-                          )}
-                        </h4>
-                        <p className="text-sm text-stone-600 mt-1">{item.description}</p>
+                  <div className="p-6">
+                    <div className="mb-3">
+                      <h4 className="text-xl font-bold text-gray-900 mb-2">{item.name}</h4>
+                      <p className="text-gray-600 text-sm leading-relaxed">{item.description}</p>
+                    </div>
+
+                    {/* Price and Prep Time */}
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="text-2xl font-bold text-gray-900">
+                        R{item.price.toFixed(2)}
                       </div>
-                      <div className="text-right">
-                        <div className="text-lg font-semibold text-stone-800">
-                          R{item.price.toFixed(2)}
-                        </div>
+                      <div className="flex items-center gap-1 text-sm text-gray-500">
+                        <Clock className="w-4 h-4" />
+                        {item.prep_time}
                       </div>
                     </div>
-                    
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-4 text-xs text-stone-500">
-                        <div className="flex items-center gap-1">
-                          <Clock className="w-3 h-3" />
-                          {item.prep_time}
-                        </div>
-                        {item.dietary_info.length > 0 && (
-                          <div className="flex gap-1">
-                            {item.dietary_info.map((info: string, index: number) => (
-                              <Badge key={index} variant="outline" className="text-xs">
-                                {info}
-                              </Badge>
-                            ))}
-                          </div>
-                        )}
+
+                    {/* Dietary Info */}
+                    {item.dietary_info && item.dietary_info.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mb-4">
+                        {item.dietary_info.map((info: string, index: number) => (
+                          <Badge key={index} variant="outline" className="text-xs px-2 py-1 border-green-200 text-green-700">
+                            {info}
+                          </Badge>
+                        ))}
                       </div>
-                      
-                      {/* Add to Cart Controls */}
-                      <div className="flex items-center gap-2">
-                        {getCartItemQuantity(item.id) === 0 ? (
+                    )}
+
+                    {/* Add to Cart Controls */}
+                    <div className="flex items-center justify-center">
+                      {getCartItemQuantity(item.id) === 0 ? (
+                        <Button
+                          size="lg"
+                          onClick={() => handleAddToCart(item)}
+                          className="w-full bg-blue-600 hover:bg-blue-700 text-white h-12 text-lg font-medium"
+                        >
+                          <Plus className="w-5 h-5 mr-2" />
+                          Add to Cart
+                        </Button>
+                      ) : (
+                        <div className="flex items-center gap-3 w-full">
                           <Button
-                            size="sm"
-                            onClick={() => handleAddToCart(item)}
-                            className="bg-orange-600 hover:bg-orange-700 text-white"
+                            size="lg"
+                            variant="outline"
+                            onClick={() => handleUpdateQuantity(item.id, getCartItemQuantity(item.id) - 1)}
+                            className="flex-1 h-12 border-blue-200 hover:bg-blue-50"
                           >
-                            <Plus className="w-4 h-4 mr-1" />
-                            Add
+                            <Minus className="w-5 h-5" />
                           </Button>
-                        ) : (
-                          <div className="flex items-center gap-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleUpdateQuantity(item.id, getCartItemQuantity(item.id) - 1)}
-                            >
-                              <Minus className="w-4 h-4" />
-                            </Button>
-                            <span className="font-medium min-w-[2rem] text-center">
+                          <div className="flex-1 text-center">
+                            <span className="text-2xl font-bold text-gray-900">
                               {getCartItemQuantity(item.id)}
                             </span>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleAddToCart(item)}
-                            >
-                              <Plus className="w-4 h-4" />
-                            </Button>
                           </div>
-                        )}
-                      </div>
+                          <Button
+                            size="lg"
+                            variant="outline"
+                            onClick={() => handleAddToCart(item)}
+                            className="flex-1 h-12 border-blue-200 hover:bg-blue-50"
+                          >
+                            <Plus className="w-5 h-5" />
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
 
           {filteredMenu.length === 0 && (
-            <Card className="p-8 text-center">
-              <Utensils className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-800 mb-2">No items found</h3>
-              <p className="text-gray-600">Try adjusting your search or category filter.</p>
+            <Card className="border-0 shadow-sm">
+              <CardContent className="p-12 text-center">
+                <Utensils className="w-16 h-16 text-gray-300 mx-auto mb-6" />
+                <h3 className="text-2xl font-bold text-gray-900 mb-4">No items found</h3>
+                <p className="text-gray-600 text-lg">Try adjusting your search or category filter.</p>
+              </CardContent>
             </Card>
           )}
         </div>
 
         {/* Cart Sidebar */}
-        <div className="lg:col-span-1">
-          <Card className="sticky top-24">
+        <div className="xl:col-span-1">
+          <Card className="sticky top-24 border-0 shadow-lg">
             <CardContent className="p-6">
-              <h3 className="text-lg font-semibold text-stone-800 mb-4 flex items-center gap-2">
-                <ShoppingCart className="w-5 h-5" />
+              <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-3">
+                <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                  <ShoppingCart className="w-4 h-4 text-blue-600" />
+                </div>
                 Your Order
               </h3>
 
               {cartState.items.length === 0 ? (
-                <div className="text-center py-8">
-                  <ShoppingCart className="w-12 h-12 text-gray-400 mx-auto mb-2" />
-                  <p className="text-gray-600 text-sm">Your cart is empty</p>
+                <div className="text-center py-12">
+                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <ShoppingCart className="w-8 h-8 text-gray-400" />
+                  </div>
+                  <p className="text-gray-600">Your cart is empty</p>
+                  <p className="text-sm text-gray-500 mt-1">Add items from the menu to get started</p>
                 </div>
               ) : (
-                <div className="space-y-4">
+                <div className="space-y-6">
                   {/* Order Type Selection */}
                   <div>
-                    <label className="text-sm font-medium text-stone-700 block mb-2">
+                    <label className="text-sm font-semibold text-gray-900 block mb-3">
                       Order Type
                     </label>
-                    <Select value={orderType} onValueChange={(value: 'delivery' | 'pickup') => setOrderType(value)}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="delivery">Delivery</SelectItem>
-                        <SelectItem value="pickup">Pickup</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <select
+                      value={orderType}
+                      onChange={(e) => setOrderType(e.target.value as 'delivery' | 'pickup')}
+                      className="w-full h-12 border border-gray-200 rounded-md px-3 bg-white focus:border-blue-500 focus:outline-none"
+                    >
+                      <option value="delivery">🚚 Delivery</option>
+                      <option value="pickup">🏪 Pickup</option>
+                    </select>
                   </div>
 
                   {/* Cart Items */}
-                  <div className="space-y-2">
+                  <div className="space-y-3">
+                    <h4 className="text-sm font-semibold text-gray-900">Items in your cart</h4>
                     {cartState.items.map(item => (
-                      <div key={item.id} className="flex items-center justify-between text-sm">
-                        <div className="flex-1">
-                          <span className="font-medium">{item.quantity}x {item.name}</span>
+                      <div key={item.id} className="bg-gray-50 rounded-lg p-3">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <span className="font-medium text-gray-900">{item.name}</span>
+                            <div className="text-sm text-gray-600">Qty: {item.quantity}</div>
+                          </div>
+                          <span className="font-bold text-gray-900">R{(item.price * item.quantity).toFixed(2)}</span>
                         </div>
-                        <span className="font-medium">R{(item.price * item.quantity).toFixed(2)}</span>
                       </div>
                     ))}
                   </div>
@@ -420,49 +426,59 @@ export default function FoodOrderingInterface({ business }: FoodOrderingProps) {
                   <Separator />
 
                   {/* Order Summary */}
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span>Subtotal</span>
-                      <span>R{cartTotal.toFixed(2)}</span>
-                    </div>
-                    {orderType === 'delivery' && (
-                      <div className="flex justify-between">
-                        <span>Delivery Fee</span>
-                        <span>R{deliveryFee.toFixed(2)}</span>
+                  <div className="space-y-3">
+                    <h4 className="text-sm font-semibold text-gray-900">Order Summary</h4>
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-gray-700">
+                        <span>Subtotal</span>
+                        <span>R{cartTotal.toFixed(2)}</span>
                       </div>
-                    )}
-                    <Separator />
-                    <div className="flex justify-between font-semibold">
-                      <span>Total</span>
-                      <span>R{orderTotal.toFixed(2)}</span>
+                      {orderType === 'delivery' && (
+                        <div className="flex justify-between text-gray-700">
+                          <span>Delivery Fee</span>
+                          <span>R{deliveryFee.toFixed(2)}</span>
+                        </div>
+                      )}
+                      <Separator />
+                      <div className="flex justify-between text-lg font-bold text-gray-900">
+                        <span>Total</span>
+                        <span>R{orderTotal.toFixed(2)}</span>
+                      </div>
                     </div>
                   </div>
 
                   {/* Minimum Order Warning */}
                   {cartTotal < business.minimum_order && (
-                    <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
-                      <div className="flex items-center gap-2">
-                        <Info className="w-4 h-4 text-amber-600" />
-                        <span className="text-xs text-amber-800">
-                          Minimum order: R{business.minimum_order}
-                        </span>
+                    <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                      <div className="flex items-start gap-3">
+                        <Info className="w-5 h-5 text-amber-600 mt-0.5" />
+                        <div>
+                          <p className="text-sm font-medium text-amber-800">Minimum order required</p>
+                          <p className="text-xs text-amber-700 mt-1">
+                            Add R{(business.minimum_order - cartTotal).toFixed(2)} more to place your order
+                          </p>
+                        </div>
                       </div>
                     </div>
                   )}
 
                   {/* Estimated Time */}
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                    <div className="flex items-center gap-2">
-                      <Clock className="w-4 h-4 text-blue-600" />
-                      <span className="text-xs text-blue-800">
-                        {orderType === 'delivery' ? 'Estimated delivery' : 'Ready for pickup'}: {business.estimated_delivery_time}
-                      </span>
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <div className="flex items-start gap-3">
+                      <Clock className="w-5 h-5 text-blue-600 mt-0.5" />
+                      <div>
+                        <p className="text-sm font-medium text-blue-800">
+                          {orderType === 'delivery' ? 'Estimated delivery' : 'Ready for pickup'}
+                        </p>
+                        <p className="text-xs text-blue-700 mt-1">{business.estimated_delivery_time}</p>
+                      </div>
                     </div>
                   </div>
 
                   {/* Checkout Button */}
                   <Button
-                    className="w-full bg-orange-600 hover:bg-orange-700 text-white"
+                    size="lg"
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white h-12 text-lg font-medium"
                     onClick={handleCheckout}
                     disabled={cartTotal < business.minimum_order}
                   >
@@ -491,15 +507,14 @@ export default function FoodOrderingInterface({ business }: FoodOrderingProps) {
               <label className="text-sm font-medium text-stone-700 block mb-2">
                 Order Type
               </label>
-              <Select value={orderType} onValueChange={(value: 'delivery' | 'pickup') => setOrderType(value)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="delivery">Delivery</SelectItem>
-                  <SelectItem value="pickup">Pickup</SelectItem>
-                </SelectContent>
-              </Select>
+              <select
+                value={orderType}
+                onChange={(e) => setOrderType(e.target.value as 'delivery' | 'pickup')}
+                className="w-full h-12 border border-gray-200 rounded-md px-3 bg-white focus:border-blue-500 focus:outline-none"
+              >
+                <option value="delivery">Delivery</option>
+                <option value="pickup">Pickup</option>
+              </select>
             </div>
 
             {/* Delivery Address */}

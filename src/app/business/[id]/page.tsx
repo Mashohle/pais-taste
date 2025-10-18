@@ -1,23 +1,20 @@
 "use client"
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
+import { Skeleton } from "@/components/ui/skeleton"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { 
-  Star, 
-  MapPin, 
-  Clock, 
-  Phone, 
-  Globe, 
+import {
+  Star,
+  MapPin,
+  Clock,
+  Phone,
+  Globe,
   Heart,
   Share2,
   ArrowLeft,
-  Calendar,
-  ShoppingCart,
-  Plus,
-  Minus,
   Info
 } from "lucide-react"
 import Link from 'next/link'
@@ -26,9 +23,7 @@ import { DynamicIcon } from '@/lib/utils/icon-mapper'
 import FoodOrderingInterface from '@/components/business/food-ordering-interface'
 import ServiceBookingInterface from '@/components/business/service-booking-interface'
 import RetailOrderingInterface from '@/components/business/retail-ordering-interface'
-import { useBusiness as useBusinessContext, Business } from '@/lib/contexts/business-context'
 import { useBusiness } from '@/lib/hooks/use-business'
-import { BusinessErrorDisplay } from '@/components/business/business-error-boundary'
 
 // Business data interface for backward compatibility with existing components
 interface BusinessPageData {
@@ -58,6 +53,7 @@ interface BusinessPageData {
   price_range?: string
   verified: boolean
   featured: boolean
+  menu_items?: any[]
 }
 
 const categories = {
@@ -75,19 +71,34 @@ export default function BusinessDetailPage() {
   const [isFavorited, setIsFavorited] = useState(false)
   
   // Use the custom hook for business data
-  const { 
+  const {
     business,
-    isLoading,
-    hasError,
+    loading,
     error,
     refetch
   } = useBusiness(businessSlug)
 
   // Convert business data from hook to page format if needed
   const businessPageData: BusinessPageData | null = business ? {
-    ...business,
-    image_url: business.logo_url,
+    id: business.id,
+    name: business.name,
+    category: business.category?.id || 'service',
+    category_name: business.category?.name || 'Service',
+    description: business.description,
     long_description: business.long_description || business.description,
+    image_url: business.logo_url,
+    rating: business.rating,
+    review_count: business.review_count,
+    address: business.address,
+    city: business.city,
+    province: business.province,
+    phone: business.phone,
+    website: business.website,
+    email: business.email,
+    is_open: business.is_open,
+    delivery_fee: business.delivery_fee || 0,
+    minimum_order: business.minimum_order || 0,
+    menu_items: business.menu_items || [],
     opening_hours: {
       monday: { open: '09:00', close: '18:00', closed: false },
       tuesday: { open: '09:00', close: '18:00', closed: false },
@@ -97,11 +108,10 @@ export default function BusinessDetailPage() {
       saturday: { open: '09:00', close: '17:00', closed: false },
       sunday: { open: '10:00', close: '16:00', closed: false }
     },
-    estimated_delivery_time: '30-45 min',
-    estimated_service_time: '45-60 min',
+    features: business.features || [],
     verified: true,
     featured: false,
-    features: business.features || []
+    price_range: business.price_range
   } : null
 
   const handleShare = async () => {
@@ -124,23 +134,12 @@ export default function BusinessDetailPage() {
     }
   }
 
-  const getCurrentStatus = () => {
-    if (!businessPageData) return { isOpen: false, text: 'Closed' }
-
-    const now = new Date()
-    const dayName = now.toLocaleDateString('en', { weekday: 'long' }).toLowerCase()
-    const currentTime = now.toTimeString().slice(0, 5)
-
-    const todayHours = businessPageData.opening_hours[dayName]
-    if (!todayHours || todayHours.closed) {
-      return { isOpen: false, text: 'Closed Today' }
-    }
-
-    const isCurrentlyOpen = currentTime >= todayHours.open && currentTime <= todayHours.close
-    if (isCurrentlyOpen) {
-      return { isOpen: true, text: `Open until ${todayHours.close}` }
-    } else {
-      return { isOpen: false, text: `Opens at ${todayHours.open}` }
+  // Status comes from API now
+  const getStatusFromBusiness = () => {
+    if (!business) return { isOpen: false, text: 'Closed' }
+    return {
+      isOpen: business.is_open,
+      text: business.status_text || (business.is_open ? 'Open' : 'Closed')
     }
   }
 
@@ -172,20 +171,155 @@ export default function BusinessDetailPage() {
   }
 
   // Handle loading state
-  if (isLoading) {
+  if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-stone-50 to-stone-100 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-stone-600 mx-auto mb-4"></div>
-          <p className="text-stone-700">Loading business details...</p>
+      <div className="min-h-screen bg-gradient-to-br from-stone-50 to-stone-100">
+        {/* Header Skeleton */}
+        <nav className="bg-white/90 backdrop-blur-md border-b border-stone-200 sticky top-0 z-50">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex justify-between items-center h-16">
+              <div className="flex items-center space-x-4">
+                <Skeleton className="h-8 w-24" />
+                <Skeleton className="h-6 w-32" />
+              </div>
+              <div className="flex items-center space-x-4">
+                <Skeleton className="h-8 w-8 rounded-full" />
+                <Skeleton className="h-8 w-8 rounded-full" />
+              </div>
+            </div>
+          </div>
+        </nav>
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* Business Header Skeleton */}
+          <div className="mb-8">
+            <div className="flex flex-col lg:flex-row gap-8">
+              {/* Business Image Skeleton */}
+              <div className="lg:w-1/3">
+                <Skeleton className="h-64 lg:h-80 rounded-2xl" />
+              </div>
+
+              {/* Business Info Skeleton */}
+              <div className="lg:w-2/3">
+                <div className="flex items-center gap-2 mb-2">
+                  <Skeleton className="w-8 h-8 rounded-lg" />
+                  <Skeleton className="h-6 w-20" />
+                  <Skeleton className="h-6 w-16" />
+                </div>
+
+                <Skeleton className="h-8 w-64 mb-4" />
+                <Skeleton className="h-4 w-full mb-2" />
+                <Skeleton className="h-4 w-3/4 mb-6" />
+
+                <div className="flex items-center space-x-6 mb-6">
+                  <div className="flex items-center space-x-1">
+                    <Skeleton className="w-5 h-5" />
+                    <Skeleton className="h-4 w-12" />
+                  </div>
+                  <div className="flex items-center space-x-1">
+                    <Skeleton className="w-4 h-4" />
+                    <Skeleton className="h-4 w-32" />
+                  </div>
+                </div>
+
+                <div className="flex items-center space-x-4">
+                  <Skeleton className="h-10 w-24" />
+                  <Skeleton className="h-10 w-24" />
+                  <Skeleton className="h-10 w-10 rounded-full" />
+                  <Skeleton className="h-10 w-10 rounded-full" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Tabs Skeleton */}
+          <div className="mb-6">
+            <div className="flex space-x-1 bg-stone-100 p-1 rounded-lg mb-6 w-fit">
+              <Skeleton className="h-10 w-20" />
+              <Skeleton className="h-10 w-20" />
+              <Skeleton className="h-10 w-20" />
+            </div>
+          </div>
+
+          {/* Content Area Skeleton */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Main Content */}
+            <div className="lg:col-span-2">
+              <Card>
+                <CardContent className="p-6">
+                  <Skeleton className="h-6 w-32 mb-4" />
+                  <div className="space-y-4">
+                    {[...Array(4)].map((_, i) => (
+                      <div key={i} className="flex items-center space-x-4 p-4 border rounded-lg">
+                        <Skeleton className="w-16 h-16 rounded-lg" />
+                        <div className="flex-1">
+                          <Skeleton className="h-5 w-40 mb-2" />
+                          <Skeleton className="h-4 w-full mb-1" />
+                          <Skeleton className="h-4 w-24" />
+                        </div>
+                        <Skeleton className="h-8 w-20" />
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Sidebar */}
+            <div className="space-y-6">
+              <Card>
+                <CardContent className="p-6">
+                  <Skeleton className="h-6 w-24 mb-4" />
+                  <div className="space-y-3">
+                    <div className="flex items-center space-x-2">
+                      <Skeleton className="w-4 h-4" />
+                      <Skeleton className="h-4 w-32" />
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Skeleton className="w-4 h-4" />
+                      <Skeleton className="h-4 w-28" />
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Skeleton className="w-4 h-4" />
+                      <Skeleton className="h-4 w-36" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="p-6">
+                  <Skeleton className="h-6 w-28 mb-4" />
+                  <div className="space-y-3">
+                    {[...Array(7)].map((_, i) => (
+                      <div key={i} className="flex justify-between">
+                        <Skeleton className="h-4 w-16" />
+                        <Skeleton className="h-4 w-20" />
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
         </div>
       </div>
     )
   }
 
   // Handle error state
-  if (hasError && error) {
-    return <BusinessErrorDisplay error={error} />
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-stone-50 to-stone-100 flex items-center justify-center">
+        <div className="text-center max-w-md mx-auto px-4">
+          <div className="text-red-600 mb-4">❌ Error loading business</div>
+          <p className="text-stone-700 mb-4">{error}</p>
+          <Button onClick={() => refetch()}>
+            Try Again
+          </Button>
+        </div>
+      </div>
+    )
   }
 
   // Handle missing business (shouldn't happen with proper error handling, but keep as fallback)
@@ -204,23 +338,34 @@ export default function BusinessDetailPage() {
     )
   }
 
-  const status = getCurrentStatus()
-  const categoryInfo = categories[businessPageData.category as keyof typeof categories]
+  const status = getStatusFromBusiness()
+  const categoryInfo = categories[businessPageData.category as keyof typeof categories] || {
+    icon: 'building',
+    color: 'bg-gray-100 text-gray-700'
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-stone-50 to-stone-100">
-      {/* Header */}
-      <div className="bg-white/90 backdrop-blur-md border-b border-stone-200 sticky top-0 z-50">
+      {/* Navigation Header - Like Home Page */}
+      <nav className="bg-white/90 backdrop-blur-md border-b border-stone-200 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
+          <div className="flex justify-between items-center h-16">
+            <div className="flex items-center space-x-4">
+              <Link href="/">
+                <div className="text-2xl font-bold bg-gradient-to-r from-stone-600 to-stone-800 bg-clip-text text-transparent">
+                  SideHusl
+                </div>
+              </Link>
+              <Badge variant="secondary" className="text-xs">
+                Customer Portal
+              </Badge>
+            </div>
+
             <div className="flex items-center space-x-4">
               <Button variant="ghost" size="sm" onClick={() => router.back()}>
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Back
               </Button>
-            </div>
-            
-            <div className="flex items-center space-x-2">
               <Button
                 variant="ghost"
                 size="sm"
@@ -232,148 +377,146 @@ export default function BusinessDetailPage() {
               <Button variant="ghost" size="sm" onClick={handleShare}>
                 <Share2 className="w-4 h-4" />
               </Button>
-              <Link href="/customer/auth">
-                <Button variant="outline" size="sm">
-                  Sign In
-                </Button>
-              </Link>
             </div>
           </div>
         </div>
-      </div>
+      </nav>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Business Header */}
-        <div className="mb-8">
-          <div className="flex flex-col lg:flex-row gap-8">
-            {/* Business Image */}
-            <div className="lg:w-1/3">
-              <div className="h-64 lg:h-80 bg-gradient-to-r from-stone-200 to-stone-300 rounded-2xl flex items-center justify-center relative">
-                <DynamicIcon name={categoryInfo.icon} className="w-16 h-16 text-stone-600" />
-                {businessPageData.featured && (
-                  <Badge className="absolute top-4 left-4 bg-yellow-500 text-white">
-                    Featured
-                  </Badge>
+        {/* Business Card - Similar to Home Page Business Cards */}
+        {businessPageData && (
+          <Card className="hover:shadow-lg transition-shadow mb-8">
+            <CardContent className="p-0">
+              <div className="h-48 bg-gradient-to-r from-stone-200 to-stone-300 rounded-t-lg flex items-center justify-center overflow-hidden">
+                {businessPageData.image_url ? (
+                  <img
+                    src={businessPageData.image_url}
+                    alt={businessPageData.name}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).style.display = 'none'
+                      const parent = (e.target as HTMLImageElement).parentElement
+                      if (parent) {
+                        parent.innerHTML = `<div class="w-12 h-12 text-stone-600"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path></svg></div>`
+                      }
+                    }}
+                  />
+                ) : (
+                  <DynamicIcon name={categoryInfo.icon} className="w-12 h-12 text-stone-600" />
                 )}
-                {businessPageData.verified && (
-                  <Badge className="absolute top-4 right-4 bg-blue-500 text-white">
-                    Verified
-                  </Badge>
-                )}
-              </div>
-            </div>
-
-            {/* Business Info */}
-            <div className="lg:w-2/3">
-              <div className="flex items-center gap-2 mb-2">
-                <div className={`w-8 h-8 rounded-lg ${categoryInfo.color} flex items-center justify-center`}>
-                  <DynamicIcon name={categoryInfo.icon} className="w-4 h-4" />
-                </div>
-                <Badge variant="secondary">{businessPageData.category_name}</Badge>
-                <Badge variant={status.isOpen ? "default" : "secondary"}>
-                  {status.text}
-                </Badge>
               </div>
 
-              <h1 className="text-3xl font-bold text-stone-800 mb-2">{businessPageData.name}</h1>
-              
-              <div className="flex items-center space-x-4 mb-4">
-                <div className="flex items-center space-x-1">
-                  <Star className="w-5 h-5 text-yellow-500 fill-current" />
-                  <span className="font-semibold">{businessPageData.rating}</span>
-                  <span className="text-stone-600">({businessPageData.review_count} reviews)</span>
-                </div>
-                <span className="text-stone-400">•</span>
-                <span className="text-stone-600">{businessPageData.price_range}</span>
-              </div>
-
-              <p className="text-stone-700 mb-4">{businessPageData.description}</p>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-stone-600">
-                <div className="flex items-center space-x-2">
-                  <MapPin className="w-4 h-4" />
-                  <span>{businessPageData.address}</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Phone className="w-4 h-4" />
-                  <span>{businessPageData.phone}</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Clock className="w-4 h-4" />
-                  <span>{businessPageData.estimated_delivery_time || businessPageData.estimated_service_time}</span>
-                </div>
-                {businessPageData.website && (
-                  <div className="flex items-center space-x-2">
-                    <Globe className="w-4 h-4" />
-                    <a href={businessPageData.website} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
-                      Website
-                    </a>
+              <div className="p-6">
+                <div className="flex justify-between items-start mb-4">
+                  <h1 className="text-3xl font-bold text-stone-800">{businessPageData.name}</h1>
+                  <div className="flex items-center space-x-1">
+                    <Star className="w-5 h-5 text-yellow-500 fill-current" />
+                    <span className="text-lg font-medium">{businessPageData.rating || 0}</span>
+                    <span className="text-sm text-gray-500">({businessPageData.review_count || 0})</span>
                   </div>
-                )}
-              </div>
-
-              {/* Features */}
-              <div className="flex flex-wrap gap-2 mt-4">
-                {businessPageData.features.map((feature: string, index: number) => (
-                  <Badge key={index} variant="outline" className="text-xs">
-                    {feature}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Tabs */}
-        <Tabs defaultValue="order" className="space-y-6">
-          <TabsList>
-            <TabsTrigger value="order" className="flex items-center gap-2">
-              {businessPageData.category === 'food' || businessPageData.category === 'retail' ? (
-                <ShoppingCart className="w-4 h-4" />
-              ) : (
-                <Calendar className="w-4 h-4" />
-              )}
-              {businessPageData.category === 'food' || businessPageData.category === 'retail' ? 'Order' : 'Book Service'}
-            </TabsTrigger>
-            <TabsTrigger value="info">Info</TabsTrigger>
-            <TabsTrigger value="reviews">Reviews</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="order">
-            {renderOrderingInterface()}
-          </TabsContent>
-
-          <TabsContent value="info">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              <Card className="p-6">
-                <h3 className="text-lg font-semibold text-stone-800 mb-4">About</h3>
-                <p className="text-stone-700">{businessPageData.long_description}</p>
-              </Card>
-              
-              <Card className="p-6">
-                <h3 className="text-lg font-semibold text-stone-800 mb-4">Opening Hours</h3>
-                <div className="space-y-2">
-                  {Object.entries(businessPageData.opening_hours).map(([day, hours]: [string, any]) => (
-                    <div key={day} className="flex justify-between">
-                      <span className="capitalize font-medium">{day}</span>
-                      <span className="text-stone-600">
-                        {hours.closed ? 'Closed' : `${hours.open} - ${hours.close}`}
-                      </span>
-                    </div>
-                  ))}
                 </div>
-              </Card>
-            </div>
-          </TabsContent>
 
-          <TabsContent value="reviews">
-            <Card className="p-6 text-center">
-              <Star className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-800 mb-2">Reviews Coming Soon</h3>
-              <p className="text-gray-600">Customer reviews and ratings will be available soon.</p>
-            </Card>
-          </TabsContent>
-        </Tabs>
+                <p className="text-stone-600 mb-4 text-lg">{businessPageData.description}</p>
+
+                <div className="flex items-center space-x-6 text-stone-500 mb-4">
+                  <div className="flex items-center space-x-2">
+                    <MapPin className="w-4 h-4" />
+                    <span>{businessPageData.address}</span>
+                  </div>
+                  {businessPageData.phone && (
+                    <div className="flex items-center space-x-2">
+                      <Phone className="w-4 h-4" />
+                      <span>{businessPageData.phone}</span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <Badge variant={status.isOpen ? "default" : "secondary"}>
+                      {status.text}
+                    </Badge>
+                    <Badge variant="outline" className="text-xs">
+                      {businessPageData.category_name}
+                    </Badge>
+                  </div>
+                  {businessPageData.website && (
+                    <Button variant="outline" size="sm" asChild>
+                      <a href={businessPageData.website} target="_blank" rel="noopener noreferrer">
+                        <Globe className="w-4 h-4 mr-2" />
+                        Website
+                      </a>
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Simple Tabs - Like Home Page Style */}
+        {businessPageData && (
+          <Tabs defaultValue="menu" className="space-y-6">
+            <div className="flex justify-center">
+              <TabsList className="bg-white p-1 rounded-lg shadow-sm">
+                <TabsTrigger value="menu" className="text-base">
+                  {businessPageData.category === 'food' ? 'Menu' : businessPageData.category === 'retail' ? 'Products' : 'Services'}
+                </TabsTrigger>
+                <TabsTrigger value="info" className="text-base">
+                  About
+                </TabsTrigger>
+                <TabsTrigger value="contact" className="text-base">
+                  Contact
+                </TabsTrigger>
+              </TabsList>
+            </div>
+
+            <TabsContent value="menu">
+              {renderOrderingInterface()}
+            </TabsContent>
+
+            <TabsContent value="info">
+              <Card>
+                <CardContent className="p-8">
+                  <h3 className="text-2xl font-bold text-stone-800 mb-4">About {businessPageData.name}</h3>
+                  <p className="text-stone-700 leading-relaxed text-lg">
+                    {businessPageData.long_description}
+                  </p>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="contact">
+              <Card>
+                <CardContent className="p-8">
+                  <h3 className="text-2xl font-bold text-stone-800 mb-6">Contact Information</h3>
+                  <div className="space-y-4">
+                    {businessPageData.phone && (
+                      <div className="flex items-center space-x-3">
+                        <Phone className="w-5 h-5 text-stone-400" />
+                        <a href={`tel:${businessPageData.phone}`} className="text-stone-700 hover:text-stone-900">
+                          {businessPageData.phone}
+                        </a>
+                      </div>
+                    )}
+                    {businessPageData.email && (
+                      <div className="flex items-center space-x-3">
+                        <span className="w-5 h-5 text-stone-400">✉</span>
+                        <a href={`mailto:${businessPageData.email}`} className="text-stone-700 hover:text-stone-900">
+                          {businessPageData.email}
+                        </a>
+                      </div>
+                    )}
+                    <div className="flex items-center space-x-3">
+                      <MapPin className="w-5 h-5 text-stone-400" />
+                      <span className="text-stone-700">{businessPageData.address}</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
+        )}
       </div>
     </div>
   )
