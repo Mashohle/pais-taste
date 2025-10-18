@@ -9,8 +9,8 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Search, Filter, Edit, Trash2, Plus, Eye, EyeOff, ChevronDown, Package } from "lucide-react"
 import { useState } from "react"
 import { useRouter } from 'next/navigation'
-import { useMenuApi } from '@/lib/hooks/use-menu-api'
-import { usePageLoading } from '@/lib/hooks/use-loading-coordinator'
+import { useMenuApi } from '@/lib/hooks'
+import { usePageLoading } from '@/lib/hooks'
 
 export default function MenuManagement() {
   // Use forAdmin=true to show all items in admin

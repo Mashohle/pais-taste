@@ -13,7 +13,7 @@ import { Switch } from "@/components/ui/switch"
 import { Separator } from "@/components/ui/separator"
 import { StatusManager } from "@/components/admin/status-manager"
 import { Settings, Building, Users, Bell, Palette, CreditCard, Clock, Shield, Save, Upload, MapPin } from "lucide-react"
-import { useBusinessAdminAuth } from '@/lib/hooks/use-business-admin-auth'
+import { useBusinessAdminAuth } from '@/lib/hooks'
 
 export default function SettingsPage() {
     const { user, userBusinesses, currentBusiness } = useBusinessAdminAuth()

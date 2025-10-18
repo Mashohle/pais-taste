@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import Image from 'next/image'
-import { useAdminLogin } from '@/lib/hooks/use-admin-login'
+import { useAdminLogin } from '@/lib/hooks'
 
 export default function AdminLogin() {
   console.log('🔑 LOGIN PAGE: AdminLogin component rendering')

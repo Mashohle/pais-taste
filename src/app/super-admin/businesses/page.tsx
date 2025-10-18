@@ -21,7 +21,7 @@ import {
   Building2,
   RefreshCw
 } from "lucide-react"
-import { useBusinesses, Business } from "@/lib/hooks/use-businesses"
+import { useBusinesses, Business } from "@/lib/hooks"
 
 export default function BusinessesManagement() {
   const [searchTerm, setSearchTerm] = useState("")

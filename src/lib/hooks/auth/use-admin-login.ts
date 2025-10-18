@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useBusinessAdminAuth } from '@/lib/hooks/use-business-admin-auth'
+import { useBusinessAdminAuth } from '@/lib/hooks'
 import { useAuth } from '@/lib/contexts/auth-context'
 
 interface AdminLoginState {

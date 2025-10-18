@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from '@/lib/contexts/auth-context'
-import { useOrders } from '@/lib/hooks/use-orders'
+import { useOrders } from '@/lib/hooks'
 import SettingsTab from '@/components/account/settings'
 
 export default function SettingsPage() {

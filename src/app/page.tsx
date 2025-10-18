@@ -9,7 +9,7 @@ import { Search, MapPin, Clock, Star, ChevronRight, Utensils, ShoppingBag, Wrenc
 import Link from 'next/link'
 import { DynamicIcon } from '@/lib/utils/icon-mapper'
 import { useAuth } from '@/lib/contexts/auth-context'
-import { useCustomerPortal } from '@/lib/hooks/use-customer-portal'
+import { useCustomerPortal } from '@/lib/hooks'
 
 // Dynamic Content API Response Interface (to be consumed from super admin portal)
 interface DynamicScreenContent {
@@ -55,7 +55,7 @@ export default function CustomerPortalHome() {
         // This will eventually call your super admin API
         // const response = await fetch('/api/dynamic-content/home')
         // const content = await response.json()
-        
+
         // For now, simulate no dynamic content configured
         await new Promise(resolve => setTimeout(resolve, 1000))
         setDynamicContent(null) // No content configured yet
@@ -70,14 +70,22 @@ export default function CustomerPortalHome() {
     fetchDynamicContent()
   }, [])
 
-  // Handle search (no filtering by category on home page)
-  const handleSearch = (term: string) => {
+  // Debounce search to avoid excessive API calls and reloading
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (searchTerm.trim()) {
+        searchBusinesses(searchTerm)
+      } else if (!selectedCategory) {
+        filterByCategory(null)
+      }
+    }, 300) // 300ms debounce delay
+
+    return () => clearTimeout(timeoutId)
+  }, [searchTerm, searchBusinesses, filterByCategory, selectedCategory])
+
+  // Handle search input change (just update state, debounce effect handles API call)
+  const handleSearchChange = (term: string) => {
     setSearchTerm(term)
-    if (term.trim()) {
-      searchBusinesses(term)
-    } else {
-      filterByCategory(null)
-    }
   }
 
   // Dynamic Content Renderer (placeholder for super admin built screens)
@@ -306,7 +314,7 @@ export default function CustomerPortalHome() {
                 placeholder="Search for businesses, food, services..."
                 className="w-full pl-12 pr-4 py-4 rounded-2xl border border-stone-200 focus:ring-2 focus:ring-stone-400 focus:border-transparent text-lg"
                 value={searchTerm}
-                onChange={(e) => handleSearch(e.target.value)}
+                onChange={(e) => handleSearchChange(e.target.value)}
               />
               <Button className="absolute right-2 top-1/2 transform -translate-y-1/2 rounded-xl">
                 Search

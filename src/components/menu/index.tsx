@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Plus, ShoppingCartIcon, Package } from "lucide-react"
-import { useMenuItems } from '@/lib/hooks/use-menu-items'
+import { useMenuItems } from '@/lib/hooks'
 import { ShoppingCart } from "@/components/cart"
 import { useCart } from '@/lib/contexts/cart-context'
 import { useState, useEffect, useMemo } from 'react'

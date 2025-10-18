@@ -6,7 +6,7 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { useState, useEffect } from "react"
-import { useOrders } from '@/lib/hooks/use-orders'
+import { useOrders } from '@/lib/hooks'
 import { supabase } from '@/lib/supabase'
 
 export default function OrderConfirmationPage() {

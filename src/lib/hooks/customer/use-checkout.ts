@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { useCart } from '@/lib/contexts/cart-context'
-import { useBusiness } from './use-business'
-import { useBusinessErrorHandler } from './use-business-error-handler'
+import { useBusiness } from '../business/use-business'
+import { useBusinessErrorHandler } from '../business/use-business-error-handler'
 
 export interface CheckoutData {
   business: ReturnType<typeof useBusiness>['business'] | null
@@ -16,10 +16,9 @@ export function useCheckout() {
   const businessContext = getBusinessContext()
   
   // Get business data using the business hook
-  const { 
+  const {
     business,
-    isLoading: isLoadingBusiness,
-    hasError: hasBusinessError,
+    loading: isLoadingBusiness,
     error: businessError
   } = useBusiness(businessContext.business_id)
 
@@ -77,10 +76,10 @@ export function useCheckout() {
   return {
     ...checkoutData,
     isLoading: isLoadingBusiness || isValidating,
-    hasError: hasBusinessError || hasValidationError,
+    hasError: !!businessError || hasValidationError,
     error: businessError || validationError,
     businessContext,
-    
+
     // Convenience getters
     isEmpty: orderItems.length === 0,
     businessId: businessContext.business_id,

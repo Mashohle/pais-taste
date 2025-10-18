@@ -14,7 +14,7 @@ import {
   Loader2 
 } from "lucide-react"
 import Link from "next/link"
-import { useSuperAdminLogin } from '@/lib/hooks/use-super-admin-login'
+import { useSuperAdminLogin } from '@/lib/hooks'
 
 export default function SuperAdminLogin() {
   const {

@@ -1,8 +1,8 @@
 "use client"
 
 import { useState } from 'react'
-import { useApplicationSubmission } from '@/lib/hooks/use-application-submission'
-import { useBusinessApplicationForm } from '@/lib/hooks/use-business-application-form'
+import { useApplicationSubmission } from '@/lib/hooks'
+import { useBusinessApplicationForm } from '@/lib/hooks'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"

@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
-import { useSuperAdminAuth } from '@/lib/hooks/use-super-admin-auth'
+import { useSuperAdminAuth } from '@/lib/hooks'
 
 interface SuperAdminGuardProps {
   children: React.ReactNode

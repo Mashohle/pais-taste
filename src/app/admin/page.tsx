@@ -3,7 +3,7 @@
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Clock, Users, CheckCircle, AlertCircle, ChevronRight, Calendar, ShoppingBag, TrendingUp, Plus, Activity } from "lucide-react"
-import { useBusinessAdminAuth } from '@/lib/hooks/use-business-admin-auth'
+import { useBusinessAdminAuth } from '@/lib/hooks'
 import { DynamicIcon } from '@/lib/utils/icon-mapper'
 import Link from 'next/link'
 

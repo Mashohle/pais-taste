@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import { useState, useEffect } from 'react'
 
 import { createOrder } from '@/lib/orders'
-import { useCheckout } from '@/lib/hooks/use-checkout'
+import { useCheckout } from '@/lib/hooks'
 import { useCart } from '@/lib/contexts/cart-context'
 import { BusinessErrorDisplay } from '@/components/business/business-error-boundary'
 

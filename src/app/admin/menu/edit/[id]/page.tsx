@@ -14,7 +14,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
 import { Badge } from "@/components/ui/badge"
-import { useMenuApi } from '@/lib/hooks/use-menu-api'
+import { useMenuApi } from '@/lib/hooks'
 
 interface FormData {
   name: string

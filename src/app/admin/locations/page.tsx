@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { Skeleton } from "@/components/ui/skeleton"
-import { usePageLoading } from '@/lib/hooks/use-loading-coordinator'
+import { usePageLoading } from '@/lib/hooks'
 import {
   Search,
   Plus,

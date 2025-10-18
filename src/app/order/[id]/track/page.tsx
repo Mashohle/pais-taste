@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { CheckCircle, Clock, ChefHat, Package, MapPin, Phone, MessageCircle, ArrowLeft, User } from "lucide-react"
 import { useState, useEffect, use } from "react"
 import { useRouter } from "next/navigation"
-import { useOrders } from '@/lib/hooks/use-orders'
+import { useOrders } from '@/lib/hooks'
 import Link from "next/link"
 import { supabase } from "@/lib/supabase"
 import { useAuth } from "@/lib/contexts/auth-context"

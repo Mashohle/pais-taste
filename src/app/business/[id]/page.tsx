@@ -15,7 +15,9 @@ import {
   Heart,
   Share2,
   ArrowLeft,
-  Info
+  Info,
+  ShoppingCart,
+  Calendar
 } from "lucide-react"
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
@@ -23,7 +25,7 @@ import { DynamicIcon } from '@/lib/utils/icon-mapper'
 import FoodOrderingInterface from '@/components/business/food-ordering-interface'
 import ServiceBookingInterface from '@/components/business/service-booking-interface'
 import RetailOrderingInterface from '@/components/business/retail-ordering-interface'
-import { useBusiness } from '@/lib/hooks/use-business'
+import { useBusiness } from '@/lib/hooks'
 
 // Business data interface for backward compatibility with existing components
 interface BusinessPageData {
@@ -383,42 +385,73 @@ export default function BusinessDetailPage() {
       </nav>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Business Card - Similar to Home Page Business Cards */}
+        {/* Business Header - Matching Skeleton Layout */}
         {businessPageData && (
-          <Card className="hover:shadow-lg transition-shadow mb-8">
-            <CardContent className="p-0">
-              <div className="h-48 bg-gradient-to-r from-stone-200 to-stone-300 rounded-t-lg flex items-center justify-center overflow-hidden">
-                {businessPageData.image_url ? (
-                  <img
-                    src={businessPageData.image_url}
-                    alt={businessPageData.name}
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).style.display = 'none'
-                      const parent = (e.target as HTMLImageElement).parentElement
-                      if (parent) {
-                        parent.innerHTML = `<div class="w-12 h-12 text-stone-600"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path></svg></div>`
-                      }
-                    }}
-                  />
-                ) : (
-                  <DynamicIcon name={categoryInfo.icon} className="w-12 h-12 text-stone-600" />
-                )}
+          <div className="mb-8">
+            <div className="flex flex-col lg:flex-row gap-8">
+              {/* Business Image */}
+              <div className="lg:w-1/3">
+                <div className="h-64 lg:h-80 bg-gradient-to-r from-stone-200 to-stone-300 rounded-2xl flex items-center justify-center overflow-hidden relative shadow-lg">
+                  {businessPageData.image_url ? (
+                    <img
+                      src={businessPageData.image_url}
+                      alt={businessPageData.name}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).style.display = 'none'
+                        const parent = (e.target as HTMLImageElement).parentElement
+                        if (parent) {
+                          parent.innerHTML = `<div class="w-16 h-16 text-stone-600 flex items-center justify-center"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path></svg></div>`
+                        }
+                      }}
+                    />
+                  ) : (
+                    <DynamicIcon name={categoryInfo.icon} className="w-16 h-16 text-stone-600" />
+                  )}
+                  {businessPageData.featured && (
+                    <Badge className="absolute top-4 left-4 bg-yellow-500 text-white">
+                      Featured
+                    </Badge>
+                  )}
+                  {businessPageData.verified && (
+                    <Badge className="absolute top-4 right-4 bg-blue-500 text-white">
+                      Verified
+                    </Badge>
+                  )}
+                </div>
               </div>
 
-              <div className="p-6">
-                <div className="flex justify-between items-start mb-4">
-                  <h1 className="text-3xl font-bold text-stone-800">{businessPageData.name}</h1>
-                  <div className="flex items-center space-x-1">
-                    <Star className="w-5 h-5 text-yellow-500 fill-current" />
-                    <span className="text-lg font-medium">{businessPageData.rating || 0}</span>
-                    <span className="text-sm text-gray-500">({businessPageData.review_count || 0})</span>
+              {/* Business Info */}
+              <div className="lg:w-2/3">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className={`w-8 h-8 rounded-lg ${categoryInfo.color} flex items-center justify-center`}>
+                    <DynamicIcon name={categoryInfo.icon} className="w-4 h-4" />
                   </div>
+                  <Badge variant="secondary">{businessPageData.category_name}</Badge>
+                  <Badge variant={status.isOpen ? "default" : "secondary"}>
+                    {status.text}
+                  </Badge>
                 </div>
 
-                <p className="text-stone-600 mb-4 text-lg">{businessPageData.description}</p>
+                <h1 className="text-3xl font-bold text-stone-800 mb-2">{businessPageData.name}</h1>
 
-                <div className="flex items-center space-x-6 text-stone-500 mb-4">
+                <div className="flex items-center space-x-4 mb-4">
+                  <div className="flex items-center space-x-1">
+                    <Star className="w-5 h-5 text-yellow-500 fill-current" />
+                    <span className="font-semibold">{businessPageData.rating || 0}</span>
+                    <span className="text-stone-600">({businessPageData.review_count || 0} reviews)</span>
+                  </div>
+                  {businessPageData.price_range && (
+                    <>
+                      <span className="text-stone-400">•</span>
+                      <span className="text-stone-600">{businessPageData.price_range}</span>
+                    </>
+                  )}
+                </div>
+
+                <p className="text-stone-700 mb-4">{businessPageData.description}</p>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-stone-600 mb-6">
                   <div className="flex items-center space-x-2">
                     <MapPin className="w-4 h-4" />
                     <span>{businessPageData.address}</span>
@@ -429,90 +462,69 @@ export default function BusinessDetailPage() {
                       <span>{businessPageData.phone}</span>
                     </div>
                   )}
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <Badge variant={status.isOpen ? "default" : "secondary"}>
-                      {status.text}
-                    </Badge>
-                    <Badge variant="outline" className="text-xs">
-                      {businessPageData.category_name}
-                    </Badge>
-                  </div>
+                  {businessPageData.email && (
+                    <div className="flex items-center space-x-2">
+                      <span className="w-4 h-4">✉</span>
+                      <span>{businessPageData.email}</span>
+                    </div>
+                  )}
                   {businessPageData.website && (
-                    <Button variant="outline" size="sm" asChild>
-                      <a href={businessPageData.website} target="_blank" rel="noopener noreferrer">
-                        <Globe className="w-4 h-4 mr-2" />
+                    <div className="flex items-center space-x-2">
+                      <Globe className="w-4 h-4" />
+                      <a href={businessPageData.website} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
                         Website
                       </a>
-                    </Button>
+                    </div>
                   )}
                 </div>
+
+                {/* Features */}
+                {businessPageData.features && businessPageData.features.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {businessPageData.features.map((feature: string, index: number) => (
+                      <Badge key={index} variant="outline" className="text-xs">
+                        {feature}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         )}
 
-        {/* Simple Tabs - Like Home Page Style */}
+        {/* Tabs */}
         {businessPageData && (
-          <Tabs defaultValue="menu" className="space-y-6">
-            <div className="flex justify-center">
-              <TabsList className="bg-white p-1 rounded-lg shadow-sm">
-                <TabsTrigger value="menu" className="text-base">
-                  {businessPageData.category === 'food' ? 'Menu' : businessPageData.category === 'retail' ? 'Products' : 'Services'}
-                </TabsTrigger>
-                <TabsTrigger value="info" className="text-base">
-                  About
-                </TabsTrigger>
-                <TabsTrigger value="contact" className="text-base">
-                  Contact
-                </TabsTrigger>
-              </TabsList>
-            </div>
+          <Tabs defaultValue="order" className="space-y-6">
+            <TabsList>
+              <TabsTrigger value="order" className="flex items-center gap-2">
+                {businessPageData.category === 'food' || businessPageData.category === 'retail' ? (
+                  <ShoppingCart className="w-4 h-4" />
+                ) : (
+                  <Calendar className="w-4 h-4" />
+                )}
+                {businessPageData.category === 'food' || businessPageData.category === 'retail' ? 'Order' : 'Book Service'}
+              </TabsTrigger>
+              <TabsTrigger value="info">Info</TabsTrigger>
+              <TabsTrigger value="reviews">Reviews</TabsTrigger>
+            </TabsList>
 
-            <TabsContent value="menu">
+            <TabsContent value="order">
               {renderOrderingInterface()}
             </TabsContent>
 
             <TabsContent value="info">
-              <Card>
-                <CardContent className="p-8">
-                  <h3 className="text-2xl font-bold text-stone-800 mb-4">About {businessPageData.name}</h3>
-                  <p className="text-stone-700 leading-relaxed text-lg">
-                    {businessPageData.long_description}
-                  </p>
-                </CardContent>
+              <Card className="p-6">
+                <h3 className="text-lg font-semibold text-stone-800 mb-4">About</h3>
+                <p className="text-stone-700">{businessPageData.long_description}</p>
               </Card>
             </TabsContent>
 
-            <TabsContent value="contact">
-              <Card>
-                <CardContent className="p-8">
-                  <h3 className="text-2xl font-bold text-stone-800 mb-6">Contact Information</h3>
-                  <div className="space-y-4">
-                    {businessPageData.phone && (
-                      <div className="flex items-center space-x-3">
-                        <Phone className="w-5 h-5 text-stone-400" />
-                        <a href={`tel:${businessPageData.phone}`} className="text-stone-700 hover:text-stone-900">
-                          {businessPageData.phone}
-                        </a>
-                      </div>
-                    )}
-                    {businessPageData.email && (
-                      <div className="flex items-center space-x-3">
-                        <span className="w-5 h-5 text-stone-400">✉</span>
-                        <a href={`mailto:${businessPageData.email}`} className="text-stone-700 hover:text-stone-900">
-                          {businessPageData.email}
-                        </a>
-                      </div>
-                    )}
-                    <div className="flex items-center space-x-3">
-                      <MapPin className="w-5 h-5 text-stone-400" />
-                      <span className="text-stone-700">{businessPageData.address}</span>
-                    </div>
-                  </div>
-                </CardContent>
+            <TabsContent value="reviews">
+              <Card className="p-6 text-center">
+                <Star className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-gray-800 mb-2">Reviews Coming Soon</h3>
+                <p className="text-gray-600">Customer reviews and ratings will be available soon.</p>
               </Card>
             </TabsContent>
           </Tabs>

@@ -1,7 +1,7 @@
 "use client"
 
 import { SuperAdminGuard } from '@/components/auth/super-admin-guard'
-import { useSuperAdminAuth } from '@/lib/hooks/use-super-admin-auth'
+import { useSuperAdminAuth } from '@/lib/hooks'
 import { useState, useEffect } from 'react'
 import { usePathname } from 'next/navigation'
 import { Button } from '@/components/ui/button'

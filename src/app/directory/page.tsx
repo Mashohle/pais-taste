@@ -13,8 +13,8 @@ import { Separator } from "@/components/ui/separator"
 import { Search, MapPin, Clock, Star, ChevronRight, Filter, Map, List, SlidersHorizontal, X, Heart, Phone, Globe, Navigation } from "lucide-react"
 import Link from 'next/link'
 import { DynamicIcon } from '@/lib/utils/icon-mapper'
-import { useBusinessSwitching } from '@/lib/hooks/use-business-switching'
-import { useBusinessDirectory } from '@/lib/hooks/use-business-directory'
+import { useBusinessSwitching } from '@/lib/hooks'
+import { useBusinessDirectory } from '@/lib/hooks'
 
 interface Business {
   id: string

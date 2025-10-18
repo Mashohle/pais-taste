@@ -6,8 +6,8 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Clock, Users, CheckCircle, AlertCircle, Phone, MapPin, CreditCard, Banknote, ChevronRight, X } from "lucide-react"
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { useOrders } from '@/lib/hooks/use-orders'
-import { useBusinessAdminAuth } from '@/lib/hooks/use-business-admin-auth'
+import { useOrders } from '@/lib/hooks'
+import { useBusinessAdminAuth } from '@/lib/hooks'
 
 // Interface to match your existing UI structure
 interface Order {

@@ -23,7 +23,7 @@ import {
   Building2,
   UserCog
 } from "lucide-react"
-import { useUsers, UserProfile } from "@/lib/hooks/use-users"
+import { useUsers, UserProfile } from "@/lib/hooks"
 
 export default function UsersManagement() {
   const [searchTerm, setSearchTerm] = useState("")

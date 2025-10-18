@@ -1,6 +1,6 @@
 // lib/hooks/use-menu-api.ts
 import { useState, useEffect, useCallback } from 'react'
-import { useBusinessAdminAuth } from '@/lib/hooks/use-business-admin-auth'
+import { useBusinessAdminAuth } from '@/lib/hooks'
 
 interface MenuItem {
   id: string

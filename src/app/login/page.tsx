@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Eye, EyeOff, Mail, Phone, User, Lock, ArrowLeft } from "lucide-react"
 import Link from "next/link"
 import Image from 'next/image'
-import { useCustomerAuth } from '@/lib/hooks/use-customer-auth'
+import { useCustomerAuth } from '@/lib/hooks'
 
 export default function AuthPage() {
   const {

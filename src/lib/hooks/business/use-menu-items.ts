@@ -1,7 +1,7 @@
 // lib/hooks/use-menu-items.ts
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
-import { useBusinessAdminAuth } from '@/lib/hooks/use-business-admin-auth'
+import { useBusinessAdminAuth } from '@/lib/hooks'
 
 interface MenuItem {
   id: string

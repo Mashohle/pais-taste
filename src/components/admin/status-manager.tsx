@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
 import { Plus, Edit2, Trash2, Save, X, Settings } from "lucide-react"
-import { useStatusConfig, StatusConfig } from '@/lib/hooks/use-status-config'
+import { useStatusConfig, StatusConfig } from '@/lib/hooks'
 import { DynamicIcon } from '@/lib/utils/icon-mapper'
 
 interface StatusManagerProps {
