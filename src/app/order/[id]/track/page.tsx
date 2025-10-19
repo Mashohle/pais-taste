@@ -6,7 +6,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { CheckCircle, Clock, ChefHat, Package, MapPin, Phone, MessageCircle, ArrowLeft, User } from "lucide-react"
 import { useState, useEffect, use } from "react"
 import { useRouter } from "next/navigation"
-import { useOrders } from '@/lib/hooks'
 import Link from "next/link"
 import { supabase } from "@/lib/supabase"
 import { useAuth } from "@/lib/contexts/auth-context"
@@ -72,10 +71,10 @@ interface OrderTrackingPageProps {
 
 export default function OrderTrackingPage({ params }: OrderTrackingPageProps) {
   const router = useRouter()
-  const { orders, loading } = useOrders()
   const { user } = useAuth()
   const resolvedParams = use(params)
   const [order, setOrder] = useState<Order | null>(null)
+  const [loading, setLoading] = useState(true)
   const [orderNotFound, setOrderNotFound] = useState(false)
   const [currentTime, setCurrentTime] = useState(new Date())
   const [businessData, setBusinessData] = useState<any>(null)
@@ -90,21 +89,48 @@ export default function OrderTrackingPage({ params }: OrderTrackingPageProps) {
   useEffect(() => {
     if (!resolvedParams.id) {
       setOrderNotFound(true)
+      setLoading(false)
       return
     }
 
-    if (!loading && orders.length >= 0) {
-      const foundOrder = orders.find(o => o.id === resolvedParams.id)
-      if (foundOrder) {
-        setOrder(foundOrder)
-        setOrderNotFound(false)
-        loadBusinessData(foundOrder.business_id)
-      } else if (!loading) {
-        // Only set not found if we're done loading and still no order
+    fetchOrder()
+  }, [resolvedParams.id])
+
+  const fetchOrder = async () => {
+    try {
+      setLoading(true)
+
+      // Fetch order directly by ID (works for both authenticated and guest orders)
+      const { data: orderData, error: orderError } = await supabase
+        .from('orders')
+        .select(`
+          *,
+          order_items (
+            quantity,
+            unit_price,
+            menu_item_id,
+            with_combo,
+            menu_items (name, business_id)
+          )
+        `)
+        .eq('id', resolvedParams.id)
+        .single()
+
+      if (orderError || !orderData) {
         setOrderNotFound(true)
+        setLoading(false)
+        return
       }
+
+      setOrder(orderData)
+      await loadBusinessData(orderData.business_id)
+      setLoading(false)
+    } catch (error) {
+      console.error('Error fetching order:', error)
+      setOrderNotFound(true)
+      setLoading(false)
     }
-  }, [resolvedParams.id, orders, loading])
+  }
 
   const loadBusinessData = async (businessId: string) => {
     if (!businessId) return

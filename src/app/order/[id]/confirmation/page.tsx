@@ -1,38 +1,66 @@
 "use client"
 
-import { useSearchParams } from "next/navigation"
+import { useParams } from "next/navigation"
 import { CheckCircle, Clock, MapPin, Hash, ArrowLeft, Truck } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { useState, useEffect } from "react"
-import { useOrders } from '@/lib/hooks'
 import { supabase } from '@/lib/supabase'
 
 export default function OrderConfirmationPage() {
-  const searchParams = useSearchParams()
-  const orderId = searchParams.get("id")
-  const { orders, loading } = useOrders()
+  const params = useParams()
+  const orderId = params.id as string
   const [order, setOrder] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
   const [orderNotFound, setOrderNotFound] = useState(false)
   const [businessData, setBusinessData] = useState<any>(null)
 
   useEffect(() => {
     if (!orderId) {
       setOrderNotFound(true)
+      setLoading(false)
       return
     }
 
-    if (!loading && orders.length > 0) {
-      const foundOrder = orders.find(o => o.id === orderId)
-      if (foundOrder) {
-        setOrder(foundOrder)
-        loadBusinessData(foundOrder.business_id)
-      } else {
+    fetchOrder()
+  }, [orderId])
+
+  const fetchOrder = async () => {
+    try {
+      setLoading(true)
+
+      // Fetch order directly by ID (works for both authenticated and guest orders)
+      const { data: orderData, error: orderError } = await supabase
+        .from('orders')
+        .select(`
+          *,
+          order_items (
+            quantity,
+            unit_price,
+            menu_item_id,
+            with_combo,
+            menu_items (name, business_id)
+          )
+        `)
+        .eq('id', orderId)
+        .single()
+
+      if (orderError || !orderData) {
         setOrderNotFound(true)
+        setLoading(false)
+        return
       }
+
+      setOrder(orderData)
+      await loadBusinessData(orderData.business_id)
+      setLoading(false)
+    } catch (error) {
+      console.error('Error fetching order:', error)
+      setOrderNotFound(true)
+      setLoading(false)
     }
-  }, [orderId, orders, loading])
+  }
 
   const loadBusinessData = async (businessId: string) => {
     if (!businessId) return
@@ -275,7 +303,7 @@ export default function OrderConfirmationPage() {
           </div>
 
           <div className="space-y-3">
-            <Link href={`/order/track/${order.id}`} className="block">
+            <Link href={`/order/${order.id}/track`} className="block">
               <Button
                 size="lg"
                 className="w-full bg-emerald-700 hover:bg-emerald-800 text-white shadow-lg hover:shadow-xl transition-all duration-200 text-lg py-6"

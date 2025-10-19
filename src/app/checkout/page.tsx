@@ -5,7 +5,6 @@ import { useAuth } from '@/lib/contexts/auth-context'
 import { useRouter } from 'next/navigation'
 import { useState, useEffect } from 'react'
 
-import { createOrder } from '@/lib/orders'
 import { useCheckout } from '@/lib/hooks'
 import { useCart } from '@/lib/contexts/cart-context'
 import { BusinessErrorDisplay } from '@/components/business/business-error-boundary'
@@ -34,7 +33,7 @@ export default function CheckoutPage() {
         isLoading,
         hasError,
         error,
-        businessContext,
+        businessId,
         isEmpty
     } = useCheckout()
 
@@ -123,31 +122,45 @@ export default function CheckoutPage() {
         if (validateForm()) {
             try {
                 setIsSubmitting(true)
-                
-                if (!businessContext.business_id) {
-                    alert('No business context found. Please return to the menu and try again.')
+
+                if (!businessId) {
+                    alert('No business selected. Please return to the menu and try again.')
                     setIsSubmitting(false)
                     return
                 }
-                
-                const order = await createOrder({
-                    customer_name: formData.fullName,
-                    customer_phone: formData.phoneNumber,
-                    pickup_location: formData.pickupLocation,
-                    special_instructions: formData.specialInstructions,
-                    total_amount: total,
-                    items: cartItems,
-                    payment_method: formData.paymentMethod as 'online' | 'cash_on_pickup',
-                    user_id: user?.id, // Include user ID if logged in
-                    business_id: businessContext.business_id // Include business_id
+
+                // Call API endpoint to create order (bypasses RLS)
+                const response = await fetch('/api/customer/orders', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        customer_name: formData.fullName,
+                        customer_phone: formData.phoneNumber,
+                        pickup_location: formData.pickupLocation,
+                        special_instructions: formData.specialInstructions,
+                        total_amount: total,
+                        items: cartItems,
+                        payment_method: formData.paymentMethod as 'online' | 'cash_on_pickup',
+                        user_id: user?.id,
+                        business_id: businessId
+                    })
                 })
+
+                if (!response.ok) {
+                    const errorData = await response.json()
+                    throw new Error(errorData.error || 'Failed to create order')
+                }
+
+                const { order } = await response.json()
 
                 // Clear cart
                 clearCart()
-                
+
                 // Wait a moment for the order to be saved
                 await new Promise(resolve => setTimeout(resolve, 1000))
-                
+
                 // Navigate to confirmation page
                 router.push(`/order/${order.id}/confirmation`)
 
