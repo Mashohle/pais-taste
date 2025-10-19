@@ -25,6 +25,7 @@ import { useCart } from "@/lib/contexts/cart-context"
 
 interface OrderDetails {
   id: string
+  business_id: string
   customer_name: string
   customer_phone: string
   total_amount: number
@@ -93,7 +94,7 @@ const formatCurrency = (amount: number) => {
 export default function OrderDetailsPage() {
   const params = useParams()
   const { user } = useAuth()
-  const { addReorderItems, setCartOpen } = useCart()
+  const { addItems } = useCart()
   
   const [order, setOrder] = useState<OrderDetails | null>(null)
   const [loading, setLoading] = useState(true)
@@ -155,17 +156,30 @@ export default function OrderDetailsPage() {
     try {
       setReordering(true)
 
-      const reorderItems = order.order_items.map(item => ({
-        name: item.menu_items?.name || 'Unknown Item',
-        quantity: item.quantity,
-        unit_price: item.unit_price
-      }))
+      // Convert order items to cart items format
+      const cartItems = order.order_items
+        .filter(item => item.menu_items) // Only include items with menu data
+        .map(item => ({
+          business_id: order.business_id || '', // Use business_id from order
+          item_type: 'menu_item' as const,
+          name: item.menu_items!.name,
+          description: item.menu_items!.description,
+          price: item.unit_price,
+          quantity: item.quantity,
+          menu_item_id: item.id,
+          is_available: true
+        }))
 
-      addReorderItems(reorderItems)
-      setCartOpen(true)
+      if (cartItems.length === 0) {
+        alert('No items available to reorder.')
+        return
+      }
+
+      // Add all items to cart
+      await addItems(cartItems)
 
       // Show success message
-      const itemNames = reorderItems.map(item => item.name).join(', ')
+      const itemNames = cartItems.map(item => item.name).join(', ')
       alert(`Items added to cart: ${itemNames}`)
 
     } catch (error) {

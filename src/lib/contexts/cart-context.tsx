@@ -1,118 +1,66 @@
 'use client'
 
-import { createContext, useContext, useReducer, ReactNode } from 'react'
+import { createContext, useContext, useReducer, useEffect, ReactNode, useCallback, useRef } from 'react'
+import { useAuth } from './auth-context'
+import { cartSyncService, CartItem, CartBusiness, CartState } from '@/lib/services/cart-sync'
 
-export interface CartItem {
-  id: string
-  name: string
-  price: number
-  quantity: number
-  type: 'traditional' | 'combo'
-  business_id: string
-  menu_item_id?: string
-}
-
-// New interface for reorder items
-export interface ReorderItem {
-  name: string
-  quantity: number
-  unit_price: number
-  menu_item_id?: string // Optional for menu item lookup
-}
-
-interface CartState {
-  items: CartItem[]
-  isOpen: boolean
-  business_id: string | null
-  business_name?: string
-}
-
+// Action types
 type CartAction =
-  | { type: 'ADD_ITEM'; payload: Omit<CartItem, 'quantity'> }
-  | { type: 'ADD_ITEMS'; payload: CartItem[] } // New action for bulk add
+  | { type: 'SET_CART'; payload: CartState }
+  | { type: 'SET_LOADING'; payload: boolean }
+  | { type: 'SET_SYNCING'; payload: boolean }
+  | { type: 'ADD_ITEM'; payload: CartItem }
   | { type: 'UPDATE_QUANTITY'; payload: { id: string; quantity: number } }
   | { type: 'REMOVE_ITEM'; payload: { id: string } }
   | { type: 'CLEAR_CART' }
-  | { type: 'TOGGLE_CART' }
+  | { type: 'SET_BUSINESS'; payload: CartBusiness }
+  | { type: 'UPDATE_AVAILABILITY'; payload: { itemId: string; isAvailable: boolean } }
   | { type: 'SET_CART_OPEN'; payload: boolean }
-  | { type: 'SET_BUSINESS'; payload: { business_id: string; business_name?: string } }
-  | { type: 'CLEAR_BUSINESS' }
-  | { type: 'SWITCH_BUSINESS'; payload: { business_id: string; business_name?: string; preserveItems?: boolean } }
+  | { type: 'TOGGLE_CART' }
 
+// Reducer
 const cartReducer = (state: CartState, action: CartAction): CartState => {
   switch (action.type) {
-    case 'ADD_ITEM':
-      // Check if trying to add item from different business
-      if (state.business_id && action.payload.business_id !== state.business_id) {
-        throw new Error(`Cannot mix items from different businesses. Cart contains items from another business.`)
-      }
-      
-      const existingItem = state.items.find(item => item.id === action.payload.id)
-      if (existingItem) {
-        return {
-          ...state,
-          items: state.items.map(item =>
-            item.id === action.payload.id
-              ? { ...item, quantity: item.quantity + 1 }
-              : item
-          )
-        }
-      }
-      
-      // Set business context when adding first item
-      const newState = {
-        ...state,
-        items: [...state.items, { ...action.payload, quantity: 1 }]
-      }
-      
-      if (!state.business_id) {
-        newState.business_id = action.payload.business_id
-      }
-      
-      return newState
+    case 'SET_CART':
+      return action.payload
 
-    case 'ADD_ITEMS': // New case for bulk adding
-      // Validate all items belong to same business
-      const businessIds = [...new Set(action.payload.map(item => item.business_id))]
-      if (businessIds.length > 1) {
-        throw new Error('Cannot add items from multiple businesses at once.')
-      }
-      
-      const itemBusinessId = businessIds[0]
-      if (state.business_id && itemBusinessId !== state.business_id) {
-        throw new Error('Cannot mix items from different businesses. Cart contains items from another business.')
-      }
-      
-      const newItems = [...state.items]
-      
-      action.payload.forEach(newItem => {
-        const existingIndex = newItems.findIndex(item => item.id === newItem.id)
-        if (existingIndex >= 0) {
-          newItems[existingIndex].quantity += newItem.quantity
-        } else {
-          newItems.push(newItem)
-        }
-      })
-      
-      const updatedState = {
-        ...state,
-        items: newItems
-      }
-      
-      // Set business context if not set
-      if (!state.business_id && action.payload.length > 0) {
-        updatedState.business_id = itemBusinessId
-      }
-      
-      return updatedState
+    case 'SET_LOADING':
+      return { ...state, loading: action.payload }
 
-    case 'UPDATE_QUANTITY':
+    case 'SET_SYNCING':
+      return { ...state, syncing: action.payload }
+
+    case 'ADD_ITEM': {
+      const existingItemIndex = state.items.findIndex(item =>
+        item.menu_item_id === action.payload.menu_item_id &&
+        item.product_id === action.payload.product_id &&
+        item.service_id === action.payload.service_id &&
+        JSON.stringify(item.options) === JSON.stringify(action.payload.options)
+      )
+
+      if (existingItemIndex >= 0) {
+        // Item exists, increase quantity
+        const newItems = [...state.items]
+        newItems[existingItemIndex] = {
+          ...newItems[existingItemIndex],
+          quantity: newItems[existingItemIndex].quantity + action.payload.quantity
+        }
+        return { ...state, items: newItems }
+      } else {
+        // New item, add to cart
+        return { ...state, items: [...state.items, action.payload] }
+      }
+    }
+
+    case 'UPDATE_QUANTITY': {
       if (action.payload.quantity === 0) {
+        // Remove item if quantity is 0
         return {
           ...state,
           items: state.items.filter(item => item.id !== action.payload.id)
         }
       }
+
       return {
         ...state,
         items: state.items.map(item =>
@@ -121,6 +69,7 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
             : item
         )
       }
+    }
 
     case 'REMOVE_ITEM':
       return {
@@ -129,35 +78,40 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
       }
 
     case 'CLEAR_CART':
-      return { ...state, items: [], business_id: null, business_name: undefined }
-
-    case 'TOGGLE_CART':
-      return { ...state, isOpen: !state.isOpen }
-
-    case 'SET_CART_OPEN':
-      return { ...state, isOpen: action.payload }
+      return {
+        items: [],
+        business: null,
+        loading: false,
+        syncing: false,
+        isOpen: false
+      }
 
     case 'SET_BUSINESS':
-      return { 
-        ...state, 
-        business_id: action.payload.business_id,
-        business_name: action.payload.business_name
-      }
-
-    case 'CLEAR_BUSINESS':
-      return { 
-        ...state, 
-        business_id: null, 
-        business_name: undefined, 
-        items: [] // Clear items when clearing business context
-      }
-
-    case 'SWITCH_BUSINESS':
       return {
         ...state,
-        business_id: action.payload.business_id,
-        business_name: action.payload.business_name,
-        items: action.payload.preserveItems ? state.items : [] // Clear items unless preserving
+        business: action.payload
+      }
+
+    case 'UPDATE_AVAILABILITY':
+      return {
+        ...state,
+        items: state.items.map(item =>
+          item.id === action.payload.itemId
+            ? { ...item, is_available: action.payload.isAvailable }
+            : item
+        )
+      }
+
+    case 'SET_CART_OPEN':
+      return {
+        ...state,
+        isOpen: action.payload
+      }
+
+    case 'TOGGLE_CART':
+      return {
+        ...state,
+        isOpen: !state.isOpen
       }
 
     default:
@@ -165,191 +119,285 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
   }
 }
 
-const CartContext = createContext<{
+// Context type
+interface CartContextType {
   state: CartState
-  addItem: (item: Omit<CartItem, 'quantity'>) => void
-  addItems: (items: CartItem[]) => void // New function for bulk add
-  addReorderItems: (items: ReorderItem[], businessId: string) => void // New function for reorder
-  updateQuantity: (id: string, quantity: number) => void
-  removeItem: (id: string) => void
-  clearCart: () => void
-  toggleCart: () => void
-  setCartOpen: (open: boolean) => void
-  setBusiness: (businessId: string, businessName?: string) => void
-  clearBusiness: () => void
-  switchBusiness: (businessId: string, businessName?: string, options?: { preserveItems?: boolean; confirmSwitch?: boolean }) => Promise<boolean>
-  validateBusinessCompatibility: (businessId: string) => boolean
-  getBusinessContext: () => { business_id: string | null; business_name?: string }
-  getTotalItems: () => number
-  getTotalPrice: () => number
-  hasItemsFromDifferentBusiness: (businessId: string) => boolean
-} | null>(null)
 
+  // Core actions
+  addItem: (item: Omit<CartItem, 'id' | 'created_at'>) => Promise<void>
+  addItems: (items: Omit<CartItem, 'id' | 'created_at'>[]) => Promise<void>
+  updateQuantity: (itemId: string, quantity: number) => Promise<void>
+  removeItem: (itemId: string) => Promise<void>
+  clearCart: () => Promise<void>
+
+  // Business
+  setBusiness: (business: CartBusiness) => Promise<void>
+  switchBusiness: (business: CartBusiness) => Promise<boolean>
+
+  // Cart visibility
+  setCartOpen: (isOpen: boolean) => void
+  toggleCart: () => void
+
+  // Sync
+  syncCart: () => Promise<void>
+  refreshAvailability: () => Promise<void>
+
+  // Computed values
+  subtotal: number
+  total: number
+  itemCount: number
+  hasUnavailableItems: boolean
+  hasItems: boolean
+}
+
+const CartContext = createContext<CartContextType | null>(null)
+
+// Provider
 export function CartProvider({ children }: { children: ReactNode }) {
+  const { user } = useAuth()
   const [state, dispatch] = useReducer(cartReducer, {
     items: [],
-    isOpen: false,
-    business_id: null,
-    business_name: undefined
+    business: null,
+    loading: true,
+    syncing: false,
+    isOpen: false
   })
 
-  const addItem = (item: Omit<CartItem, 'quantity'>) => {
-    try {
-      dispatch({ type: 'ADD_ITEM', payload: item })
-    } catch (error) {
-      throw error
+  // Use ref to access latest state without triggering re-renders
+  const stateRef = useRef(state)
+  useEffect(() => {
+    stateRef.current = state
+  }, [state])
+
+  // Track if we've initialized to prevent double-init
+  const initialized = useRef(false)
+  const previousUserId = useRef<string | undefined>(undefined)
+
+  // Initialize cart on mount and when user changes
+  useEffect(() => {
+    // Skip if already initialized and user hasn't changed
+    if (initialized.current && previousUserId.current === user?.id) {
+      return
     }
-  }
 
-  const addItems = (items: CartItem[]) => {
-    try {
-      dispatch({ type: 'ADD_ITEMS', payload: items })
-    } catch (error) {
-      throw error
+    async function initCart() {
+      dispatch({ type: 'SET_LOADING', payload: true })
+      try {
+        const cart = await cartSyncService.initialize(user?.id)
+        dispatch({ type: 'SET_CART', payload: cart })
+        initialized.current = true
+        previousUserId.current = user?.id
+      } catch (error) {
+        console.error('Error initializing cart:', error)
+        dispatch({ type: 'SET_CART', payload: { items: [], business: null, loading: false, syncing: false, isOpen: false } })
+      }
     }
-  }
 
-  // New function to handle reorder items
-  const addReorderItems = (reorderItems: ReorderItem[], businessId: string) => {
-    const cartItems: CartItem[] = reorderItems.map((item, index) => ({
-      id: item.menu_item_id || `reorder-${Date.now()}-${index}`, // Generate ID if not available
-      name: item.name,
-      price: item.unit_price,
-      quantity: item.quantity,
-      type: 'traditional' as const, // Default type, you might want to make this dynamic
-      business_id: businessId,
-      menu_item_id: item.menu_item_id
-    }))
-    
+    initCart()
+  }, [user?.id])
+
+  // Save cart whenever it changes (without triggering state updates)
+  const saveCart = useCallback(async (newState: CartState) => {
     try {
-      dispatch({ type: 'ADD_ITEMS', payload: cartItems })
+      await cartSyncService.saveCart(user?.id, newState)
     } catch (error) {
-      throw error
+      console.error('Error saving cart:', error)
     }
-  }
+  }, [user?.id])
 
-  const updateQuantity = (id: string, quantity: number) => {
-    dispatch({ type: 'UPDATE_QUANTITY', payload: { id, quantity } })
-  }
+  // Add item to cart
+  const addItem = useCallback(async (item: Omit<CartItem, 'id' | 'created_at'>) => {
+    const currentState = stateRef.current
 
-  const removeItem = (id: string) => {
-    dispatch({ type: 'REMOVE_ITEM', payload: { id } })
-  }
+    // Validate business compatibility
+    if (currentState.business && item.business_id !== currentState.business.id) {
+      throw new Error(`Cannot add items from different businesses. Please clear your cart first.`)
+    }
 
-  const clearCart = () => {
+    const newItem: CartItem = {
+      ...item,
+      id: `${Date.now()}-${Math.random()}`, // Temporary ID for localStorage
+      is_available: true,
+      created_at: new Date().toISOString()
+    }
+
+    dispatch({ type: 'ADD_ITEM', payload: newItem })
+
+    // Save to persistence
+    const newState = { ...currentState, items: [...currentState.items, newItem] }
+    await saveCart(newState)
+  }, [saveCart])
+
+  // Update quantity
+  const updateQuantity = useCallback(async (itemId: string, quantity: number) => {
+    const currentState = stateRef.current
+
+    // Calculate new state
+    const newItems = quantity === 0
+      ? currentState.items.filter(item => item.id !== itemId)
+      : currentState.items.map(item => item.id === itemId ? { ...item, quantity } : item)
+
+    const newState = { ...currentState, items: newItems }
+
+    // Dispatch to update React state
+    dispatch({ type: 'UPDATE_QUANTITY', payload: { id: itemId, quantity } })
+
+    // Save to persistence
+    await saveCart(newState)
+  }, [saveCart])
+
+  // Remove item
+  const removeItem = useCallback(async (itemId: string) => {
+    const currentState = stateRef.current
+
+    dispatch({ type: 'REMOVE_ITEM', payload: { id: itemId } })
+
+    const newState = {
+      ...currentState,
+      items: currentState.items.filter(item => item.id !== itemId)
+    }
+    await saveCart(newState)
+  }, [saveCart])
+
+  // Clear cart
+  const clearCart = useCallback(async () => {
     dispatch({ type: 'CLEAR_CART' })
-  }
+    await cartSyncService.clearCart(user?.id)
+  }, [user?.id])
 
-  const toggleCart = () => {
-    dispatch({ type: 'TOGGLE_CART' })
-  }
+  // Set business
+  const setBusiness = useCallback(async (business: CartBusiness) => {
+    const currentState = stateRef.current
 
-  const setCartOpen = (open: boolean) => {
-    dispatch({ type: 'SET_CART_OPEN', payload: open })
-  }
+    dispatch({ type: 'SET_BUSINESS', payload: business })
 
-  const setBusiness = (businessId: string, businessName?: string) => {
-    dispatch({ type: 'SET_BUSINESS', payload: { business_id: businessId, business_name: businessName } })
-  }
+    const newState = { ...currentState, business }
+    await saveCart(newState)
+  }, [saveCart])
 
-  const clearBusiness = () => {
-    dispatch({ type: 'CLEAR_BUSINESS' })
-  }
+  // Switch business (clears cart if different business)
+  const switchBusiness = useCallback(async (business: CartBusiness): Promise<boolean> => {
+    const currentState = stateRef.current
 
-  const switchBusiness = async (
-    businessId: string, 
-    businessName?: string, 
-    options: { preserveItems?: boolean; confirmSwitch?: boolean } = {}
-  ): Promise<boolean> => {
-    // If no current business or same business, just set it
-    if (!state.business_id || state.business_id === businessId) {
-      dispatch({ type: 'SET_BUSINESS', payload: { business_id: businessId, business_name: businessName } })
+    if (!currentState.business || currentState.business.id === business.id) {
+      // No current business or same business - just set it
+      await setBusiness(business)
       return true
     }
 
-    // If cart is empty, switch freely
-    if (state.items.length === 0) {
-      dispatch({ type: 'SWITCH_BUSINESS', payload: { business_id: businessId, business_name: businessName } })
-      return true
-    }
-
-    // If has items and confirmSwitch is requested, ask user
-    if (options.confirmSwitch && typeof window !== 'undefined') {
-      const currentBusinessName = state.business_name || 'current business'
-      const newBusinessName = businessName || 'selected business'
+    // Different business with items in cart
+    if (currentState.items.length > 0) {
+      // In production, show a confirmation dialog
       const confirmed = window.confirm(
-        `You have items from ${currentBusinessName} in your cart. Switching to ${newBusinessName} will clear your current cart. Continue?`
+        `You have items from ${currentState.business.name} in your cart. Switching to ${business.name} will clear your cart. Continue?`
       )
-      
+
       if (!confirmed) {
         return false
       }
     }
 
-    // Switch business (clear items unless preserveItems is true)
-    dispatch({ 
-      type: 'SWITCH_BUSINESS', 
-      payload: { 
-        business_id: businessId, 
-        business_name: businessName,
-        preserveItems: options.preserveItems 
-      } 
-    })
-    
+    // Clear cart and set new business
+    dispatch({ type: 'CLEAR_CART' })
+    dispatch({ type: 'SET_BUSINESS', payload: business })
+
+    const newState = { items: [], business, loading: false, syncing: false, isOpen: false }
+    await cartSyncService.saveCart(user?.id, newState)
+
     return true
+  }, [user?.id, setBusiness])
+
+  // Sync cart manually
+  const syncCart = useCallback(async () => {
+    if (!user?.id) return
+
+    dispatch({ type: 'SET_SYNCING', payload: true })
+    try {
+      const cart = await cartSyncService.loadFromDatabase(user.id)
+      dispatch({ type: 'SET_CART', payload: cart })
+    } catch (error) {
+      console.error('Error syncing cart:', error)
+    } finally {
+      dispatch({ type: 'SET_SYNCING', payload: false })
+    }
+  }, [user?.id])
+
+  // Refresh availability
+  const refreshAvailability = useCallback(async () => {
+    const currentState = stateRef.current
+
+    dispatch({ type: 'SET_SYNCING', payload: true })
+    try {
+      const updatedCart = await cartSyncService.refreshAvailability(currentState)
+      dispatch({ type: 'SET_CART', payload: updatedCart })
+      await saveCart(updatedCart)
+    } catch (error) {
+      console.error('Error refreshing availability:', error)
+    } finally {
+      dispatch({ type: 'SET_SYNCING', payload: false })
+    }
+  }, [saveCart])
+
+  // Add multiple items
+  const addItems = useCallback(async (items: Omit<CartItem, 'id' | 'created_at'>[]) => {
+    for (const item of items) {
+      await addItem(item)
+    }
+  }, [addItem])
+
+  // Cart visibility
+  const setCartOpen = useCallback((isOpen: boolean) => {
+    dispatch({ type: 'SET_CART_OPEN', payload: isOpen })
+  }, [])
+
+  const toggleCart = useCallback(() => {
+    dispatch({ type: 'TOGGLE_CART' })
+  }, [])
+
+  // Computed values
+  const subtotal = state.items
+    .filter(item => item.is_available)
+    .reduce((sum, item) => sum + item.price * item.quantity, 0)
+
+  const total = subtotal + (state.business?.delivery_fee || 0)
+
+  const itemCount = state.items.reduce((sum, item) => sum + item.quantity, 0)
+
+  const hasUnavailableItems = state.items.some(item => !item.is_available)
+
+  const hasItems = state.items.length > 0
+
+  const value: CartContextType = {
+    state,
+    addItem,
+    addItems,
+    updateQuantity,
+    removeItem,
+    clearCart,
+    setBusiness,
+    switchBusiness,
+    setCartOpen,
+    toggleCart,
+    syncCart,
+    refreshAvailability,
+    subtotal,
+    total,
+    itemCount,
+    hasUnavailableItems,
+    hasItems
   }
 
-  const validateBusinessCompatibility = (businessId: string): boolean => {
-    return !state.business_id || state.business_id === businessId
-  }
-
-  const hasItemsFromDifferentBusiness = (businessId: string): boolean => {
-    return state.items.length > 0 && state.business_id !== null && state.business_id !== businessId
-  }
-
-  const getBusinessContext = () => ({
-    business_id: state.business_id,
-    business_name: state.business_name
-  })
-
-  // Helper functions
-  const getTotalItems = () => {
-    return state.items.reduce((total, item) => total + item.quantity, 0)
-  }
-
-  const getTotalPrice = () => {
-    return state.items.reduce((total, item) => total + (item.price * item.quantity), 0)
-  }
-
-  return (
-    <CartContext.Provider value={{
-      state,
-      addItem,
-      addItems,
-      addReorderItems,
-      updateQuantity,
-      removeItem,
-      clearCart,
-      toggleCart,
-      setCartOpen,
-      setBusiness,
-      clearBusiness,
-      switchBusiness,
-      validateBusinessCompatibility,
-      getBusinessContext,
-      getTotalItems,
-      getTotalPrice,
-      hasItemsFromDifferentBusiness
-    }}>
-      {children}
-    </CartContext.Provider>
-  )
+  return <CartContext.Provider value={value}>{children}</CartContext.Provider>
 }
 
-export const useCart = () => {
+// Hook
+export function useCart() {
   const context = useContext(CartContext)
   if (!context) {
     throw new Error('useCart must be used within a CartProvider')
   }
   return context
 }
+
+// Re-export types
+export type { CartItem, CartBusiness, CartState }

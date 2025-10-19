@@ -25,6 +25,7 @@ import { DynamicIcon } from '@/lib/utils/icon-mapper'
 import FoodOrderingInterface from '@/components/business/food-ordering-interface'
 import ServiceBookingInterface from '@/components/business/service-booking-interface'
 import RetailOrderingInterface from '@/components/business/retail-ordering-interface'
+import { ShoppingCart as ShoppingCartComponent } from '@/components/cart'
 import { useBusiness } from '@/lib/hooks'
 
 // Business data interface for backward compatibility with existing components
@@ -530,6 +531,9 @@ export default function BusinessDetailPage() {
           </Tabs>
         )}
       </div>
+
+      {/* Shopping Cart Sidebar */}
+      <ShoppingCartComponent />
     </div>
   )
 }

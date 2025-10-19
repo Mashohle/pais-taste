@@ -10,7 +10,7 @@ export interface BusinessSwitchOptions {
 }
 
 export function useBusinessSwitching() {
-  const { switchBusiness, getBusinessContext, hasItemsFromDifferentBusiness } = useCart()
+  const { setBusiness, state } = useCart()
   const [isSwitching, setIsSwitching] = useState(false)
   const router = useRouter()
 
@@ -29,40 +29,48 @@ export function useBusinessSwitching() {
     setIsSwitching(true)
 
     try {
-      const currentContext = getBusinessContext()
-      
+      const currentBusinessId = state.business?.id
+
       // If switching to same business, nothing to do
-      if (currentContext.business_id === targetBusinessId) {
+      if (currentBusinessId === targetBusinessId) {
         return true
       }
 
       // Check if user has items from different business
-      const hasConflictingItems = hasItemsFromDifferentBusiness(targetBusinessId)
-      
-      // Attempt to switch business
-      const success = await switchBusiness(
-        targetBusinessId,
-        targetBusinessName,
-        { 
-          preserveItems: preserveCart,
-          confirmSwitch: hasConflictingItems && confirmSwitch
-        }
-      )
+      const hasConflictingItems = state.items.length > 0 && currentBusinessId !== targetBusinessId
 
-      if (success) {
-        // Show success notification if requested
-        if (showNotification && typeof window !== 'undefined') {
-          // You could integrate with a toast library here
-          console.log(`Switched to ${targetBusinessName || 'business'}`)
-        }
+      // Confirm if needed
+      if (hasConflictingItems && confirmSwitch && !preserveCart) {
+        const confirmed = window.confirm(
+          `You have items from ${state.business?.name || 'another business'} in your cart. ` +
+          `Switching to ${targetBusinessName || 'this business'} will clear your cart. Continue?`
+        )
 
-        // Redirect if specified
-        if (redirectTo) {
-          router.push(redirectTo)
+        if (!confirmed) {
+          return false
         }
       }
 
-      return success
+      // Switch to new business (cart will be cleared if items exist from different business)
+      await setBusiness({
+        id: targetBusinessId,
+        name: targetBusinessName || '',
+        slug: targetBusinessId,
+        category: 'unknown'
+      })
+
+      // Show success notification if requested
+      if (showNotification && typeof window !== 'undefined') {
+        // You could integrate with a toast library here
+        console.log(`Switched to ${targetBusinessName || 'business'}`)
+      }
+
+      // Redirect if specified
+      if (redirectTo) {
+        router.push(redirectTo)
+      }
+
+      return true
     } catch (error) {
       console.error('Error switching business:', error)
       return false
@@ -110,7 +118,8 @@ export function useBusinessSwitching() {
   }
 
   const shouldWarnAboutBusinessSwitch = (targetBusinessId: string): boolean => {
-    return hasItemsFromDifferentBusiness(targetBusinessId)
+    const currentBusinessId = state.business?.id
+    return state.items.length > 0 && currentBusinessId !== targetBusinessId
   }
 
   return {

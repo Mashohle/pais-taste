@@ -33,7 +33,7 @@ interface ProcessedGroup {
 
 export function MenuGrid() {
 	const { items, loading, error } = useMenuItems()
-	const { state, addItem, setCartOpen, getBusinessContext } = useCart()
+	const { state, addItem } = useCart()
 	const [processedGroups, setProcessedGroups] = useState<ProcessedGroup[]>([])
 
 	// Process menu items into groups whenever items change
@@ -83,7 +83,9 @@ export function MenuGrid() {
 	const itemCounts = useMemo(() => {
 		const counts: Record<string, number> = {}
 		state.items.forEach(item => {
-			counts[item.id] = (counts[item.id] || 0) + item.quantity
+			// Generate same ID format as handleAddToCart uses
+			const itemId = `${item.menu_item_id}-${item.item_type}`
+			counts[itemId] = (counts[itemId] || 0) + item.quantity
 		})
 		return counts
 	}, [state.items])
@@ -133,7 +135,7 @@ export function MenuGrid() {
 		)
 	}
 
-	const handleAddToCart = (group: ProcessedGroup, type: "traditional" | "combo") => {
+	const handleAddToCart = async (group: ProcessedGroup, type: "traditional" | "combo") => {
 		const item = type === "traditional" ? group.traditional : group.combo
 
 		// Check if item is available
@@ -142,19 +144,28 @@ export function MenuGrid() {
 			return
 		}
 
-		const businessContext = getBusinessContext()
-		
-		addItem({
-			id: `${group.id}-${type}`,
+		// Get business_id from cart state
+		const businessId = state.business?.id
+		if (!businessId) {
+			alert('Please select a business first.')
+			return
+		}
+
+		await addItem({
+			business_id: businessId,
+			item_type: 'menu_item',
 			name: item.name,
+			description: item.description,
 			price: item.price,
-			type: type,
-			business_id: businessContext.business_id || ''
+			quantity: 1,
+			menu_item_id: `${group.id}-${type}`, // Use the same ID format for tracking
+			is_available: true
 		})
 	}
 
 	const getItemCount = (groupId: string, type: "traditional" | "combo") => {
-		return itemCounts[`${groupId}-${type}`] || 0
+		// Match the ID format used in itemCounts
+		return itemCounts[`${groupId}-${type}-menu_item`] || 0
 	}
 
 	const isItemAvailable = (item: ProcessedGroup['traditional'] | ProcessedGroup['combo']) => {
@@ -498,22 +509,7 @@ export function MenuGrid() {
 				))}
 			</div >
 
-			{/* Cart Button */}
-			{
-				totalItems > 0 && (
-					<div className="fixed bottom-4 sm:bottom-6 right-4 sm:right-6 bg-stone-800 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-full shadow-xl border-2 border-white backdrop-blur-sm z-50">
-						<button
-							onClick={() => setCartOpen(true)}
-							className="flex items-center space-x-2 hover:opacity-80 transition-opacity"
-						>
-							<ShoppingCartIcon className="w-4 h-4" />
-							<span className="font-semibold text-sm sm:text-base">Cart: {totalItems} items</span>
-						</button>
-					</div>
-				)
-			}
-
-			<ShoppingCart isOpen={state.isOpen} onClose={() => setCartOpen(false)} />
+			<ShoppingCart />
 		</div >
 	)
 }

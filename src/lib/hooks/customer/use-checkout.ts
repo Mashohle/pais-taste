@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { useCart } from '@/lib/contexts/cart-context'
 import { useBusiness } from '../business/use-business'
 import { useBusinessErrorHandler } from '../business/use-business-error-handler'
@@ -12,15 +12,15 @@ export interface CheckoutData {
 }
 
 export function useCheckout() {
-  const { state, getBusinessContext } = useCart()
-  const businessContext = getBusinessContext()
-  
+  const { state, subtotal, total, hasItems, hasUnavailableItems } = useCart()
+  const businessId = state.business?.id || null
+
   // Get business data using the business hook
   const {
     business,
     loading: isLoadingBusiness,
     error: businessError
-  } = useBusiness(businessContext.business_id)
+  } = useBusiness(businessId)
 
   const {
     executeWithErrorHandling,
@@ -29,14 +29,22 @@ export function useCheckout() {
     error: validationError
   } = useBusinessErrorHandler()
 
-  // Calculate checkout totals
-  const orderItems = state.items
-  const subtotal = orderItems.reduce((sum, item) => sum + item.price * item.quantity, 0)
-  const total = subtotal
+  // Cart items (only available ones for checkout) - memoized to prevent recreating on every render
+  const orderItems = useMemo(
+    () => state.items.filter(item => item.is_available),
+    [state.items]
+  )
+
+  // Track if validation has run to prevent re-running
+  const validationRun = useRef(false)
+  const lastValidatedBusiness = useRef<string | null>(null)
 
   // Validate checkout data
   useEffect(() => {
-    if (businessContext.business_id && business) {
+    // Only validate if business changed or first time
+    if (businessId && business && lastValidatedBusiness.current !== businessId) {
+      lastValidatedBusiness.current = businessId
+
       executeWithErrorHandling(
         async () => {
           // Validate business is active and available for orders
@@ -45,10 +53,10 @@ export function useCheckout() {
           }
 
           // Validate cart items belong to this business
-          const invalidItems = orderItems.filter(item => 
-            item.business_id !== businessContext.business_id
+          const invalidItems = orderItems.filter(item =>
+            item.business_id !== businessId
           )
-          
+
           if (invalidItems.length > 0) {
             throw new Error('Cart contains items from different businesses')
           }
@@ -58,19 +66,21 @@ export function useCheckout() {
         {
           operation: 'validate checkout',
           component: 'useCheckout',
-          businessId: businessContext.business_id,
-          businessName: businessContext.business_name
+          businessId: businessId,
+          businessName: state.business?.name
         }
       )
     }
-  }, [businessContext.business_id, business, orderItems, executeWithErrorHandling])
+    // Only depend on businessId and business - validation should only re-run when business changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [businessId, business?.id, business?.is_active])
 
   const checkoutData: CheckoutData = {
     business,
     cartItems: orderItems,
     subtotal,
     total,
-    hasItems: orderItems.length > 0
+    hasItems
   }
 
   return {
@@ -78,12 +88,12 @@ export function useCheckout() {
     isLoading: isLoadingBusiness || isValidating,
     hasError: !!businessError || hasValidationError,
     error: businessError || validationError,
-    businessContext,
+    hasUnavailableItems,
 
     // Convenience getters
-    isEmpty: orderItems.length === 0,
-    businessId: businessContext.business_id,
-    businessName: businessContext.business_name || business?.name,
+    isEmpty: !hasItems,
+    businessId: businessId,
+    businessName: state.business?.name || business?.name,
     isBusinessActive: business?.is_active || false
   }
 }

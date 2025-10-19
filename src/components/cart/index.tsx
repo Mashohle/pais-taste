@@ -6,32 +6,26 @@ import { X, Plus, Minus, Trash2, ShoppingCartIcon as CartIcon } from "lucide-rea
 import { useCart } from '@/lib/contexts/cart-context'
 import { useRouter } from 'next/navigation'
 
-interface ShoppingCartProps {
-    isOpen: boolean
-    onClose: () => void
-}
-
-export function ShoppingCart({ isOpen, onClose }: ShoppingCartProps) {
-    const { state, updateQuantity, removeItem, clearCart } = useCart()
+export function ShoppingCart() {
+    const { state, updateQuantity, removeItem, clearCart, subtotal, total, hasItems, setCartOpen } = useCart()
     const router = useRouter()
 
-    const subtotal = state.items.reduce((sum, item) => sum + item.price * item.quantity, 0)
     const totalItems = state.items.reduce((sum, item) => sum + item.quantity, 0)
+
+    // Don't render if cart is hidden
+    if (!state.isOpen) return null
 
     return (
         <>
             {/* Backdrop */}
-            {isOpen && (
-                <div
-                    className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 transition-opacity duration-300"
-                    onClick={onClose}
-                />
-            )}
+            <div
+                className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 transition-opacity duration-300"
+                onClick={() => setCartOpen(false)}
+            />
 
             {/* Sidebar */}
             <div
-                className={`fixed top-0 right-0 h-full w-full sm:w-96 bg-gradient-to-b from-stone-50/95 via-stone-25/90 to-stone-50/95 backdrop-blur-xl border-l border-stone-200/60 shadow-2xl z-50 transform transition-transform duration-300 ease-in-out ${isOpen ? "translate-x-0" : "translate-x-full"
-                    }`}
+                className="fixed top-0 right-0 h-full w-full sm:w-96 bg-gradient-to-b from-stone-50/95 via-stone-25/90 to-stone-50/95 backdrop-blur-xl border-l border-stone-200/60 shadow-2xl z-50 transform transition-transform duration-300 ease-in-out translate-x-0"
             >
                 {/* Decorative pattern overlay */}
                 <div className="absolute inset-0 opacity-10 pointer-events-none">
@@ -57,7 +51,7 @@ export function ShoppingCart({ isOpen, onClose }: ShoppingCartProps) {
                         <Button
                             variant="ghost"
                             size="sm"
-                            onClick={onClose}
+                            onClick={() => setCartOpen(false)}
                             className="text-stone-600 hover:text-stone-800 hover:bg-stone-100/50"
                         >
                             <X className="w-5 h-5" />
@@ -74,9 +68,9 @@ export function ShoppingCart({ isOpen, onClose }: ShoppingCartProps) {
                                 </div>
                                 <h3 className="text-lg font-semibold text-stone-700 mb-2">Your cart is empty</h3>
                                 <p className="text-stone-500 text-sm mb-6 max-w-xs">
-                                    Add some delicious South African traditional dishes to get started!
+                                    Add some delicious items to get started!
                                 </p>
-                                <Button onClick={onClose} className="bg-stone-700 hover:bg-stone-800 text-white">
+                                <Button onClick={() => setCartOpen(false)} className="bg-stone-700 hover:bg-stone-800 text-white">
                                     Continue Shopping
                                 </Button>
                             </div>
@@ -98,12 +92,10 @@ export function ShoppingCart({ isOpen, onClose }: ShoppingCartProps) {
                                                     <div className="flex items-center space-x-2 mt-1">
                                                         <Badge
                                                             variant="outline"
-                                                            className={`text-xs ${item.type === "traditional"
-                                                                    ? "text-stone-600 border-stone-400 bg-stone-50/90"
-                                                                    : "text-stone-700 border-stone-500 bg-stone-100/90"
-                                                                }`}
+                                                            className="text-xs text-stone-600 border-stone-400 bg-stone-50/90"
                                                         >
-                                                            {item.type === "traditional" ? "Traditional" : "Combo Meal"}
+                                                            {item.item_type === "menu_item" ? "Menu Item" :
+                                                             item.item_type === "product" ? "Product" : "Service"}
                                                         </Badge>
                                                         <span className="text-stone-600 font-medium text-sm">R{item.price}</span>
                                                     </div>
@@ -164,25 +156,39 @@ export function ShoppingCart({ isOpen, onClose }: ShoppingCartProps) {
                     </div>
 
                     {/* Footer with Subtotal and Checkout */}
-                    {state.items.length > 0 && (
+                    {hasItems && (
                         <div className="border-t border-stone-200/50 bg-white/40 backdrop-blur-sm p-4 sm:p-6 space-y-4">
-                            <div className="flex justify-between items-center">
-                                <span className="text-lg font-semibold text-stone-700">Subtotal:</span>
-                                <span className="text-xl font-bold text-stone-800">R{subtotal}</span>
+                            <div className="space-y-2">
+                                <div className="flex justify-between items-center">
+                                    <span className="text-sm font-medium text-stone-600">Subtotal:</span>
+                                    <span className="text-sm font-semibold text-stone-800">R{subtotal.toFixed(2)}</span>
+                                </div>
+                                {state.business?.delivery_fee && (
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-sm font-medium text-stone-600">Delivery:</span>
+                                        <span className="text-sm font-semibold text-stone-800">R{state.business.delivery_fee.toFixed(2)}</span>
+                                    </div>
+                                )}
+                                <div className="flex justify-between items-center pt-2 border-t border-stone-200">
+                                    <span className="text-lg font-semibold text-stone-700">Total:</span>
+                                    <span className="text-xl font-bold text-stone-800">R{total.toFixed(2)}</span>
+                                </div>
                             </div>
                             <Button
                                 onClick={() => {
-                                    onClose() // Close the cart
-                                    router.push('/checkout') // Navigate to checkout page
+                                    setCartOpen(false)
+                                    router.push('/checkout')
                                 }}
                                 className="w-full bg-stone-700 hover:bg-stone-800 text-white shadow-lg hover:shadow-xl transition-all duration-200 py-3"
                                 size="lg"
                             >
                                 Proceed to Checkout
                             </Button>
-                            <p className="text-xs text-stone-500 text-center">
-                                Traditional South African cuisine • Montana, Sinoville & Annlin
-                            </p>
+                            {state.business && (
+                                <p className="text-xs text-stone-500 text-center">
+                                    {state.business.name}
+                                </p>
+                            )}
                         </div>
                     )}
                 </div>

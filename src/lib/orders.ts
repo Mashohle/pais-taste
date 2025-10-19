@@ -109,7 +109,7 @@ export async function createOrder(orderData: OrderData) {
         menu_item_id: menuItemId,
         quantity: item.quantity,
         unit_price: item.price,
-        with_combo: item.type === 'combo'
+        with_combo: false // Legacy field, no longer used with new cart structure
       }
     })
 
