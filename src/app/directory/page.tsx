@@ -1,6 +1,7 @@
 "use client"
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -10,178 +11,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Slider } from "@/components/ui/slider"
 import { Switch } from "@/components/ui/switch"
 import { Separator } from "@/components/ui/separator"
+import { Skeleton } from "@/components/ui/skeleton"
 import { Search, MapPin, Clock, Star, ChevronRight, Filter, Map, List, SlidersHorizontal, X, Heart, Phone, Globe, Navigation } from "lucide-react"
 import Link from 'next/link'
 import { DynamicIcon } from '@/lib/utils/icon-mapper'
 import { useBusinessSwitching } from '@/lib/hooks'
 import { useBusinessDirectory } from '@/lib/hooks'
 
-interface Business {
-  id: string
-  name: string
-  category: string
-  category_name: string
-  description: string
-  image_url: string | null
-  rating: number
-  review_count: number
-  address: string
-  city: string
-  province: string
-  coordinates?: { lat: number; lng: number }
-  is_open: boolean
-  opening_hours: { [key: string]: { open: string; close: string; closed: boolean } }
-  estimated_time: string
-  delivery_fee: number
-  minimum_order: number
-  phone?: string
-  website?: string
-  features: string[]
-  price_range: '$' | '$$' | '$$$' | '$$$$'
-  distance?: number
-  featured: boolean
-  verified: boolean
-}
-
-// Extended mock business data
-const mockBusinesses: Business[] = [
-  {
-    id: '1',
-    name: "Pai's Taste Food Special",
-    category: 'food',
-    category_name: 'Food & Dining',
-    description: 'Authentic South African traditional cuisine with modern twists',
-    image_url: null,
-    rating: 4.8,
-    review_count: 127,
-    address: '123 Main Street, Montana',
-    city: 'Pretoria',
-    province: 'Gauteng',
-    coordinates: { lat: -25.7479, lng: 28.2293 },
-    is_open: true,
-    opening_hours: {
-      monday: { open: '08:00', close: '22:00', closed: false },
-      tuesday: { open: '08:00', close: '22:00', closed: false },
-      wednesday: { open: '08:00', close: '22:00', closed: false },
-      thursday: { open: '08:00', close: '22:00', closed: false },
-      friday: { open: '08:00', close: '23:00', closed: false },
-      saturday: { open: '09:00', close: '23:00', closed: false },
-      sunday: { open: '10:00', close: '21:00', closed: false }
-    },
-    estimated_time: '25-30 min',
-    delivery_fee: 25.00,
-    minimum_order: 80.00,
-    phone: '+27 81 454 1020',
-    features: ['Delivery', 'Takeaway', 'Traditional Food', 'Family Friendly'],
-    price_range: '$$',
-    distance: 2.5,
-    featured: true,
-    verified: true
-  },
-  {
-    id: '2',
-    name: 'Elite Car Wash & Detail',
-    category: 'car_wash',
-    category_name: 'Car Services',
-    description: 'Professional car washing and detailing services with eco-friendly products',
-    image_url: null,
-    rating: 4.6,
-    review_count: 89,
-    address: '456 Industrial Road, Woodstock',
-    city: 'Cape Town',
-    province: 'Western Cape',
-    coordinates: { lat: -33.9249, lng: 18.4241 },
-    is_open: true,
-    opening_hours: {
-      monday: { open: '07:00', close: '18:00', closed: false },
-      tuesday: { open: '07:00', close: '18:00', closed: false },
-      wednesday: { open: '07:00', close: '18:00', closed: false },
-      thursday: { open: '07:00', close: '18:00', closed: false },
-      friday: { open: '07:00', close: '19:00', closed: false },
-      saturday: { open: '08:00', close: '16:00', closed: false },
-      sunday: { open: '09:00', close: '14:00', closed: false }
-    },
-    estimated_time: '45-60 min',
-    delivery_fee: 0,
-    minimum_order: 150.00,
-    phone: '+27 21 123 4567',
-    website: 'https://elitecarwash.co.za',
-    features: ['Mobile Service', 'Eco-Friendly', 'Premium Products', 'Warranty'],
-    price_range: '$$$',
-    distance: 5.2,
-    featured: true,
-    verified: true
-  },
-  {
-    id: '3',
-    name: 'Trendy Cuts Salon',
-    category: 'salon',
-    category_name: 'Beauty & Wellness',
-    description: 'Modern hair styling and beauty treatments by certified professionals',
-    image_url: null,
-    rating: 4.9,
-    review_count: 156,
-    address: '789 Fashion Street, Umhlanga',
-    city: 'Durban',
-    province: 'KwaZulu-Natal',
-    coordinates: { lat: -29.8587, lng: 31.0218 },
-    is_open: false,
-    opening_hours: {
-      monday: { open: '09:00', close: '18:00', closed: false },
-      tuesday: { open: '09:00', close: '20:00', closed: false },
-      wednesday: { open: '09:00', close: '20:00', closed: false },
-      thursday: { open: '09:00', close: '20:00', closed: false },
-      friday: { open: '09:00', close: '21:00', closed: false },
-      saturday: { open: '08:00', close: '17:00', closed: false },
-      sunday: { open: '00:00', close: '00:00', closed: true }
-    },
-    estimated_time: '60-90 min',
-    delivery_fee: 0,
-    minimum_order: 200.00,
-    phone: '+27 31 987 6543',
-    website: 'https://trendycuts.co.za',
-    features: ['Online Booking', 'Certified Staff', 'Premium Products', 'Parking'],
-    price_range: '$$$',
-    distance: 8.7,
-    featured: false,
-    verified: true
-  },
-  {
-    id: '4',
-    name: 'Fresh Market Grocers',
-    category: 'retail',
-    category_name: 'Shopping',
-    description: 'Fresh produce, organic foods, and daily essentials',
-    image_url: null,
-    rating: 4.3,
-    review_count: 203,
-    address: '321 Market Square, Sandton',
-    city: 'Johannesburg',
-    province: 'Gauteng',
-    coordinates: { lat: -26.2041, lng: 28.0473 },
-    is_open: true,
-    opening_hours: {
-      monday: { open: '06:00', close: '20:00', closed: false },
-      tuesday: { open: '06:00', close: '20:00', closed: false },
-      wednesday: { open: '06:00', close: '20:00', closed: false },
-      thursday: { open: '06:00', close: '20:00', closed: false },
-      friday: { open: '06:00', close: '21:00', closed: false },
-      saturday: { open: '06:00', close: '18:00', closed: false },
-      sunday: { open: '07:00', close: '16:00', closed: false }
-    },
-    estimated_time: '15-20 min',
-    delivery_fee: 35.00,
-    minimum_order: 120.00,
-    phone: '+27 11 234 5678',
-    features: ['Fresh Produce', 'Organic Options', 'Same Day Delivery', 'Loyalty Program'],
-    price_range: '$$',
-    distance: 12.3,
-    featured: false,
-    verified: false
-  }
-]
-
-// Categories are now loaded from the database via the hook
+// Business interface is now defined in the hook
 
 const provinces = [
   'All Provinces',
@@ -197,8 +34,10 @@ const provinces = [
 ]
 
 export default function BusinessDirectory() {
+  const router = useRouter()
+
   // Use custom hooks
-  const { 
+  const {
     businesses,
     categories,
     cities,
@@ -207,8 +46,8 @@ export default function BusinessDirectory() {
     error,
     getFilteredBusinesses
   } = useBusinessDirectory()
-  
-  const { 
+
+  const {
     switchToBusinessType,
     getBusinessTypeFromCategory,
     getBusinessTypeIcon,
@@ -222,7 +61,6 @@ export default function BusinessDirectory() {
   const [selectedCategory, setSelectedCategory] = useState('all')
   const [selectedProvince, setSelectedProvince] = useState('All Provinces')
   const [selectedCity, setSelectedCity] = useState('')
-  const [priceRange, setPriceRange] = useState<string[]>([])
   const [minRating, setMinRating] = useState([0])
   const [maxDistance, setMaxDistance] = useState([50])
   const [openNow, setOpenNow] = useState(false)
@@ -232,13 +70,24 @@ export default function BusinessDirectory() {
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('grid')
   const [showFilters, setShowFilters] = useState(false)
 
+  // Read category from URL on mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search)
+      const category = params.get('category')
+      if (category) {
+        setSelectedCategory(category)
+      }
+    }
+  }, [])
+
   // Get filtered businesses using the current filter state
   const currentFilters = {
     searchTerm,
     selectedCategory,
     selectedProvince,
     selectedCity,
-    priceRange,
+    priceRange: [], // Removed price range filter
     minRating,
     maxDistance,
     openNow,
@@ -257,7 +106,6 @@ export default function BusinessDirectory() {
     setSelectedCategory('all')
     setSelectedProvince('All Provinces')
     setSelectedCity('')
-    setPriceRange([])
     setMinRating([0])
     setMaxDistance([50])
     setOpenNow(false)
@@ -270,7 +118,6 @@ export default function BusinessDirectory() {
     selectedCategory !== 'all',
     selectedProvince !== 'All Provinces',
     selectedCity !== '',
-    priceRange.length > 0,
     minRating[0] > 0,
     maxDistance[0] < 50,
     openNow,
@@ -298,7 +145,7 @@ export default function BusinessDirectory() {
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-4">
               <Link href="/" className="text-2xl font-bold bg-gradient-to-r from-stone-600 to-stone-800 bg-clip-text text-transparent">
-                LocalHub
+                SideHusl
               </Link>
               <Badge variant="secondary" className="text-xs">
                 Business Directory
@@ -306,13 +153,11 @@ export default function BusinessDirectory() {
             </div>
             
             <div className="flex items-center space-x-4">
-              <Button variant="ghost" size="sm">
-                <Heart className="w-4 h-4 mr-2" />
-                Favorites
-              </Button>
-              <Button variant="outline" size="sm">
-                Sign In
-              </Button>
+              <Link href="/">
+                <Button variant="ghost" size="sm">
+                  Back to Home
+                </Button>
+              </Link>
             </div>
           </div>
         </div>
@@ -329,20 +174,22 @@ export default function BusinessDirectory() {
             
             <div className="mt-4 md:mt-0 flex items-center space-x-2">
               <Button
-                variant={viewMode === 'grid' ? 'default' : 'outline'}
+                variant="outline"
                 size="sm"
                 onClick={() => setViewMode('grid')}
+                className={viewMode === 'grid' ? 'bg-stone-700 hover:bg-stone-800 text-white border-stone-700' : 'hover:bg-stone-100'}
               >
                 <Filter className="w-4 h-4" />
               </Button>
               <Button
-                variant={viewMode === 'list' ? 'default' : 'outline'}
+                variant="outline"
                 size="sm"
                 onClick={() => setViewMode('list')}
+                className={viewMode === 'list' ? 'bg-stone-700 hover:bg-stone-800 text-white border-stone-700' : 'hover:bg-stone-100'}
               >
                 <List className="w-4 h-4" />
               </Button>
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" className="hover:bg-stone-100">
                 <Map className="w-4 h-4 mr-2" />
                 Map View
               </Button>
@@ -382,33 +229,45 @@ export default function BusinessDirectory() {
                   </Button>
                 </div>
               </div>
-              
+
               <div className="p-4 space-y-6 max-h-[70vh] overflow-y-auto">
-                {/* Category Filter */}
-                <div>
-                  <Label className="text-sm font-medium mb-3 block">Category</Label>
-                  <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem key="all" value="all">
-                        <div className="flex items-center gap-2">
-                          <DynamicIcon name="grid-3x3" className="w-4 h-4" />
-                          All Categories
-                        </div>
-                      </SelectItem>
-                      {categories.map(category => (
-                        <SelectItem key={category.id} value={category.name?.toLowerCase() || category.id}>
-                          <div className="flex items-center gap-2">
-                            <DynamicIcon name={category.icon} className="w-4 h-4" />
-                            {category.name}
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                {isLoading ? (
+                  /* Sidebar Skeleton Loaders */
+                  <div className="space-y-6">
+                    {[1, 2, 3, 4, 5].map((i) => (
+                      <div key={i} className="space-y-3">
+                        <Skeleton className="h-4 w-24" />
+                        <Skeleton className="h-10 w-full rounded-md" />
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <>
+                    {/* Category Filter */}
+                    <div>
+                      <Label className="text-sm font-medium mb-3 block">Category</Label>
+                      <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a category" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem key="all" value="all">
+                            <div className="flex items-center gap-2">
+                              <DynamicIcon name="grid-3x3" className="w-4 h-4" />
+                              All Categories
+                            </div>
+                          </SelectItem>
+                          {categories.map(category => (
+                            <SelectItem key={category.id} value={category.id}>
+                              <div className="flex items-center gap-2">
+                                <DynamicIcon name={category.icon} className="w-4 h-4" />
+                                {category.name}
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
 
                 {/* Location Filters */}
                 <div>
@@ -432,30 +291,6 @@ export default function BusinessDirectory() {
                       value={selectedCity}
                       onChange={(e) => setSelectedCity(e.target.value)}
                     />
-                  </div>
-                </div>
-
-                {/* Price Range */}
-                <div>
-                  <Label className="text-sm font-medium mb-3 block">Price Range</Label>
-                  <div className="grid grid-cols-2 gap-2">
-                    {['$', '$$', '$$$', '$$$$'].map(range => (
-                      <label key={range} className="flex items-center space-x-2">
-                        <input
-                          type="checkbox"
-                          checked={priceRange.includes(range)}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setPriceRange([...priceRange, range])
-                            } else {
-                              setPriceRange(priceRange.filter(r => r !== range))
-                            }
-                          }}
-                          className="rounded border-gray-300"
-                        />
-                        <span className="text-sm">{getPriceRangeDisplay(range)}</span>
-                      </label>
-                    ))}
                   </div>
                 </div>
 
@@ -520,6 +355,8 @@ export default function BusinessDirectory() {
                     />
                   </div>
                 </div>
+                  </>
+                )}
               </div>
             </Card>
           </div>
@@ -546,7 +383,7 @@ export default function BusinessDirectory() {
             <div className="flex items-center justify-between mb-6">
               <div>
                 <h2 className="text-xl font-semibold text-stone-800">
-                  {sortedBusinesses.length} businesses found
+                  {sortedBusinesses.length} {sortedBusinesses.length === 1 ? 'business' : 'businesses'}
                 </h2>
                 {searchTerm && (
                   <p className="text-sm text-stone-600">
@@ -572,159 +409,171 @@ export default function BusinessDirectory() {
 
             {/* Business Listings */}
             {isLoading ? (
-              <div className="flex items-center justify-center py-12">
-                <div className="text-center">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-stone-600 mx-auto mb-4"></div>
-                  <p className="text-stone-700">Loading businesses...</p>
-                </div>
+              <div className="space-y-4">
+                {/* Skeleton Loaders */}
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <Card key={i} className="overflow-hidden">
+                    <CardContent className="p-0">
+                      <div className="flex gap-4">
+                        {/* Image Skeleton */}
+                        <div className="w-40 h-48 ml-4 my-4">
+                          <Skeleton className="w-full h-full rounded-lg" />
+                        </div>
+
+                        {/* Content Skeleton */}
+                        <div className="flex-1 py-6 pr-6 space-y-4">
+                          {/* Title */}
+                          <div className="space-y-2">
+                            <Skeleton className="h-6 w-2/3" />
+                            <Skeleton className="h-4 w-1/2" />
+                          </div>
+
+                          {/* Meta info */}
+                          <div className="flex items-center gap-3">
+                            <Skeleton className="h-5 w-20" />
+                            <Skeleton className="h-5 w-24" />
+                            <Skeleton className="h-5 w-16" />
+                          </div>
+
+                          {/* Description */}
+                          <div className="space-y-2">
+                            <Skeleton className="h-4 w-full" />
+                            <Skeleton className="h-4 w-4/5" />
+                          </div>
+
+                          {/* Action buttons */}
+                          <div className="flex items-center justify-between">
+                            <Skeleton className="h-6 w-24" />
+                            <div className="flex gap-2">
+                              <Skeleton className="h-9 w-9 rounded-md" />
+                              <Skeleton className="h-9 w-24 rounded-md" />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
               </div>
             ) : (
-              <div className={viewMode === 'grid' 
-                ? "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6" 
-                : "space-y-4"
-              }>
+              <div className="space-y-4">
                 {sortedBusinesses.map((business) => (
-                <Card key={business.id} className="hover:shadow-lg transition-shadow">
+                <Card
+                  key={business.id}
+                  className="hover:shadow-lg transition-shadow cursor-pointer"
+                  onClick={() => {
+                    router.push(`/business/${business.id}`)
+                  }}
+                >
                   <CardContent className="p-0">
-                    <div className={viewMode === 'grid' ? '' : 'flex'}>
+                    <div className="flex gap-4">
                       {/* Business Image */}
-                      <div className={`${viewMode === 'grid' ? 'h-48' : 'w-32 h-32 flex-shrink-0'} bg-gradient-to-r from-stone-200 to-stone-300 ${viewMode === 'grid' ? 'rounded-t-lg' : 'rounded-l-lg'} flex items-center justify-center relative`}>
-                        <DynamicIcon 
-                          name={categories.find(c => c.id === business.category)?.icon || 'building'} 
-                          className="w-12 h-12 text-stone-600" 
+                      <div className="w-40 self-stretch flex-shrink-0 bg-gradient-to-r from-stone-200 to-stone-300 rounded-lg flex items-center justify-center relative overflow-hidden ml-4">
+                        <DynamicIcon
+                          name={categories.find(c => c.id === business.category)?.icon || 'building'}
+                          className="w-12 h-12 text-stone-600"
                         />
-                        
+
                         {/* Badges */}
                         <div className="absolute top-2 left-2 flex gap-1">
                           {business.featured && (
                             <Badge className="text-xs bg-yellow-500 text-white">Featured</Badge>
                           )}
-                          {business.verified && (
-                            <Badge className="text-xs bg-blue-500 text-white">Verified</Badge>
-                          )}
                         </div>
-                        
-                        {/* Distance */}
-                        {business.distance && (
-                          <div className="absolute top-2 right-2">
-                            <Badge variant="secondary" className="text-xs">
-                              {business.distance}km
-                            </Badge>
-                          </div>
-                        )}
                       </div>
-                      
+
                       {/* Business Details */}
-                      <div className="p-4 flex-1">
-                        <div className="flex justify-between items-start mb-2">
-                          <div className="flex-1">
-                            <h3 className="text-lg font-semibold text-stone-800 mb-1">
+                      <div className="pr-4 flex-1 flex flex-col justify-between min-h-0">
+                        <div>
+                          <div className="flex justify-between items-start mb-3">
+                            <h3 className="text-lg font-semibold text-stone-800">
                               {business.name}
                             </h3>
-                            <div className="flex items-center space-x-2 mb-2">
-                              <div className="flex items-center space-x-1">
-                                <Star className="w-4 h-4 text-yellow-500 fill-current" />
-                                <span className="text-sm font-medium">{business.rating}</span>
-                                <span className="text-xs text-gray-500">({business.review_count})</span>
-                              </div>
-                              <span className="text-gray-300">•</span>
-                              <span className="text-sm text-gray-600">{business.price_range}</span>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-gray-400 hover:text-red-500 -mt-2 -mr-2"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                // TODO: Add to favorites functionality
+                              }}
+                            >
+                              <Heart className="w-4 h-4" />
+                            </Button>
+                          </div>
+
+                          <div className="flex items-center space-x-2 text-sm text-stone-600 mb-2">
+                            <div className="flex items-center space-x-1">
+                              <Star className="w-4 h-4 text-yellow-500 fill-current" />
+                              <span className="font-medium">{(business.rating || 0).toFixed(1)}</span>
+                              <span className="text-xs text-gray-500">({business.review_count || 0})</span>
                             </div>
+                            <span>•</span>
+                            <div className="flex items-center space-x-1">
+                              <MapPin className="w-3 h-3" />
+                              <span>{business.city}, {business.province}</span>
+                            </div>
+                            {business.distance && (
+                              <>
+                                <span>•</span>
+                                <span>{business.distance.toFixed(1)}km</span>
+                              </>
+                            )}
                           </div>
-                          
-                          <Button variant="ghost" size="sm" className="text-gray-400 hover:text-red-500">
-                            <Heart className="w-4 h-4" />
-                          </Button>
-                        </div>
-                        
-                        <p className="text-sm text-stone-600 mb-3 line-clamp-2">
-                          {business.description}
-                        </p>
-                        
-                        <div className="flex items-center space-x-4 text-sm text-stone-500 mb-3">
-                          <div className="flex items-center space-x-1">
-                            <MapPin className="w-3 h-3" />
-                            <span>{business.city}, {business.province}</span>
-                          </div>
-                        </div>
-                        
-                        {/* Business Type & Features */}
-                        <div className="flex flex-wrap gap-1 mb-3">
-                          <Badge 
-                            className={`text-xs border ${getBusinessTypeColor(getBusinessTypeFromCategory(business.category_name))}`}
-                          >
-                            {getBusinessTypeIcon(getBusinessTypeFromCategory(business.category_name))} {business.category_name}
-                          </Badge>
-                          {(business.features || []).slice(0, 2).map((feature, index) => (
-                            <Badge key={index} variant="outline" className="text-xs">
-                              {feature}
-                            </Badge>
-                          ))}
-                          {(business.features || []).length > 2 && (
-                            <Badge variant="outline" className="text-xs">
-                              +{(business.features || []).length - 2} more
-                            </Badge>
-                          )}
-                        </div>
-                        
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-2">
-                            <Badge variant={business.is_open ? "default" : "secondary"}>
+
+                          <div className="flex items-center space-x-2 text-sm text-stone-600">
+                            <Badge variant={business.is_open ? "default" : "secondary"} className="text-xs">
                               {business.is_open ? 'Open' : 'Closed'}
                             </Badge>
-                            <div className="flex items-center space-x-1 text-sm text-stone-600">
-                              <Clock className="w-3 h-3" />
-                              <span>{business.hours}</span>
-                            </div>
+                            <Clock className="w-4 h-4" />
+                            <span>
+                              {(() => {
+                                const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
+                                const today = days[new Date().getDay()]
+                                const hours = business.opening_hours?.[today]
+                                if (hours?.closed) return 'Closed today'
+                                if (hours) return `${hours.open} - ${hours.close}`
+                                return 'Hours unavailable'
+                              })()}
+                            </span>
                           </div>
-                          
+                        </div>
+
+                        <div className="flex items-center justify-between mt-3">
+                          <div className="flex items-center space-x-2">
+                            <Badge
+                              className={`text-xs border ${getBusinessTypeColor(getBusinessTypeFromCategory(business.category_name))}`}
+                            >
+                              {business.category_name}
+                            </Badge>
+                          </div>
+
                           <div className="flex items-center space-x-2">
                             {business.phone && (
-                              <Button variant="ghost" size="sm">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  window.location.href = `tel:${business.phone}`
+                                }}
+                              >
                                 <Phone className="w-4 h-4" />
                               </Button>
                             )}
-                            {business.website && (
-                              <Button variant="ghost" size="sm">
-                                <Globe className="w-4 h-4" />
-                              </Button>
-                            )}
-                            <Button 
-                              size="sm" 
-                              disabled={isSwitching}
-                              onClick={async () => {
-                                const success = await switchToBusinessType(
-                                  business.id,
-                                  business.name,
-                                  {
-                                    confirmSwitch: shouldWarnAboutBusinessSwitch(business.id),
-                                    redirectTo: `/business/${business.id}`,
-                                    showNotification: false
-                                  }
-                                )
-                                // If user cancelled the switch, don't navigate
-                                if (!success && shouldWarnAboutBusinessSwitch(business.id)) {
-                                  return
-                                }
+                            <Button
+                              size="sm"
+                              className="bg-stone-700 hover:bg-stone-800 text-white"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                router.push(`/business/${business.id}`)
                               }}
                             >
-                              {isSwitching ? (
-                                <>Loading...</>
-                              ) : (
-                                <>
-                                  View
-                                  <ChevronRight className="w-4 h-4 ml-1" />
-                                </>
-                              )}
+                              View
+                              <ChevronRight className="w-4 h-4 ml-1" />
                             </Button>
                           </div>
                         </div>
-                        
-                        {(business.delivery_fee || 0) > 0 && (
-                          <div className="mt-2 text-xs text-stone-500">
-                            Delivery: R{business.delivery_fee || 0} • Min order: R{business.minimum_order || 0}
-                          </div>
-                        )}
                       </div>
                     </div>
                   </CardContent>
@@ -738,7 +587,7 @@ export default function BusinessDirectory() {
                 <div className="w-16 h-16 bg-stone-200 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Search className="w-8 h-8 text-stone-400" />
                 </div>
-                <h3 className="text-lg font-medium text-stone-800 mb-2">No businesses found</h3>
+                <h3 className="text-lg font-medium text-stone-800 mb-2">No business found</h3>
                 <p className="text-stone-600 mb-4">
                   Try adjusting your search criteria or filters to find what you're looking for.
                 </p>

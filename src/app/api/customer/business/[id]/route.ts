@@ -1,6 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 
+// Haversine formula to calculate distance between two coordinates in kilometers
+function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371 // Earth's radius in kilometers
+  const dLat = (lat2 - lat1) * Math.PI / 180
+  const dLon = (lon2 - lon1) * Math.PI / 180
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2)
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+  return R * c
+}
+
 // Helper functions for business status calculation
 function calculateBusinessStatus(operatingHours: any): boolean {
   if (!operatingHours) return true // Default to open if no hours set
@@ -43,6 +56,9 @@ export async function GET(
 ) {
   try {
     const { id } = await params
+    const { searchParams } = new URL(request.url)
+    const userLat = searchParams.get('lat') ? parseFloat(searchParams.get('lat')!) : null
+    const userLon = searchParams.get('lon') ? parseFloat(searchParams.get('lon')!) : null
     const supabase = await createClient()
 
     // Check if id looks like a UUID or slug
@@ -64,6 +80,8 @@ export async function GET(
         email,
         logo_url,
         primary_color,
+        latitude,
+        longitude,
         settings,
         is_active,
         business_categories (
@@ -118,6 +136,12 @@ export async function GET(
       menuItems = items || []
     }
 
+    // Calculate distance if user location and business coordinates are available
+    let distance = null
+    if (userLat && userLon && business.latitude && business.longitude) {
+      distance = calculateDistance(userLat, userLon, business.latitude, business.longitude)
+    }
+
     // TODO: Fetch additional data like reviews, gallery
     // Return business with computed fields
     const businessData = {
@@ -155,6 +179,7 @@ export async function GET(
       delivery_fee: business.settings?.food?.delivery_fee || 0,
       minimum_order: business.settings?.food?.minimum_order || 0,
       price_range: business.settings?.price_range || '$$',
+      distance,
       features: [
         ...(business.settings?.food?.features || []),
         ...(business.settings?.retail?.features || []),

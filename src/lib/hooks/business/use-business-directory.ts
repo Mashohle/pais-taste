@@ -1,7 +1,20 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useBusinessErrorHandler } from './use-business-error-handler'
 import { BusinessData } from './use-business'
+
+// Haversine formula to calculate distance between two coordinates in kilometers
+function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371 // Earth's radius in kilometers
+  const dLat = (lat2 - lat1) * Math.PI / 180
+  const dLon = (lon2 - lon1) * Math.PI / 180
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2)
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+  return R * c
+}
 
 export interface DirectoryFilters {
   searchTerm: string
@@ -27,13 +40,50 @@ export function useBusinessDirectory() {
   const [businesses, setBusinesses] = useState<DirectoryBusiness[]>([])
   const [categories, setCategories] = useState<{id: string; name: string; description?: string}[]>([])
   const [cities, setCities] = useState<string[]>([])
-  
+  const [initialLoading, setInitialLoading] = useState(true)
+
+  // Initialize userLocation from localStorage if available
+  const [userLocation, setUserLocation] = useState<{ lat: number; lon: number } | null>(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('userLocation')
+      if (stored) {
+        try {
+          return JSON.parse(stored)
+        } catch {
+          return null
+        }
+      }
+    }
+    return null
+  })
+
   const {
     executeWithErrorHandling,
     hasError,
     error,
-    isLoading
+    isLoading: operationLoading
   } = useBusinessErrorHandler()
+
+  // Request user location
+  const requestLocation = useCallback(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const location = {
+            lat: position.coords.latitude,
+            lon: position.coords.longitude
+          }
+          setUserLocation(location)
+          // Save to localStorage for future page loads
+          localStorage.setItem('userLocation', JSON.stringify(location))
+        },
+        (error) => {
+          console.log('Location access denied or unavailable:', error)
+          // Continue without location - distance will just be undefined
+        }
+      )
+    }
+  }, [])
 
   // Load businesses from database
   useEffect(() => {
@@ -66,52 +116,81 @@ export function useBusinessDirectory() {
 
       if (!businessData) return
 
+      // Helper function to calculate if business is currently open
+      const isCurrentlyOpen = (operatingHours: any): boolean => {
+        if (!operatingHours) return false
+
+        const now = new Date()
+        const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
+        const today = days[now.getDay()]
+        const todayHours = operatingHours[today]
+
+        if (!todayHours || todayHours.closed) return false
+
+        const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
+        return currentTime >= todayHours.open && currentTime <= todayHours.close
+      }
+
       // Transform database data to component format
-      const transformedBusinesses: DirectoryBusiness[] = businessData.map(business => ({
-        id: business.id,
-        name: business.name,
-        slug: business.slug || business.id,
-        category: business.business_categories?.name?.toLowerCase() || 'service',
-        category_name: business.business_categories?.name || 'Service',
-        description: business.description || 'No description available',
-        long_description: business.long_description || business.description || '',
-        logo_url: business.logo_url,
-        rating: 4.5, // TODO: Calculate from reviews
-        review_count: Math.floor(Math.random() * 100), // TODO: Get from reviews
-        address: [
-          business.address_line1,
-          business.address_line2,
-          business.city,
-          business.state
-        ].filter(Boolean).join(', '),
-        city: business.city || 'Unknown',
-        province: business.state || 'Unknown',
-        coordinates: business.latitude && business.longitude ? {
-          lat: business.latitude,
-          lng: business.longitude
-        } : undefined,
-        phone: business.phone,
-        website: business.website,
-        email: business.email,
-        is_open: true, // TODO: Calculate based on operating hours
-        is_active: business.is_active,
-        settings: business.settings,
-        business_categories: business.business_categories,
-        
-        // Directory specific fields
-        hours: '9:00 AM - 10:00 PM', // TODO: Get from settings
-        delivery_fee: business.settings?.food?.delivery_fee || 0,
-        minimum_order: business.settings?.food?.minimum_order || 0,
-        price_range: business.settings?.price_range || '$$',
-        features: [
-          ...(business.settings?.food?.features || []),
-          ...(business.settings?.retail?.features || []),
-          ...(business.settings?.service?.features || [])
-        ].filter(Boolean),
-        distance: Math.random() * 10, // TODO: Calculate real distance
-        featured: Math.random() > 0.7, // TODO: Get from business settings
-        verified: Math.random() > 0.5 // TODO: Get from business verification status
-      }))
+      const transformedBusinesses: DirectoryBusiness[] = businessData.map(business => {
+        const operatingHours = business.settings?.operating_hours
+        const isOpen = isCurrentlyOpen(operatingHours)
+
+        // Calculate distance if user location and business coordinates are available
+        let distance = undefined
+        if (userLocation && business.latitude && business.longitude) {
+          distance = calculateDistance(userLocation.lat, userLocation.lon, business.latitude, business.longitude)
+        }
+
+        return {
+          id: business.id,
+          name: business.name,
+          slug: business.slug || business.id,
+          category: business.business_categories?.id || 'general',
+          category_name: business.business_categories?.name || 'General',
+          description: business.description || 'No description available',
+          long_description: business.long_description || business.description || '',
+          logo_url: business.logo_url,
+          rating: 4.5, // Temporary hardcoded value matching business detail page
+          review_count: 0, // Will be counted from reviews when implemented
+          address: [
+            business.address_line1,
+            business.address_line2,
+            business.city,
+            business.state
+          ].filter(Boolean).join(', '),
+          city: business.city || 'Unknown',
+          province: business.state || 'Unknown',
+          coordinates: business.latitude && business.longitude ? {
+            lat: business.latitude,
+            lng: business.longitude
+          } : undefined,
+          phone: business.phone,
+          website: business.website,
+          email: business.email,
+          is_open: isOpen,
+          is_active: business.is_active,
+          settings: business.settings,
+          business_categories: business.business_categories,
+          opening_hours: operatingHours,
+
+          // Directory specific fields
+          estimated_time: business.settings?.food?.estimated_time ||
+                          business.settings?.service?.estimated_time ||
+                          '30-45 min',
+          delivery_fee: business.settings?.food?.delivery_fee || 0,
+          minimum_order: business.settings?.food?.minimum_order || 0,
+          price_range: business.settings?.price_range || '$$',
+          features: [
+            ...(business.settings?.food?.features || []),
+            ...(business.settings?.retail?.features || []),
+            ...(business.settings?.service?.features || [])
+          ].filter(Boolean),
+          distance, // Calculated based on user location
+          featured: business.is_featured || false,
+          verified: business.is_verified || false
+        }
+      })
 
       setBusinesses(transformedBusinesses)
 
@@ -122,10 +201,11 @@ export function useBusinessDirectory() {
           .filter((city): city is string => Boolean(city))
       ))
       setCities(uniqueCities.sort())
+      setInitialLoading(false)
     }
 
     loadBusinesses()
-  }, [executeWithErrorHandling])
+  }, [executeWithErrorHandling, userLocation])
 
   // Load business categories
   useEffect(() => {
@@ -259,27 +339,35 @@ export function useBusinessDirectory() {
   }
 
   const refetch = async () => {
+    setInitialLoading(true)
     setBusinesses([])
     setCategories([])
     setCities([])
     // The useEffect will trigger a new fetch
   }
 
+  // Request location on mount
+  useEffect(() => {
+    requestLocation()
+  }, [requestLocation])
+
   return {
     businesses,
     categories,
     cities,
-    isLoading,
+    isLoading: initialLoading || operationLoading,
     hasError,
     error,
+    userLocation,
+    requestLocation,
     refetch,
     getFilteredBusinesses,
-    
+
     // Stats
     totalBusinesses: businesses.length,
     businessesByCategory: categories.map(cat => ({
       category: cat,
-      count: businesses.filter(b => b.category === cat.name?.toLowerCase()).length
+      count: businesses.filter(b => b.category === cat.id).length
     }))
   }
 }

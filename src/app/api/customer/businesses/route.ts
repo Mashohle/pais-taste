@@ -1,6 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 
+// Haversine formula to calculate distance between two coordinates in kilometers
+function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371 // Earth's radius in kilometers
+  const dLat = (lat2 - lat1) * Math.PI / 180
+  const dLon = (lon2 - lon1) * Math.PI / 180
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2)
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+  return R * c
+}
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
@@ -8,6 +21,8 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search')
     const limit = parseInt(searchParams.get('limit') || '20')
     const offset = parseInt(searchParams.get('offset') || '0')
+    const userLat = searchParams.get('lat') ? parseFloat(searchParams.get('lat')!) : null
+    const userLon = searchParams.get('lon') ? parseFloat(searchParams.get('lon')!) : null
 
     const supabase = await createClient()
 
@@ -25,6 +40,8 @@ export async function GET(request: NextRequest) {
         website,
         logo_url,
         primary_color,
+        latitude,
+        longitude,
         business_categories (
           id,
           name,
@@ -65,6 +82,12 @@ export async function GET(request: NextRequest) {
         ? business.business_categories[0]
         : business.business_categories
 
+      // Calculate distance if user coordinates are provided and business has coordinates
+      let distance = null
+      if (userLat && userLon && business.latitude && business.longitude) {
+        distance = calculateDistance(userLat, userLon, business.latitude, business.longitude)
+      }
+
       return {
         id: business.id,
         name: business.name,
@@ -82,10 +105,11 @@ export async function GET(request: NextRequest) {
           icon: categoryData?.icon || 'building',
           color: categoryData?.color || 'bg-gray-100 text-gray-700'
         },
-        // Default values for missing fields
-        rating: 0,
+        // Default values since rating/review columns don't exist yet
+        rating: 4.5,
         review_count: 0,
         is_featured: false,
+        distance,
         created_at: business.created_at
       }
     }) || []

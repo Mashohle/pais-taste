@@ -31,6 +31,7 @@ export interface BusinessData {
   delivery_fee?: number
   minimum_order?: number
   price_range?: string
+  distance?: number | null
   features?: string[]
   // Additional data for business page
   reviews?: any[]
@@ -44,6 +45,41 @@ export function useBusiness(businessId: string | null) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
+  // Initialize userLocation from localStorage if available
+  const [userLocation, setUserLocation] = useState<{ lat: number; lon: number } | null>(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('userLocation')
+      if (stored) {
+        try {
+          return JSON.parse(stored)
+        } catch {
+          return null
+        }
+      }
+    }
+    return null
+  })
+
+  // Get user location on mount (and save to localStorage)
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const location = {
+            lat: position.coords.latitude,
+            lon: position.coords.longitude
+          }
+          setUserLocation(location)
+          // Save to localStorage for future page loads
+          localStorage.setItem('userLocation', JSON.stringify(location))
+        },
+        (error) => {
+          console.log('Location access denied or unavailable:', error)
+        }
+      )
+    }
+  }, [])
+
   useEffect(() => {
     if (!businessId) {
       setBusiness(null)
@@ -52,14 +88,19 @@ export function useBusiness(businessId: string | null) {
     }
 
     fetchBusiness()
-  }, [businessId])
+  }, [businessId, userLocation])
 
   async function fetchBusiness() {
     try {
       setLoading(true)
       setError(null)
 
-      const response = await fetch(`/api/customer/business/${businessId}`)
+      let url = `/api/customer/business/${businessId}`
+      if (userLocation) {
+        url += `?lat=${userLocation.lat}&lon=${userLocation.lon}`
+      }
+
+      const response = await fetch(url)
       const result = await response.json()
 
       if (!response.ok) {

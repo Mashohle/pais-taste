@@ -54,6 +54,7 @@ interface BusinessPageData {
   estimated_delivery_time?: string
   estimated_service_time?: string
   price_range?: string
+  distance?: number | null
   verified: boolean
   featured: boolean
   menu_items?: any[]
@@ -101,6 +102,7 @@ export default function BusinessDetailPage() {
     is_open: business.is_open,
     delivery_fee: business.delivery_fee || 0,
     minimum_order: business.minimum_order || 0,
+    distance: business.distance,
     menu_items: business.menu_items || [],
     opening_hours: {
       monday: { open: '09:00', close: '18:00', closed: false },
@@ -391,8 +393,8 @@ export default function BusinessDetailPage() {
           <div className="mb-8">
             <div className="flex flex-col lg:flex-row gap-8">
               {/* Business Image */}
-              <div className="lg:w-1/3">
-                <div className="h-64 lg:h-80 bg-gradient-to-r from-stone-200 to-stone-300 rounded-2xl flex items-center justify-center overflow-hidden relative shadow-lg">
+              <div className="lg:w-[22%]">
+                <div className="h-48 lg:h-56 bg-gradient-to-r from-stone-200 to-stone-300 rounded-2xl flex items-center justify-center overflow-hidden relative shadow-lg">
                   {businessPageData.image_url ? (
                     <img
                       src={businessPageData.image_url}
@@ -423,15 +425,11 @@ export default function BusinessDetailPage() {
               </div>
 
               {/* Business Info */}
-              <div className="lg:w-2/3">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className={`w-8 h-8 rounded-lg ${categoryInfo.color} flex items-center justify-center`}>
-                    <DynamicIcon name={categoryInfo.icon} className="w-4 h-4" />
-                  </div>
-                  <Badge variant="secondary">{businessPageData.category_name}</Badge>
-                  <Badge variant={status.isOpen ? "default" : "secondary"}>
-                    {status.text}
-                  </Badge>
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-4">
+                  <Heart className={`w-5 h-5 cursor-pointer ${isFavorited ? 'text-red-500 fill-current' : 'text-gray-400'}`}
+                    onClick={() => setIsFavorited(!isFavorited)} />
+                  <Share2 className="w-5 h-5 text-gray-400 cursor-pointer" />
                 </div>
 
                 <h1 className="text-3xl font-bold text-stone-800 mb-2">{businessPageData.name}</h1>
@@ -445,38 +443,24 @@ export default function BusinessDetailPage() {
                   {businessPageData.price_range && (
                     <>
                       <span className="text-stone-400">•</span>
-                      <span className="text-stone-600">{businessPageData.price_range}</span>
+                      <span className="text-stone-600">{businessPageData.price_range.replace(/\$/g, 'R')}</span>
+                    </>
+                  )}
+                  {businessPageData.distance && (
+                    <>
+                      <span className="text-stone-400">•</span>
+                      <span className="text-stone-600">{businessPageData.distance.toFixed(1)}km</span>
                     </>
                   )}
                 </div>
 
                 <p className="text-stone-700 mb-4">{businessPageData.description}</p>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-stone-600 mb-6">
-                  <div className="flex items-center space-x-2">
-                    <MapPin className="w-4 h-4" />
-                    <span>{businessPageData.address}</span>
-                  </div>
-                  {businessPageData.phone && (
-                    <div className="flex items-center space-x-2">
-                      <Phone className="w-4 h-4" />
-                      <span>{businessPageData.phone}</span>
-                    </div>
-                  )}
-                  {businessPageData.email && (
-                    <div className="flex items-center space-x-2">
-                      <span className="w-4 h-4">✉</span>
-                      <span>{businessPageData.email}</span>
-                    </div>
-                  )}
-                  {businessPageData.website && (
-                    <div className="flex items-center space-x-2">
-                      <Globe className="w-4 h-4" />
-                      <a href={businessPageData.website} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
-                        Website
-                      </a>
-                    </div>
-                  )}
+                <div className="flex items-center gap-2 mb-6">
+                  <Badge className={`text-xs ${categoryInfo.color}`}>{businessPageData.category_name}</Badge>
+                  <Badge variant={status.isOpen ? "default" : "secondary"}>
+                    {status.text}
+                  </Badge>
                 </div>
 
                 {/* Features */}

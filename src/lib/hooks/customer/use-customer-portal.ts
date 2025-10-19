@@ -29,6 +29,7 @@ interface Business {
   rating: number
   review_count: number
   is_featured: boolean
+  distance?: number | null
   created_at: string
 }
 
@@ -45,6 +46,21 @@ export function useCustomerPortal() {
   const [loading, setLoading] = useState(true)
   const [categoriesLoading, setCategoriesLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+
+  // Initialize userLocation from localStorage if available
+  const [userLocation, setUserLocation] = useState<{ lat: number; lon: number } | null>(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('userLocation')
+      if (stored) {
+        try {
+          return JSON.parse(stored)
+        } catch {
+          return null
+        }
+      }
+    }
+    return null
+  })
 
   // Fetch categories
   const fetchCategories = useCallback(async () => {
@@ -77,6 +93,10 @@ export function useCustomerPortal() {
       if (filters.search) searchParams.append('search', filters.search)
       if (filters.limit) searchParams.append('limit', filters.limit.toString())
       if (filters.offset) searchParams.append('offset', filters.offset.toString())
+      if (userLocation) {
+        searchParams.append('lat', userLocation.lat.toString())
+        searchParams.append('lon', userLocation.lon.toString())
+      }
 
       const response = await fetch(`/api/customer/businesses?${searchParams.toString()}`)
 
@@ -92,7 +112,7 @@ export function useCustomerPortal() {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [userLocation])
 
   // Search businesses
   const searchBusinesses = useCallback((searchTerm: string, category?: string) => {
@@ -111,11 +131,50 @@ export function useCustomerPortal() {
     })
   }, [fetchBusinesses])
 
-  // Initial load
+  // Request user location
+  const requestLocation = useCallback(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const location = {
+            lat: position.coords.latitude,
+            lon: position.coords.longitude
+          }
+          setUserLocation(location)
+          localStorage.setItem('userLocation', JSON.stringify(location))
+        },
+        (error) => {
+          // Use default location (Johannesburg) if geolocation fails
+          const defaultLocation = {
+            lat: -26.2041,
+            lon: 28.0473
+          }
+          setUserLocation(defaultLocation)
+          localStorage.setItem('userLocation', JSON.stringify(defaultLocation))
+        },
+        {
+          enableHighAccuracy: false,
+          timeout: 5000,
+          maximumAge: 0
+        }
+      )
+    }
+  }, [])
+
+  // Request location on mount
+  useEffect(() => {
+    requestLocation()
+  }, [requestLocation])
+
+  // Fetch categories on mount
   useEffect(() => {
     fetchCategories()
+  }, [fetchCategories])
+
+  // Fetch businesses on mount and when user location changes
+  useEffect(() => {
     fetchBusinesses({ limit: 20 })
-  }, [fetchCategories, fetchBusinesses])
+  }, [fetchBusinesses]) // fetchBusinesses already depends on userLocation, so it will refetch when location changes
 
   return {
     businesses,
@@ -123,9 +182,11 @@ export function useCustomerPortal() {
     loading,
     categoriesLoading,
     error,
+    userLocation,
     fetchBusinesses,
     searchBusinesses,
     filterByCategory,
+    requestLocation,
     refreshData: () => {
       fetchCategories()
       fetchBusinesses({ limit: 20 })

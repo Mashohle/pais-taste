@@ -1,11 +1,13 @@
 "use client"
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { Card, CardContent } from "@/components/ui/card"
+import { BusinessCard, BusinessCardContent } from "@/components/ui/business-card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Search, MapPin, Clock, Star, ChevronRight, Utensils, ShoppingBag, Wrench, Car, Scissors, Home, Filter, Menu, User, Heart, ShoppingCart } from "lucide-react"
+import { Search, MapPin, Clock, Star, ChevronRight, Utensils, ShoppingBag, Wrench, Car, Scissors, Home, Filter, Menu, User, Heart, ShoppingCart, Phone } from "lucide-react"
 import Link from 'next/link'
 import { DynamicIcon } from '@/lib/utils/icon-mapper'
 import { useAuth } from '@/lib/contexts/auth-context'
@@ -31,6 +33,7 @@ interface DynamicScreenContent {
 
 
 export default function CustomerPortalHome() {
+  const router = useRouter()
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [dynamicContent, setDynamicContent] = useState<DynamicScreenContent | null>(null)
@@ -328,9 +331,9 @@ export default function CustomerPortalHome() {
           <h2 className="text-2xl font-bold text-stone-800 mb-6">Browse Categories</h2>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
             {categories.map((category) => (
-              <Link href={`/businesses?category=${category.id}`} key={category.id}>
+              <Link href={`/directory?category=${category.id}`} key={category.id}>
                 <Card className="cursor-pointer transition-all hover:shadow-md">
-                  <CardContent className="p-6 text-center">
+                  <CardContent className="px-4 text-center">
                     <div className={`w-12 h-12 rounded-full ${category.color} flex items-center justify-center mx-auto mb-3`}>
                       <DynamicIcon name={category.icon} className="w-6 h-6" />
                     </div>
@@ -357,9 +360,16 @@ export default function CustomerPortalHome() {
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {businesses.map((business) => (
-              <Card key={business.id} className="hover:shadow-lg transition-shadow cursor-pointer">
-                <CardContent className="p-0">
-                  <div className="h-48 bg-gradient-to-r from-stone-200 to-stone-300 rounded-t-lg flex items-center justify-center overflow-hidden">
+              <BusinessCard
+                key={business.id}
+                className="hover:shadow-lg transition-shadow cursor-pointer"
+                onClick={() => {
+                  router.push(`/business/${business.slug || business.id}`)
+                }}
+              >
+                <BusinessCardContent className="p-0">
+                  {/* Business Image */}
+                  <div className="h-48 bg-gradient-to-r from-stone-200 to-stone-300 rounded-t-lg flex items-center justify-center relative overflow-hidden">
                     {business.logo_url ? (
                       <img
                         src={business.logo_url}
@@ -369,54 +379,106 @@ export default function CustomerPortalHome() {
                           (e.target as HTMLImageElement).style.display = 'none'
                           const parent = (e.target as HTMLImageElement).parentElement
                           if (parent) {
-                            parent.innerHTML = `<div class="w-12 h-12 text-stone-600"><svg viewBox="0 0 24 24" fill="currentColor"><path d="${business.category?.icon === 'utensils' ? 'M11 9H9V2H7v7H5V2H3v7c0 2.12 1.66 3.84 3.75 3.97V22h2.5v-9.03C11.34 12.84 13 11.12 13 9V2h-2v7zm5-3v8h2.5v8H21V2c-2.76 0-5 2.24-5 4z' : 'M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z'}"></path></svg></div>`
+                            const iconDiv = document.createElement('div')
+                            iconDiv.className = 'w-12 h-12 text-stone-600'
+                            parent.appendChild(iconDiv)
                           }
                         }}
                       />
                     ) : (
-                      <DynamicIcon name={business.category.icon || 'building'} className="w-12 h-12 text-stone-600" />
+                      <DynamicIcon name={business.category?.icon || 'building'} className="w-12 h-12 text-stone-600" />
                     )}
-                  </div>
 
-                  <div className="p-4">
-                    <div className="flex justify-between items-start mb-2">
-                      <h3 className="text-lg font-semibold text-stone-800">{business.name}</h3>
-                      <div className="flex items-center space-x-1">
-                        <Star className="w-4 h-4 text-yellow-500 fill-current" />
-                        <span className="text-sm font-medium">{business.rating || 0}</span>
-                        <span className="text-xs text-gray-500">({business.review_count || 0})</span>
-                      </div>
+                    {/* Badges */}
+                    <div className="absolute top-2 left-2 flex gap-1">
+                      {business.is_featured && (
+                        <Badge className="text-xs bg-yellow-500 text-white">Featured</Badge>
+                      )}
                     </div>
 
-                    <p className="text-sm text-stone-600 mb-3">{business.description}</p>
+                    {/* Heart Button */}
+                    <div className="absolute top-2 right-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-gray-400 hover:text-red-500 bg-white/80 hover:bg-white"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          // TODO: Add to favorites functionality
+                        }}
+                      >
+                        <Heart className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
 
-                    <div className="flex items-center space-x-4 text-sm text-stone-500 mb-3">
+                  {/* Business Details */}
+                  <div className="p-4">
+                    <div className="mb-2">
+                      <h3 className="text-lg font-semibold text-stone-800 mb-2">
+                        {business.name}
+                      </h3>
+                    </div>
+
+                    <div className="flex items-center space-x-2 text-sm text-stone-600 mb-2">
+                      <div className="flex items-center space-x-1">
+                        <Star className="w-4 h-4 text-yellow-500 fill-current" />
+                        <span className="font-medium">{(business.rating || 0).toFixed(1)}</span>
+                        <span className="text-xs text-gray-500">({business.review_count || 0})</span>
+                      </div>
+                      <span>•</span>
                       <div className="flex items-center space-x-1">
                         <MapPin className="w-3 h-3" />
-                        <span>{business.address}{business.city && `, ${business.city}`}</span>
+                        <span className="truncate">{business.city}</span>
+                      </div>
+                      {business.distance && (
+                        <>
+                          <span>•</span>
+                          <span className="text-xs">{business.distance.toFixed(1)}km</span>
+                        </>
+                      )}
+                    </div>
+
+                    <div className="flex items-center space-x-2 text-sm text-stone-600 mb-3">
+                      <Badge variant={business.is_open ? "default" : "secondary"} className="text-xs">
+                        {business.is_open ? 'Open' : 'Closed'}
+                      </Badge>
+                      <div className="flex items-center space-x-1 text-xs truncate">
+                        <Clock className="w-3 h-3" />
+                        <span>
+                          {(() => {
+                            const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
+                            const today = days[new Date().getDay()]
+                            const hours = business.opening_hours?.[today]
+                            if (hours?.closed) return 'Closed'
+                            if (hours) return `${hours.open} - ${hours.close}`
+                            return 'N/A'
+                          })()}
+                        </span>
                       </div>
                     </div>
 
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2">
-                        <Badge variant={business.is_featured ? "default" : "secondary"}>
-                          {business.is_featured ? 'Featured' : 'Available'}
-                        </Badge>
-                        <Badge variant="outline" className="text-xs">
-                          {business.category.name}
-                        </Badge>
-                      </div>
+                      <Badge className={`text-xs ${business.category?.color || 'bg-stone-200'}`}>
+                        {business.category?.name}
+                      </Badge>
 
-                      <Link href={`/business/${business.slug || business.id}`}>
-                        <Button size="sm">
-                          View
-                          <ChevronRight className="w-4 h-4 ml-1" />
+                      {business.phone && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            window.location.href = `tel:${business.phone}`
+                          }}
+                        >
+                          <Phone className="w-4 h-4" />
                         </Button>
-                      </Link>
+                      )}
                     </div>
                   </div>
-                </CardContent>
-              </Card>
+                </BusinessCardContent>
+              </BusinessCard>
             ))}
           </div>
           
