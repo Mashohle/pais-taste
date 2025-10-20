@@ -29,7 +29,15 @@ interface Business {
   rating: number
   review_count: number
   is_featured: boolean
+  is_open?: boolean
   distance?: number | null
+  opening_hours?: {
+    [key: string]: {
+      open: string
+      close: string
+      closed?: boolean
+    }
+  }
   created_at: string
 }
 
