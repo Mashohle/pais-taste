@@ -20,22 +20,23 @@ export interface Order {
   customer_name: string
   customer_phone: string
   total_amount: number
-  
+  reference?: string // Human-readable order reference (e.g., PAI-9B825)
+
   // Legacy status fields (kept for backward compatibility)
   order_status: string
   payment_status: string
-  
+
   // New configurable status system
   order_status_code?: string
   payment_status_code?: string
-  
+
   payment_method: 'online' | 'cash_on_pickup'
   pickup_location: string
   special_instructions: string | null
   created_at: string
   updated_at?: string
   order_items: OrderItem[]
-  
+
   // Business relationship for populated queries
   businesses?: {
     id: string

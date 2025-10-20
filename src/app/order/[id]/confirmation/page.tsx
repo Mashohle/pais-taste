@@ -1,10 +1,12 @@
 "use client"
 
 import { useParams } from "next/navigation"
-import { CheckCircle, Clock, MapPin, Hash, ArrowLeft, Truck } from "lucide-react"
+import { CheckCircle, Clock, MapPin, Hash, ArrowLeft, Truck, Phone, Lock, Copy, Check } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { useState, useEffect } from "react"
 import { supabase } from '@/lib/supabase'
 
@@ -15,6 +17,11 @@ export default function OrderConfirmationPage() {
   const [loading, setLoading] = useState(true)
   const [orderNotFound, setOrderNotFound] = useState(false)
   const [businessData, setBusinessData] = useState<any>(null)
+  const [showPhoneVerification, setShowPhoneVerification] = useState(false)
+  const [phoneNumber, setPhoneNumber] = useState('')
+  const [phoneError, setPhoneError] = useState('')
+  const [isVerifying, setIsVerifying] = useState(false)
+  const [copied, setCopied] = useState(false)
 
   useEffect(() => {
     if (!orderId) {
@@ -23,8 +30,61 @@ export default function OrderConfirmationPage() {
       return
     }
 
-    fetchOrder()
+    checkAccessAndFetchOrder()
   }, [orderId])
+
+  const checkAccessAndFetchOrder = () => {
+    // Check if we have access via session storage (just placed order)
+    const accessibleOrders = JSON.parse(sessionStorage.getItem('accessibleOrders') || '[]')
+
+    if (accessibleOrders.includes(orderId)) {
+      fetchOrder()
+    } else {
+      // Need phone verification
+      setShowPhoneVerification(true)
+      setLoading(false)
+    }
+  }
+
+  const verifyPhoneNumber = async () => {
+    setPhoneError('')
+    setIsVerifying(true)
+
+    try {
+      // Fetch order and verify phone number
+      const { data: orderData, error: orderError } = await supabase
+        .from('orders')
+        .select('id, customer_phone')
+        .eq('id', orderId)
+        .single()
+
+      if (orderError || !orderData) {
+        setPhoneError('Order not found')
+        setIsVerifying(false)
+        return
+      }
+
+      // Normalize phone numbers for comparison (remove spaces, dashes, etc)
+      const normalizePhone = (phone: string) => phone.replace(/[\s\-\(\)]/g, '')
+
+      if (normalizePhone(orderData.customer_phone) === normalizePhone(phoneNumber)) {
+        // Phone verified! Store in session and fetch order
+        const accessibleOrders = JSON.parse(sessionStorage.getItem('accessibleOrders') || '[]')
+        accessibleOrders.push(orderId)
+        sessionStorage.setItem('accessibleOrders', JSON.stringify(accessibleOrders))
+
+        setShowPhoneVerification(false)
+        fetchOrder()
+      } else {
+        setPhoneError('Phone number does not match order')
+        setIsVerifying(false)
+      }
+    } catch (error) {
+      console.error('Error verifying phone:', error)
+      setPhoneError('Verification failed. Please try again.')
+      setIsVerifying(false)
+    }
+  }
 
   const fetchOrder = async () => {
     try {
@@ -117,9 +177,82 @@ export default function OrderConfirmationPage() {
   }
 
   const getOrderDisplayId = () => {
-    if (!order || !businessData) return "ORD-XXX"
-    const prefix = businessData.name.substring(0, 3).toUpperCase()
-    return `${prefix}-${order.id.slice(-3).toUpperCase()}`
+    if (!order) return "ORD-XXX"
+    // Use the reference from the database if available
+    return order.reference || "ORD-XXX"
+  }
+
+  const copyOrderReference = async () => {
+    const reference = getOrderDisplayId()
+    try {
+      await navigator.clipboard.writeText(reference)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000) // Reset after 2 seconds
+    } catch (err) {
+      console.error('Failed to copy:', err)
+    }
+  }
+
+  // Phone verification modal
+  if (showPhoneVerification) {
+    return (
+      <div className="min-h-screen bg-stone-50 flex items-center justify-center px-4">
+        <div className="max-w-md w-full bg-white rounded-2xl shadow-2xl p-8">
+          <div className="text-center mb-6">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-stone-100 rounded-full mb-4">
+              <Lock className="w-8 h-8 text-stone-600" />
+            </div>
+            <h1 className="text-2xl font-bold text-stone-800 mb-2">Verify Your Order</h1>
+            <p className="text-stone-600">
+              Please enter the phone number used when placing this order
+            </p>
+          </div>
+
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="phone" className="text-stone-700">Phone Number</Label>
+              <div className="relative">
+                <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-stone-400" />
+                <Input
+                  id="phone"
+                  type="tel"
+                  placeholder="+27123456789"
+                  value={phoneNumber}
+                  onChange={(e) => setPhoneNumber(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && verifyPhoneNumber()}
+                  className="pl-10"
+                />
+              </div>
+              {phoneError && (
+                <p className="text-red-600 text-sm mt-1">{phoneError}</p>
+              )}
+            </div>
+
+            <Button
+              onClick={verifyPhoneNumber}
+              disabled={isVerifying || !phoneNumber}
+              className="w-full bg-stone-700 hover:bg-stone-800"
+            >
+              {isVerifying ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Verifying...
+                </>
+              ) : (
+                'Verify & View Order'
+              )}
+            </Button>
+
+            <Link href="/" className="block">
+              <Button variant="outline" className="w-full">
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back to Menu
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   // Loading state
@@ -208,7 +341,23 @@ export default function OrderConfirmationPage() {
               <div className="flex items-center justify-center space-x-2 bg-white/80 backdrop-blur-sm rounded-lg p-3 border border-stone-200/60">
                 <Hash className="w-5 h-5 text-stone-600" />
                 <span className="font-mono text-lg font-semibold text-stone-800">{getOrderDisplayId()}</span>
+                <button
+                  onClick={copyOrderReference}
+                  className="ml-2 p-2 hover:bg-stone-100 rounded-lg transition-colors"
+                  title="Copy order reference"
+                >
+                  {copied ? (
+                    <Check className="w-5 h-5 text-green-600" />
+                  ) : (
+                    <Copy className="w-5 h-5 text-stone-600" />
+                  )}
+                </button>
               </div>
+              {copied && (
+                <p className="text-sm text-green-600 text-center mt-2">
+                  Order reference copied to clipboard!
+                </p>
+              )}
             </div>
           </div>
 

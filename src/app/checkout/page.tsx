@@ -155,6 +155,11 @@ export default function CheckoutPage() {
 
                 const { order } = await response.json()
 
+                // Store order ID in session storage for immediate access
+                const accessibleOrders = JSON.parse(sessionStorage.getItem('accessibleOrders') || '[]')
+                accessibleOrders.push(order.id)
+                sessionStorage.setItem('accessibleOrders', JSON.stringify(accessibleOrders))
+
                 // Clear cart
                 clearCart()
 

@@ -7,7 +7,7 @@ import { BusinessCard, BusinessCardContent } from "@/components/ui/business-card
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Search, MapPin, Clock, Star, ChevronRight, Utensils, ShoppingBag, Wrench, Car, Scissors, Home, Filter, Menu, User, Heart, ShoppingCart, Phone } from "lucide-react"
+import { Search, MapPin, Clock, Star, ChevronRight, Utensils, ShoppingBag, Wrench, Car, Scissors, Home, Filter, Menu, User, Heart, Phone, Package } from "lucide-react"
 import Link from 'next/link'
 import { DynamicIcon } from '@/lib/utils/icon-mapper'
 import { useAuth } from '@/lib/contexts/auth-context'
@@ -166,10 +166,12 @@ export default function CustomerPortalHome() {
                   <Heart className="w-4 h-4 mr-2" />
                   Favorites
                 </Button>
-                <Button variant="ghost" size="sm">
-                  <ShoppingCart className="w-4 h-4 mr-2" />
-                  Orders
-                </Button>
+                <Link href="/track-order">
+                  <Button variant="ghost" size="sm">
+                    <Package className="w-4 h-4 mr-2" />
+                    Track Order
+                  </Button>
+                </Link>
                 <Link href={user ? "/account" : "/login"}>
                   <Button variant="outline" size="sm">
                     <User className="w-4 h-4 mr-2" />
@@ -283,10 +285,12 @@ export default function CustomerPortalHome() {
                 <Heart className="w-4 h-4 mr-2" />
                 Favorites
               </Button>
-              <Button variant="ghost" size="sm">
-                <ShoppingCart className="w-4 h-4 mr-2" />
-                Orders
-              </Button>
+              <Link href="/track-order">
+                <Button variant="ghost" size="sm">
+                  <Package className="w-4 h-4 mr-2" />
+                  Track Order
+                </Button>
+              </Link>
               <Link href={user ? "/account" : "/login"}>
                 <Button variant="outline" size="sm">
                   <User className="w-4 h-4 mr-2" />

@@ -3,7 +3,9 @@
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { CheckCircle, Clock, ChefHat, Package, MapPin, Phone, MessageCircle, ArrowLeft, User } from "lucide-react"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { CheckCircle, Clock, ChefHat, Package, MapPin, Phone, MessageCircle, ArrowLeft, User, Lock, Copy, Check } from "lucide-react"
 import { useState, useEffect, use } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
@@ -78,6 +80,11 @@ export default function OrderTrackingPage({ params }: OrderTrackingPageProps) {
   const [orderNotFound, setOrderNotFound] = useState(false)
   const [currentTime, setCurrentTime] = useState(new Date())
   const [businessData, setBusinessData] = useState<any>(null)
+  const [showPhoneVerification, setShowPhoneVerification] = useState(false)
+  const [phoneNumber, setPhoneNumber] = useState('')
+  const [phoneError, setPhoneError] = useState('')
+  const [isVerifying, setIsVerifying] = useState(false)
+  const [copied, setCopied] = useState(false)
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -93,8 +100,61 @@ export default function OrderTrackingPage({ params }: OrderTrackingPageProps) {
       return
     }
 
-    fetchOrder()
+    checkAccessAndFetchOrder()
   }, [resolvedParams.id])
+
+  const checkAccessAndFetchOrder = () => {
+    // Check if we have access via session storage (just placed order)
+    const accessibleOrders = JSON.parse(sessionStorage.getItem('accessibleOrders') || '[]')
+
+    if (accessibleOrders.includes(resolvedParams.id)) {
+      fetchOrder()
+    } else {
+      // Need phone verification
+      setShowPhoneVerification(true)
+      setLoading(false)
+    }
+  }
+
+  const verifyPhoneNumber = async () => {
+    setPhoneError('')
+    setIsVerifying(true)
+
+    try {
+      // Fetch order and verify phone number
+      const { data: orderData, error: orderError } = await supabase
+        .from('orders')
+        .select('id, customer_phone')
+        .eq('id', resolvedParams.id)
+        .single()
+
+      if (orderError || !orderData) {
+        setPhoneError('Order not found')
+        setIsVerifying(false)
+        return
+      }
+
+      // Normalize phone numbers for comparison (remove spaces, dashes, etc)
+      const normalizePhone = (phone: string) => phone.replace(/[\s\-\(\)]/g, '')
+
+      if (normalizePhone(orderData.customer_phone) === normalizePhone(phoneNumber)) {
+        // Phone verified! Store in session and fetch order
+        const accessibleOrders = JSON.parse(sessionStorage.getItem('accessibleOrders') || '[]')
+        accessibleOrders.push(resolvedParams.id)
+        sessionStorage.setItem('accessibleOrders', JSON.stringify(accessibleOrders))
+
+        setShowPhoneVerification(false)
+        fetchOrder()
+      } else {
+        setPhoneError('Phone number does not match order')
+        setIsVerifying(false)
+      }
+    } catch (error) {
+      console.error('Error verifying phone:', error)
+      setPhoneError('Verification failed. Please try again.')
+      setIsVerifying(false)
+    }
+  }
 
   const fetchOrder = async () => {
     try {
@@ -180,8 +240,20 @@ export default function OrderTrackingPage({ params }: OrderTrackingPageProps) {
   }
 
   const getOrderDisplayId = () => {
-    if (!order) return "PAI-XXX"
-    return `PAI-${order.id.slice(-3).toUpperCase()}`
+    if (!order) return "ORD-XXX"
+    // Use the reference from the database if available
+    return order.reference || "ORD-XXX"
+  }
+
+  const copyOrderReference = async () => {
+    const reference = getOrderDisplayId()
+    try {
+      await navigator.clipboard.writeText(reference)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000) // Reset after 2 seconds
+    } catch (err) {
+      console.error('Failed to copy:', err)
+    }
   }
 
   const getEstimatedReadyTime = () => {
@@ -250,6 +322,68 @@ export default function OrderTrackingPage({ params }: OrderTrackingPageProps) {
       return 'Back to My Orders'
     }
     return 'Back to Menu'
+  }
+
+  // Phone verification modal
+  if (showPhoneVerification) {
+    return (
+      <div className="min-h-screen bg-stone-50 flex items-center justify-center px-4">
+        <div className="max-w-md w-full bg-white rounded-2xl shadow-2xl p-8">
+          <div className="text-center mb-6">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-stone-100 rounded-full mb-4">
+              <Lock className="w-8 h-8 text-stone-600" />
+            </div>
+            <h1 className="text-2xl font-bold text-stone-800 mb-2">Verify Your Order</h1>
+            <p className="text-stone-600">
+              Please enter the phone number used when placing this order
+            </p>
+          </div>
+
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="phone" className="text-stone-700">Phone Number</Label>
+              <div className="relative">
+                <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-stone-400" />
+                <Input
+                  id="phone"
+                  type="tel"
+                  placeholder="+27123456789"
+                  value={phoneNumber}
+                  onChange={(e) => setPhoneNumber(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && verifyPhoneNumber()}
+                  className="pl-10"
+                />
+              </div>
+              {phoneError && (
+                <p className="text-red-600 text-sm mt-1">{phoneError}</p>
+              )}
+            </div>
+
+            <Button
+              onClick={verifyPhoneNumber}
+              disabled={isVerifying || !phoneNumber}
+              className="w-full bg-stone-700 hover:bg-stone-800"
+            >
+              {isVerifying ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Verifying...
+                </>
+              ) : (
+                'Verify & Track Order'
+              )}
+            </Button>
+
+            <Link href="/" className="block">
+              <Button variant="outline" className="w-full">
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back to Menu
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   // Loading state
@@ -323,7 +457,25 @@ export default function OrderTrackingPage({ params }: OrderTrackingPageProps) {
 
           <div className="text-center">
             <h1 className="text-2xl sm:text-3xl font-bold text-stone-800 mb-2">Track Your Order</h1>
-            <p className="text-stone-600">Order #{getOrderDisplayId()}</p>
+            <div className="flex items-center justify-center space-x-2 mb-2">
+              <p className="text-stone-600">Order #{getOrderDisplayId()}</p>
+              <button
+                onClick={copyOrderReference}
+                className="p-1.5 hover:bg-stone-100 rounded-lg transition-colors"
+                title="Copy order reference"
+              >
+                {copied ? (
+                  <Check className="w-4 h-4 text-green-600" />
+                ) : (
+                  <Copy className="w-4 h-4 text-stone-600" />
+                )}
+              </button>
+            </div>
+            {copied && (
+              <p className="text-xs text-green-600 mb-2">
+                Copied to clipboard!
+              </p>
+            )}
             <p className="text-sm text-stone-500">Customer: {order.customer_name}</p>
             {user && order.user_id === user.id && (
               <Badge className="mt-2 bg-green-100 text-green-800">Your Order</Badge>

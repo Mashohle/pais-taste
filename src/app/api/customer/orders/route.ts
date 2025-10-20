@@ -63,10 +63,10 @@ export async function POST(request: Request) {
       }
     })
 
-    // Get business category to determine appropriate statuses
+    // Get business info to determine appropriate statuses and generate order reference
     const { data: business, error: businessError } = await supabaseAdmin
       .from('businesses')
-      .select('category_id')
+      .select('category_id, name')
       .eq('id', orderData.business_id)
       .single()
 
@@ -120,7 +120,26 @@ export async function POST(request: Request) {
       )
     }
 
-    // 2. Get menu item IDs by matching names/prices and business_id
+    // 2. Generate and update reference
+    // Format: [FIRST_3_CHARS_OF_BUSINESS_NAME]-[LAST_5_CHARS_OF_UUID]
+    const businessPrefix = business.name.substring(0, 3).toUpperCase()
+    const orderSuffix = order.id.slice(-5).toUpperCase()
+    const reference = `${businessPrefix}-${orderSuffix}`
+
+    const { error: updateError } = await supabaseAdmin
+      .from('orders')
+      .update({ reference })
+      .eq('id', order.id)
+
+    if (updateError) {
+      console.error('Failed to update reference:', updateError)
+      // Don't fail the whole order creation, just log the error
+    }
+
+    // Add reference to the returned order object
+    order.reference = reference
+
+    // 3. Get menu item IDs by matching names/prices and business_id
     const orderItemsPromises = orderData.items.map(async (item) => {
       let menuItemId = item.menu_item_id || null
 
