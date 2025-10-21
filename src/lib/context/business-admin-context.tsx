@@ -1,7 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
+import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
 interface UserBusiness {
@@ -39,7 +38,34 @@ interface BusinessProfileData {
   isBusinessUser: boolean
 }
 
-export function useBusinessAdminAuth() {
+interface BusinessAdminContextType {
+  // Auth state
+  user: any
+  profile: UserProfile | null
+  session: null
+
+  // Business-specific data
+  userBusinesses: UserBusiness[]
+  currentBusiness: UserBusiness | null
+
+  // Loading states
+  loading: boolean
+  error: string | null
+
+  // Computed values
+  isAuthenticated: boolean
+  isBusinessUser: boolean
+  hasBusinessAccess: boolean
+
+  // Actions
+  signOut: () => Promise<void>
+  refetch: () => Promise<void>
+  setCurrentBusiness: (business: UserBusiness | null) => void
+}
+
+const BusinessAdminContext = createContext<BusinessAdminContextType | undefined>(undefined)
+
+export function BusinessAdminProvider({ children }: { children: ReactNode }) {
   const [data, setData] = useState<BusinessProfileData | null>(null)
   const [currentBusiness, setCurrentBusiness] = useState<UserBusiness | null>(null)
   const [loading, setLoading] = useState(true)
@@ -52,13 +78,14 @@ export function useBusinessAdminAuth() {
       setLoading(true)
       setError(null)
 
-      console.log('🔍 Business Admin: Fetching combined business profile')
+      console.log('🔍 Business Admin Context: Fetching combined business profile')
+      console.log('📍 Stack trace:', new Error().stack)
 
       const response = await fetch('/api/auth/business-profile')
 
       if (!response.ok) {
         if (response.status === 401) {
-          console.log('❌ Business Admin: Not authenticated')
+          console.log('❌ Business Admin Context: Not authenticated')
           setData(null)
           return
         }
@@ -66,7 +93,7 @@ export function useBusinessAdminAuth() {
       }
 
       const profileData = await response.json()
-      console.log('✅ Business Admin: Profile loaded:', {
+      console.log('✅ Business Admin Context: Profile loaded:', {
         email: profileData.profile?.email,
         isBusinessUser: profileData.isBusinessUser,
         businessCount: profileData.businesses?.length || 0
@@ -82,7 +109,7 @@ export function useBusinessAdminAuth() {
 
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch business profile'
-      console.error('💥 Business Admin: Error:', errorMessage)
+      console.error('💥 Business Admin Context: Error:', errorMessage)
       setError(errorMessage)
       setData(null)
     } finally {
@@ -92,8 +119,10 @@ export function useBusinessAdminAuth() {
 
   // Initialize on mount
   useEffect(() => {
+    console.log('🎬 Business Admin Context: useEffect triggered')
+    console.log('📍 useEffect Stack trace:', new Error().stack)
     fetchBusinessProfile()
-  }, []) // Only run once on mount
+  }, [fetchBusinessProfile])
 
   // Sign out function
   const signOut = async () => {
@@ -107,11 +136,11 @@ export function useBusinessAdminAuth() {
   const isBusinessUser = data?.isBusinessUser || false
   const hasBusinessAccess = (data?.businesses?.length || 0) > 0
 
-  return {
+  const value: BusinessAdminContextType = {
     // Auth state
     user: data?.user || null,
     profile: data?.profile || null,
-    session: null, // We don't need session in this hook
+    session: null,
 
     // Business-specific data
     userBusinesses: data?.businesses || [],
@@ -131,4 +160,18 @@ export function useBusinessAdminAuth() {
     refetch: fetchBusinessProfile,
     setCurrentBusiness
   }
+
+  return (
+    <BusinessAdminContext.Provider value={value}>
+      {children}
+    </BusinessAdminContext.Provider>
+  )
+}
+
+export function useBusinessAdminAuth() {
+  const context = useContext(BusinessAdminContext)
+  if (context === undefined) {
+    throw new Error('useBusinessAdminAuth must be used within a BusinessAdminProvider')
+  }
+  return context
 }

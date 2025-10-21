@@ -7,7 +7,7 @@ import { Clock, Users, CheckCircle, AlertCircle, Phone, MapPin, CreditCard, Bank
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useOrders } from '@/lib/hooks'
-import { useBusinessAdminAuth } from '@/lib/hooks'
+import { useBusinessAdminAuth } from '@/lib/context/business-admin-context'
 
 // Interface to match your existing UI structure
 interface Order {
@@ -25,7 +25,7 @@ interface Order {
 
 export default function OrdersPage() {
     const { orders: dbOrders, loading, updateOrderStatus, updatePaymentStatus } = useOrders()
-    const { user, currentBusiness } = useBusinessAdminAuth()
+    const { currentBusiness } = useBusinessAdminAuth()
     const router = useRouter()
     const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
     const [isModalOpen, setIsModalOpen] = useState(false)

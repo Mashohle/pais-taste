@@ -13,10 +13,10 @@ import { Switch } from "@/components/ui/switch"
 import { Separator } from "@/components/ui/separator"
 import { StatusManager } from "@/components/admin/status-manager"
 import { Settings, Building, Users, Bell, Palette, CreditCard, Clock, Shield, Save, Upload, MapPin } from "lucide-react"
-import { useBusinessAdminAuth } from '@/lib/hooks'
+import { useBusinessAdminAuth } from '@/lib/context/business-admin-context'
 
 export default function SettingsPage() {
-    const { user, userBusinesses, currentBusiness } = useBusinessAdminAuth()
+    const { currentBusiness } = useBusinessAdminAuth()
     const isOwner = currentBusiness?.role === 'owner'
     const isAdmin = currentBusiness?.role === 'admin' || isOwner
     const [activeTab, setActiveTab] = useState('general')

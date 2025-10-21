@@ -4,13 +4,12 @@ import { BusinessAdminGuard } from '@/components/auth/business-admin-guard'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
-import { useBusinessAdminAuth } from '@/lib/hooks'
+import { BusinessAdminProvider, useBusinessAdminAuth } from '@/lib/context/business-admin-context'
 import { DynamicIcon } from '@/lib/utils/icon-mapper'
 import { useRouter, usePathname } from 'next/navigation'
-import { LogOut, LayoutDashboard, UtensilsCrossed, ShoppingBag, Calendar, Users, Settings, Menu, X, Search, Bell, User } from 'lucide-react'
+import { LogOut, LayoutDashboard, UtensilsCrossed, ShoppingBag, Calendar, Users, Settings, Menu, X } from 'lucide-react'
 import Link from 'next/link'
-import { useState, useEffect } from 'react'
-import Image from 'next/image'
+import { useState } from 'react'
 
 export default function AdminLayout({
     children,
@@ -20,9 +19,11 @@ export default function AdminLayout({
     console.log('📄 LAYOUT: AdminLayout called')
 
     return (
-        <BusinessAdminGuard>
-            <AdminLayoutContent>{children}</AdminLayoutContent>
-        </BusinessAdminGuard>
+        <BusinessAdminProvider>
+            <BusinessAdminGuard>
+                <AdminLayoutContent>{children}</AdminLayoutContent>
+            </BusinessAdminGuard>
+        </BusinessAdminProvider>
     )
 }
 
@@ -33,16 +34,8 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
     const pathname = usePathname()
 
     // ALWAYS call hooks first - React rule
-    const { signOut, user, userBusinesses, loading, error } = useBusinessAdminAuth()
-    const [currentBusinessSlug, setCurrentBusinessSlug] = useState<string>('')
+    const { signOut, user, userBusinesses, currentBusiness, setCurrentBusiness, loading, error } = useBusinessAdminAuth()
     const [sidebarOpen, setSidebarOpen] = useState(false)
-
-    // Set initial business when businesses load
-    useEffect(() => {
-        if (userBusinesses.length > 0 && !currentBusinessSlug) {
-            setCurrentBusinessSlug(userBusinesses[0].slug)
-        }
-    }, [userBusinesses, currentBusinessSlug])
 
     // CRITICAL: If we're on login page, just return children without any auth logic
     if (pathname === '/admin/login') {
@@ -57,15 +50,16 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
         pathname
     })
 
-    const currentBusiness = userBusinesses.find(b => b.slug === currentBusinessSlug) || userBusinesses[0]
-
     const handleSignOut = async () => {
         await signOut()
         router.push('/admin/login')
     }
 
     const handleBusinessSwitch = (businessSlug: string) => {
-        setCurrentBusinessSlug(businessSlug)
+        const business = userBusinesses.find(b => b.slug === businessSlug)
+        if (business) {
+            setCurrentBusiness(business)
+        }
     }
 
     // Get category-specific navigation based on current business
@@ -195,111 +189,77 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-stone-50 via-stone-100 to-stone-200">
-            {/* Header */}
-            <header className="bg-white/90 backdrop-blur-md border-b border-stone-200 sticky top-0 z-50">
-                <div className="flex items-center justify-between px-4 sm:px-6 lg:px-8 h-16">
-                    <div className="flex items-center space-x-4">
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            className="lg:hidden"
-                            onClick={() => setSidebarOpen(!sidebarOpen)}
-                        >
-                            {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-                        </Button>
+            {/* Header - Matches Customer Portal Style */}
+            <nav className="bg-white/90 backdrop-blur-md border-b border-stone-200 sticky top-0 z-50">
+                <div className="px-4 sm:px-6 lg:px-8">
+                    <div className="flex justify-between items-center h-16">
+                        {/* Left Section: Logo + Portal Badge */}
+                        <div className="flex items-center space-x-4">
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="lg:hidden"
+                                onClick={() => setSidebarOpen(!sidebarOpen)}
+                            >
+                                {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+                            </Button>
 
-                        <Link href="/admin" className="flex items-center space-x-3">
-                            <div className="w-10 h-10 bg-gradient-to-br from-stone-200 via-stone-100 to-stone-300 rounded-xl flex items-center justify-center shadow-lg">
-                                <Image
-                                    src="/logo.svg"
-                                    alt="SideHusl"
-                                    width={24}
-                                    height={24}
-                                />
-                            </div>
-                            <div className="hidden sm:block">
-                                <h1 className="text-xl font-bold bg-gradient-to-r from-stone-600 to-stone-800 bg-clip-text text-transparent">SideHusl</h1>
-                                <p className="text-xs text-stone-600">Business Portal</p>
-                            </div>
-                        </Link>
-                    </div>
+                            <Link href="/admin" className="text-2xl font-bold bg-gradient-to-r from-stone-600 to-stone-800 bg-clip-text text-transparent">
+                                SideHusl
+                            </Link>
+                            <Badge variant="secondary" className="text-xs">
+                                Business Portal
+                            </Badge>
 
-                    <div className="flex items-center space-x-4">
-                        {/* Business Switcher - moved to header */}
-                        {userBusinesses.length > 1 && (
-                            <Select value={currentBusinessSlug} onValueChange={handleBusinessSwitch}>
-                                <SelectTrigger className="w-auto min-w-[200px] border-none bg-transparent hover:bg-stone-100">
-                                    <SelectValue>
-                                        <div className="flex items-center space-x-2">
-                                            <span className="font-medium text-stone-800">{currentBusiness.name}</span>
-                                            <Badge variant="secondary" className={currentBusiness.business?.business_categories?.color || 'bg-stone-200'}>
-                                                {currentBusiness.business?.business_categories?.name}
-                                            </Badge>
-                                        </div>
-                                    </SelectValue>
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {userBusinesses.map((business) => (
-                                        <SelectItem key={business.id} value={business.slug}>
+                            {/* Business Switcher for Multi-Business Users */}
+                            {userBusinesses.length > 1 && currentBusiness && (
+                                <Select value={currentBusiness.slug} onValueChange={handleBusinessSwitch}>
+                                    <SelectTrigger className="w-auto border-none bg-transparent hover:bg-stone-100 h-8">
+                                        <SelectValue>
                                             <div className="flex items-center space-x-2">
-                                                {business.business?.business_categories && (
-                                                    <DynamicIcon
-                                                        name={business.business.business_categories.icon}
-                                                        className="h-4 w-4"
-                                                    />
-                                                )}
-                                                <span>{business.name}</span>
-                                                <Badge variant="outline" className="text-xs">
-                                                    {business.business?.business_categories?.name}
-                                                </Badge>
+                                                <span className="text-xs font-medium text-stone-700">{currentBusiness.name}</span>
                                             </div>
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        )}
-
-                        {/* Search */}
-                        <div className="hidden md:flex relative">
-                            <Search className="w-4 h-4 absolute left-3 top-3 text-stone-400" />
-                            <input
-                                type="text"
-                                placeholder="Search orders, customers..."
-                                className="pl-10 pr-4 py-2 bg-stone-100 rounded-lg text-sm border-0 focus:ring-2 focus:ring-stone-500 focus:bg-white transition-all"
-                            />
+                                        </SelectValue>
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {userBusinesses.map((business) => (
+                                            <SelectItem key={business.id} value={business.slug}>
+                                                <div className="flex items-center space-x-2">
+                                                    {business.business?.business_categories && (
+                                                        <DynamicIcon
+                                                            name={business.business.business_categories.icon}
+                                                            className="h-4 w-4"
+                                                        />
+                                                    )}
+                                                    <span>{business.name}</span>
+                                                    <Badge variant="outline" className="text-xs">
+                                                        {business.business?.business_categories?.name}
+                                                    </Badge>
+                                                </div>
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            )}
                         </div>
 
-                        {/* Notifications */}
-                        <Button variant="ghost" size="sm" className="relative">
-                            <Bell className="w-5 h-5" />
-                            <Badge
-                                variant="destructive"
-                                className="absolute -top-1 -right-1 w-5 h-5 p-0 flex items-center justify-center text-xs"
-                            >
-                                3
-                            </Badge>
-                        </Button>
-
-                        {/* Profile */}
-                        <div className="flex items-center space-x-3">
-                            {/* User Avatar */}
-                            <div className="w-8 h-8 bg-gradient-to-br from-stone-300 to-stone-400 rounded-full flex items-center justify-center">
-                                <User className="w-4 h-4 text-stone-600" />
-                            </div>
-
+                        {/* Right Section: Welcome + Sign Out */}
+                        <div className="flex items-center space-x-4">
+                            <p className="text-sm text-stone-600 hidden md:block">
+                                Welcome, <span className="font-medium text-stone-800">{user?.user_metadata?.full_name || user?.email?.split('@')[0]}</span>
+                            </p>
                             <Button
                                 onClick={handleSignOut}
                                 variant="outline"
                                 size="sm"
-                                className="flex items-center gap-2"
                             >
-                                <LogOut className="w-4 h-4" />
+                                <LogOut className="w-4 h-4 mr-2" />
                                 <span className="hidden sm:inline">Sign Out</span>
                             </Button>
                         </div>
                     </div>
                 </div>
-            </header>
+            </nav>
 
             <div className="flex">
                 {/* Sidebar */}

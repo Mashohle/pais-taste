@@ -2,20 +2,27 @@
 
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Skeleton } from "@/components/ui/skeleton"
 import { Clock, Users, CheckCircle, AlertCircle, ChevronRight, Calendar, ShoppingBag, TrendingUp, Plus, Activity } from "lucide-react"
-import { useBusinessAdminAuth } from '@/lib/hooks'
+import { useBusinessAdminAuth } from '@/lib/context/business-admin-context'
+import { useDashboardStats } from '@/lib/hooks'
 import { DynamicIcon } from '@/lib/utils/icon-mapper'
 import Link from 'next/link'
 
 export default function AdminDashboard() {
-    const { user, userBusinesses } = useBusinessAdminAuth()
-    const currentBusiness = userBusinesses[0] // Get the first/primary business
+    const { currentBusiness, user } = useBusinessAdminAuth()
+    const { stats, loading: statsLoading } = useDashboardStats(currentBusiness?.business?.id)
 
     if (!currentBusiness) {
         return null // Loading handled by layout
     }
 
     const businessCategory = currentBusiness.business.business_categories
+
+    // Type-safe stats accessors
+    const foodStats = stats as { newOrders?: number; inKitchen?: number; ready?: number; todaySales?: number }
+    const retailStats = stats as { products?: number; lowStock?: number; orders?: number; revenue?: number }
+    const serviceStats = stats as { todayBookings?: number; activeStaff?: number; inProgress?: number; revenue?: number }
 
     // Get current date for display
     const currentDate = new Date().toLocaleDateString("en-ZA", {
@@ -36,43 +43,59 @@ export default function AdminDashboard() {
                             <AlertCircle className="h-8 w-8 text-amber-600" />
                             <div className="ml-4">
                                 <p className="text-sm font-medium text-gray-600">New Orders</p>
-                                <p className="text-2xl font-bold">12</p>
+                                {statsLoading ? (
+                                    <Skeleton className="h-8 w-12 mt-1" />
+                                ) : (
+                                    <p className="text-2xl font-bold">{foodStats?.newOrders || 0}</p>
+                                )}
                             </div>
                         </div>
                     </CardContent>
                 </Card>
-                
+
                 <Card>
                     <CardContent className="p-6">
                         <div className="flex items-center">
                             <Clock className="h-8 w-8 text-blue-600" />
                             <div className="ml-4">
                                 <p className="text-sm font-medium text-gray-600">In Kitchen</p>
-                                <p className="text-2xl font-bold">8</p>
+                                {statsLoading ? (
+                                    <Skeleton className="h-8 w-12 mt-1" />
+                                ) : (
+                                    <p className="text-2xl font-bold">{foodStats?.inKitchen || 0}</p>
+                                )}
                             </div>
                         </div>
                     </CardContent>
                 </Card>
-                
+
                 <Card>
                     <CardContent className="p-6">
                         <div className="flex items-center">
                             <CheckCircle className="h-8 w-8 text-green-600" />
                             <div className="ml-4">
                                 <p className="text-sm font-medium text-gray-600">Ready</p>
-                                <p className="text-2xl font-bold">5</p>
+                                {statsLoading ? (
+                                    <Skeleton className="h-8 w-12 mt-1" />
+                                ) : (
+                                    <p className="text-2xl font-bold">{foodStats?.ready || 0}</p>
+                                )}
                             </div>
                         </div>
                     </CardContent>
                 </Card>
-                
+
                 <Card>
                     <CardContent className="p-6">
                         <div className="flex items-center">
                             <TrendingUp className="h-8 w-8 text-purple-600" />
                             <div className="ml-4">
                                 <p className="text-sm font-medium text-gray-600">Today&apos;s Sales</p>
-                                <p className="text-2xl font-bold">R2,450</p>
+                                {statsLoading ? (
+                                    <Skeleton className="h-8 w-20 mt-1" />
+                                ) : (
+                                    <p className="text-2xl font-bold">R{(foodStats?.todaySales || 0).toLocaleString('en-ZA', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</p>
+                                )}
                             </div>
                         </div>
                     </CardContent>
@@ -136,43 +159,59 @@ export default function AdminDashboard() {
                             <ShoppingBag className="h-8 w-8 text-blue-600" />
                             <div className="ml-4">
                                 <p className="text-sm font-medium text-gray-600">Products</p>
-                                <p className="text-2xl font-bold">156</p>
+                                {statsLoading ? (
+                                    <Skeleton className="h-8 w-16 mt-1" />
+                                ) : (
+                                    <p className="text-2xl font-bold">{retailStats?.products || 0}</p>
+                                )}
                             </div>
                         </div>
                     </CardContent>
                 </Card>
-                
+
                 <Card>
                     <CardContent className="p-6">
                         <div className="flex items-center">
                             <AlertCircle className="h-8 w-8 text-red-600" />
                             <div className="ml-4">
                                 <p className="text-sm font-medium text-gray-600">Low Stock</p>
-                                <p className="text-2xl font-bold">8</p>
+                                {statsLoading ? (
+                                    <Skeleton className="h-8 w-12 mt-1" />
+                                ) : (
+                                    <p className="text-2xl font-bold">{retailStats?.lowStock || 0}</p>
+                                )}
                             </div>
                         </div>
                     </CardContent>
                 </Card>
-                
+
                 <Card>
                     <CardContent className="p-6">
                         <div className="flex items-center">
                             <CheckCircle className="h-8 w-8 text-green-600" />
                             <div className="ml-4">
                                 <p className="text-sm font-medium text-gray-600">Orders</p>
-                                <p className="text-2xl font-bold">23</p>
+                                {statsLoading ? (
+                                    <Skeleton className="h-8 w-12 mt-1" />
+                                ) : (
+                                    <p className="text-2xl font-bold">{retailStats?.orders || 0}</p>
+                                )}
                             </div>
                         </div>
                     </CardContent>
                 </Card>
-                
+
                 <Card>
                     <CardContent className="p-6">
                         <div className="flex items-center">
                             <TrendingUp className="h-8 w-8 text-purple-600" />
                             <div className="ml-4">
                                 <p className="text-sm font-medium text-gray-600">Revenue</p>
-                                <p className="text-2xl font-bold">R12,580</p>
+                                {statsLoading ? (
+                                    <Skeleton className="h-8 w-20 mt-1" />
+                                ) : (
+                                    <p className="text-2xl font-bold">R{(retailStats?.revenue || 0).toLocaleString('en-ZA', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</p>
+                                )}
                             </div>
                         </div>
                     </CardContent>
@@ -236,43 +275,59 @@ export default function AdminDashboard() {
                             <Calendar className="h-8 w-8 text-blue-600" />
                             <div className="ml-4">
                                 <p className="text-sm font-medium text-gray-600">Today&apos;s Bookings</p>
-                                <p className="text-2xl font-bold">18</p>
+                                {statsLoading ? (
+                                    <Skeleton className="h-8 w-12 mt-1" />
+                                ) : (
+                                    <p className="text-2xl font-bold">{serviceStats?.todayBookings || 0}</p>
+                                )}
                             </div>
                         </div>
                     </CardContent>
                 </Card>
-                
+
                 <Card>
                     <CardContent className="p-6">
                         <div className="flex items-center">
                             <Users className="h-8 w-8 text-green-600" />
                             <div className="ml-4">
                                 <p className="text-sm font-medium text-gray-600">Active Staff</p>
-                                <p className="text-2xl font-bold">5</p>
+                                {statsLoading ? (
+                                    <Skeleton className="h-8 w-12 mt-1" />
+                                ) : (
+                                    <p className="text-2xl font-bold">{serviceStats?.activeStaff || 0}</p>
+                                )}
                             </div>
                         </div>
                     </CardContent>
                 </Card>
-                
+
                 <Card>
                     <CardContent className="p-6">
                         <div className="flex items-center">
                             <Clock className="h-8 w-8 text-amber-600" />
                             <div className="ml-4">
                                 <p className="text-sm font-medium text-gray-600">In Progress</p>
-                                <p className="text-2xl font-bold">7</p>
+                                {statsLoading ? (
+                                    <Skeleton className="h-8 w-12 mt-1" />
+                                ) : (
+                                    <p className="text-2xl font-bold">{serviceStats?.inProgress || 0}</p>
+                                )}
                             </div>
                         </div>
                     </CardContent>
                 </Card>
-                
+
                 <Card>
                     <CardContent className="p-6">
                         <div className="flex items-center">
                             <TrendingUp className="h-8 w-8 text-purple-600" />
                             <div className="ml-4">
                                 <p className="text-sm font-medium text-gray-600">Revenue</p>
-                                <p className="text-2xl font-bold">R8,920</p>
+                                {statsLoading ? (
+                                    <Skeleton className="h-8 w-20 mt-1" />
+                                ) : (
+                                    <p className="text-2xl font-bold">R{(serviceStats?.revenue || 0).toLocaleString('en-ZA', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</p>
+                                )}
                             </div>
                         </div>
                     </CardContent>
@@ -363,13 +418,11 @@ export default function AdminDashboard() {
                                     <Badge variant="secondary" className={businessCategory?.color || 'bg-stone-200'}>
                                         {businessCategory?.name}
                                     </Badge>
-                                    <span className="ml-2">Business Dashboard</span>
                                 </div>
                             </div>
                         </div>
                         <div className="mt-4 sm:mt-0 text-right">
                             <p className="text-stone-700 font-semibold">{currentDate}</p>
-                            <p className="text-stone-500 text-xs mt-1">Welcome, {user?.email}</p>
                         </div>
                     </div>
                 </div>

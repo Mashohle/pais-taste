@@ -1,6 +1,6 @@
 // lib/hooks/use-menu-api.ts
 import { useState, useEffect, useCallback } from 'react'
-import { useBusinessAdminAuth } from '@/lib/hooks'
+import { useBusinessAdminAuth } from '@/lib/context/business-admin-context'
 
 interface MenuItem {
   id: string
@@ -21,7 +21,14 @@ export function useMenuApi(forAdmin: boolean = false) {
   const [items, setItems] = useState<MenuItem[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+
+  console.log('🍽️ useMenuApi: Hook called, forAdmin:', forAdmin)
   const { currentBusiness, loading: businessLoading } = useBusinessAdminAuth()
+  console.log('🍽️ useMenuApi: Got context data:', {
+    hasCurrentBusiness: !!currentBusiness,
+    businessLoading,
+    businessId: currentBusiness?.business?.id
+  })
 
   const fetchMenuItems = useCallback(async () => {
     try {
@@ -55,20 +62,28 @@ export function useMenuApi(forAdmin: boolean = false) {
   }, [currentBusiness?.business?.id, forAdmin])
 
   useEffect(() => {
+    console.log('🍽️ useMenuApi: useEffect triggered', {
+      businessLoading,
+      hasBusinessId: !!currentBusiness?.business?.id
+    })
+
     // Keep loading while business context is still loading
     if (businessLoading) {
+      console.log('🍽️ useMenuApi: Business still loading, waiting...')
       setLoading(true)
       return
     }
 
     // If business loading is done but no business, stop loading
     if (!currentBusiness?.business?.id) {
+      console.log('🍽️ useMenuApi: No business ID, stopping')
       setItems([])
       setLoading(false)
       return
     }
 
     // Business is ready, fetch data
+    console.log('🍽️ useMenuApi: Business ready, fetching menu items')
     setLoading(true) // Ensure loading stays true while fetching
     fetchMenuItems()
   }, [forAdmin, currentBusiness?.business?.id, businessLoading, fetchMenuItems])
