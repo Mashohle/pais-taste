@@ -78,14 +78,10 @@ export function BusinessAdminProvider({ children }: { children: ReactNode }) {
       setLoading(true)
       setError(null)
 
-      console.log('🔍 Business Admin Context: Fetching combined business profile')
-      console.log('📍 Stack trace:', new Error().stack)
-
       const response = await fetch('/api/auth/business-profile')
 
       if (!response.ok) {
         if (response.status === 401) {
-          console.log('❌ Business Admin Context: Not authenticated')
           setData(null)
           return
         }
@@ -93,23 +89,15 @@ export function BusinessAdminProvider({ children }: { children: ReactNode }) {
       }
 
       const profileData = await response.json()
-      console.log('✅ Business Admin Context: Profile loaded:', {
-        email: profileData.profile?.email,
-        isBusinessUser: profileData.isBusinessUser,
-        businessCount: profileData.businesses?.length || 0
-      })
-
       setData(profileData)
 
       // Set first business as current if available
       if (profileData.businesses?.length > 0) {
-        console.log('🏢 Setting current business to:', profileData.businesses[0].name)
         setCurrentBusiness(profileData.businesses[0])
       }
 
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch business profile'
-      console.error('💥 Business Admin Context: Error:', errorMessage)
       setError(errorMessage)
       setData(null)
     } finally {
@@ -119,8 +107,6 @@ export function BusinessAdminProvider({ children }: { children: ReactNode }) {
 
   // Initialize on mount
   useEffect(() => {
-    console.log('🎬 Business Admin Context: useEffect triggered')
-    console.log('📍 useEffect Stack trace:', new Error().stack)
     fetchBusinessProfile()
   }, [fetchBusinessProfile])
 
