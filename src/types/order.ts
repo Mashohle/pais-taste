@@ -35,6 +35,7 @@ export interface Order {
   special_instructions: string | null
   created_at: string
   updated_at?: string
+  completed_at?: string // Timestamp when order was completed
   order_items: OrderItem[]
 
   // Business relationship for populated queries

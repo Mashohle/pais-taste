@@ -137,9 +137,9 @@ export async function updateOrderStatus(orderId: string, newStatusCode: string) 
       .select('business_id, order_status_code')
       .eq('id', orderId)
       .single()
-    
+
     if (orderError) throw orderError
-    
+
     // Validate status transition is allowed
     const { data: currentStatus, error: statusError } = await supabase
       .from('order_statuses')
@@ -149,19 +149,31 @@ export async function updateOrderStatus(orderId: string, newStatusCode: string) 
       .order('business_id', { nullsFirst: false })
       .limit(1)
       .single()
-    
+
     if (statusError) throw statusError
-    
+
     if (currentStatus.can_transition_to && !currentStatus.can_transition_to.includes(newStatusCode)) {
       throw new Error(`Cannot transition from ${order.order_status_code} to ${newStatusCode}`)
     }
-    
+
+    // Prepare update object
+    const updateData: {
+      order_status: string
+      order_status_code: string
+      completed_at?: string
+    } = {
+      order_status: newStatusCode, // Backward compatibility
+      order_status_code: newStatusCode
+    }
+
+    // Set completed_at timestamp when order is completed
+    if (newStatusCode === 'completed') {
+      updateData.completed_at = new Date().toISOString()
+    }
+
     const { error } = await supabase
       .from('orders')
-      .update({ 
-        order_status: newStatusCode, // Backward compatibility
-        order_status_code: newStatusCode 
-      })
+      .update(updateData)
       .eq('id', orderId)
 
     if (error) throw error

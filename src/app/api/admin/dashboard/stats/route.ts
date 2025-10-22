@@ -79,8 +79,9 @@ export async function GET(request: NextRequest) {
           .from('orders')
           .select('total_amount')
           .eq('business_id', businessId)
-          .gte('created_at', today.toISOString())
-          .lt('created_at', tomorrow.toISOString()),
+          .eq('order_status', 'completed')
+          .gte('completed_at', today.toISOString())
+          .lt('completed_at', tomorrow.toISOString()),
       ])
 
       const totalSales = todaySales?.reduce((sum, order) => sum + order.total_amount, 0) || 0
@@ -114,8 +115,9 @@ export async function GET(request: NextRequest) {
             .from('orders')
             .select('total_amount')
             .eq('business_id', businessId)
-            .gte('created_at', today.toISOString())
-            .lt('created_at', tomorrow.toISOString()),
+            .eq('order_status', 'completed')
+            .gte('completed_at', today.toISOString())
+            .lt('completed_at', tomorrow.toISOString()),
         ])
 
       const totalRevenue = todaySales?.reduce((sum, order) => sum + order.total_amount, 0) || 0

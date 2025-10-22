@@ -1,55 +1,71 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
-import { useAuth } from '@/lib/contexts/auth-context'
 import { Order, ReorderItem } from '@/types/order'
 
-export function useOrders() {
+interface UseOrdersOptions {
+  businessId?: string // For admin view - filter by business instead of user
+  userId?: string // For customer view - filter by user
+}
+
+export function useOrders(options?: UseOrdersOptions) {
   const [orders, setOrders] = useState<Order[]>([])
   const [activeOrders, setActiveOrders] = useState<Order[]>([])
   const [orderHistory, setOrderHistory] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const { user } = useAuth()
+
+  // Use provided options or get from auth context (for backward compatibility)
+  const businessId = options?.businessId
+  const userId = options?.userId
 
   useEffect(() => {
-    if (user) {
+    // Fetch orders if we have either businessId or userId
+    if (businessId || userId) {
       fetchOrders()
 
-      // Real-time subscription - filter by user
-      const subscription = supabase
-        .channel('user-orders')
-        .on('postgres_changes',
-          {
-            event: '*',
-            schema: 'public',
-            table: 'orders',
-            filter: `user_id=eq.${user.id}` // Only listen to current user's orders
-          },
-          () => fetchOrders()
-        )
-        .subscribe()
+      // Real-time subscription
+      const filter = businessId
+        ? `business_id=eq.${businessId}`
+        : userId
+        ? `user_id=eq.${userId}`
+        : null
 
-      return () => {
-        subscription.unsubscribe()
+      if (filter) {
+        const subscription = supabase
+          .channel(businessId ? 'business-orders' : 'user-orders')
+          .on('postgres_changes',
+            {
+              event: '*',
+              schema: 'public',
+              table: 'orders',
+              filter
+            },
+            () => fetchOrders()
+          )
+          .subscribe()
+
+        return () => {
+          subscription.unsubscribe()
+        }
       }
     } else {
-      // Clear data if no user
+      // Clear data if no filter
       setOrders([])
       setActiveOrders([])
       setOrderHistory([])
       setLoading(false)
     }
-  }, [user])
+  }, [businessId, userId])
 
   const fetchOrders = async () => {
-    if (!user) return
+    if (!businessId && !userId) return
 
     try {
       setLoading(true)
       setError(null)
 
-
-      const { data, error: fetchError } = await supabase
+      // Build query with appropriate filter
+      let query = supabase
         .from('orders')
         .select(`
           *,
@@ -66,8 +82,16 @@ export function useOrders() {
             business_categories (name)
           )
         `)
-        .eq('user_id', user.id) // Filter by current user
         .order('created_at', { ascending: false })
+
+      // Apply filter based on what's provided
+      if (businessId) {
+        query = query.eq('business_id', businessId)
+      } else if (userId) {
+        query = query.eq('user_id', userId)
+      }
+
+      const { data, error: fetchError } = await query
 
       if (fetchError) {
         if (fetchError.message?.includes('relation "public.orders" does not exist')) {
@@ -135,18 +159,27 @@ export function useOrders() {
   const updatePaymentStatus = async (orderId: string, paymentStatusCode: string) => {
     try {
       setError(null)
-      
-      const { error } = await supabase
+
+      // Build update query
+      let query = supabase
         .from('orders')
-        .update({ 
+        .update({
           payment_status: paymentStatusCode, // Backward compatibility
           payment_status_code: paymentStatusCode // New configurable system
         })
         .eq('id', orderId)
-        .eq('user_id', user?.id) // Security: only update own orders
+
+      // Add security filter based on context
+      if (businessId) {
+        query = query.eq('business_id', businessId) // Business admin: only update own business orders
+      } else if (userId) {
+        query = query.eq('user_id', userId) // Customer: only update own orders
+      }
+
+      const { error } = await query
 
       if (error) throw error
-      
+
       await fetchOrders() // Refresh orders
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to update payment status'

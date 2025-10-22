@@ -21,16 +21,24 @@ export default function SettingsPage() {
     const isAdmin = currentBusiness?.role === 'admin' || isOwner
     const [activeTab, setActiveTab] = useState('general')
     const [saving, setSaving] = useState(false)
-    
-    // Business settings state
+
+    // Business settings state - will be populated from currentBusiness
     const [businessSettings, setBusinessSettings] = useState({
-        name: currentBusiness?.name || '',
-        description: currentBusiness?.business?.description || '',
-        phone: currentBusiness?.business?.phone || '',
-        email: currentBusiness?.business?.email || '',
-        address: currentBusiness?.business?.address || '',
-        website: currentBusiness?.business?.website || '',
-        logo_url: currentBusiness?.business?.logo_url || '',
+        name: '',
+        description: '',
+        phone: '',
+        email: '',
+        address: '', // Combined address for display in textarea
+        address_line1: '',
+        address_line2: '',
+        city: '',
+        state: '',
+        postal_code: '',
+        country: '',
+        website: '',
+        logo_url: '',
+        primary_color: '',
+        accent_color: '',
         opening_hours: {
             monday: { open: '09:00', close: '17:00', closed: false },
             tuesday: { open: '09:00', close: '17:00', closed: false },
@@ -43,6 +51,54 @@ export default function SettingsPage() {
         timezone: 'Africa/Johannesburg',
         currency: 'ZAR'
     })
+
+    // Load real business data when currentBusiness is available
+    useEffect(() => {
+        if (currentBusiness?.business) {
+            const business = currentBusiness.business
+            console.log('📋 Settings: Loading business data:', {
+                name: currentBusiness.name,
+                description: business.description,
+                email: business.email,
+                phone: business.phone,
+                website: business.website,
+                address_line1: business.address_line1,
+                city: business.city,
+                state: business.state
+            })
+
+            // Combine address fields into a single string for display
+            const addressParts = [
+                business.address_line1,
+                business.address_line2,
+                business.city,
+                business.state,
+                business.postal_code
+            ].filter(Boolean) // Remove null/undefined/empty values
+            const combinedAddress = addressParts.join(', ')
+
+            setBusinessSettings(prev => ({
+                ...prev,
+                name: currentBusiness.name || '',
+                description: business.description || '',
+                phone: business.phone || '',
+                email: business.email || '',
+                address: combinedAddress || '', // Combined address for display
+                address_line1: business.address_line1 || '',
+                address_line2: business.address_line2 || '',
+                city: business.city || '',
+                state: business.state || '',
+                postal_code: business.postal_code || '',
+                country: business.country || 'South Africa',
+                website: business.website || '',
+                logo_url: business.logo_url || '',
+                primary_color: business.primary_color || '#000000',
+                accent_color: business.accent_color || '#0066CC',
+                timezone: business.timezone || 'Africa/Johannesburg',
+                currency: business.currency || 'ZAR',
+            }))
+        }
+    }, [currentBusiness])
 
     // Notification settings
     const [notificationSettings, setNotificationSettings] = useState({
@@ -148,7 +204,7 @@ export default function SettingsPage() {
                             </CardHeader>
                             <CardContent className="space-y-4">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div>
+                                    <div className="space-y-2">
                                         <Label htmlFor="business_name">Business Name</Label>
                                         <Input
                                             id="business_name"
@@ -160,7 +216,7 @@ export default function SettingsPage() {
                                             disabled={!isOwner}
                                         />
                                     </div>
-                                    <div>
+                                    <div className="space-y-2">
                                         <Label htmlFor="business_email">Business Email</Label>
                                         <Input
                                             id="business_email"
@@ -173,7 +229,7 @@ export default function SettingsPage() {
                                             disabled={!isAdmin}
                                         />
                                     </div>
-                                    <div>
+                                    <div className="space-y-2">
                                         <Label htmlFor="business_phone">Phone Number</Label>
                                         <Input
                                             id="business_phone"
@@ -185,7 +241,7 @@ export default function SettingsPage() {
                                             disabled={!isAdmin}
                                         />
                                     </div>
-                                    <div>
+                                    <div className="space-y-2">
                                         <Label htmlFor="website">Website</Label>
                                         <Input
                                             id="website"
@@ -199,8 +255,8 @@ export default function SettingsPage() {
                                         />
                                     </div>
                                 </div>
-                                
-                                <div>
+
+                                <div className="space-y-2">
                                     <Label htmlFor="description">Business Description</Label>
                                     <Textarea
                                         id="description"
@@ -214,8 +270,8 @@ export default function SettingsPage() {
                                         disabled={!isAdmin}
                                     />
                                 </div>
-                                
-                                <div>
+
+                                <div className="space-y-2">
                                     <Label htmlFor="address">Address</Label>
                                     <Textarea
                                         id="address"
@@ -231,10 +287,10 @@ export default function SettingsPage() {
                                 </div>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div>
+                                    <div className="space-y-2">
                                         <Label htmlFor="timezone">Timezone</Label>
-                                        <Select 
-                                            value={businessSettings.timezone} 
+                                        <Select
+                                            value={businessSettings.timezone}
                                             onValueChange={(value) => setBusinessSettings(prev => ({
                                                 ...prev,
                                                 timezone: value
@@ -251,10 +307,10 @@ export default function SettingsPage() {
                                             </SelectContent>
                                         </Select>
                                     </div>
-                                    <div>
+                                    <div className="space-y-2">
                                         <Label htmlFor="currency">Currency</Label>
-                                        <Select 
-                                            value={businessSettings.currency} 
+                                        <Select
+                                            value={businessSettings.currency}
                                             onValueChange={(value) => setBusinessSettings(prev => ({
                                                 ...prev,
                                                 currency: value

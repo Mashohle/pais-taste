@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Clock, Users, CheckCircle, AlertCircle, Phone, MapPin, CreditCard, Banknote, ChevronRight, X } from "lucide-react"
+import { Clock, Users, CheckCircle, AlertCircle, Phone, MapPin, CreditCard, Banknote, ChevronRight, ChevronLeft, X } from "lucide-react"
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useOrders } from '@/lib/hooks'
@@ -24,11 +24,14 @@ interface Order {
 }
 
 export default function OrdersPage() {
-    const { orders: dbOrders, loading, updateOrderStatus, updatePaymentStatus } = useOrders()
     const { currentBusiness } = useBusinessAdminAuth()
+    const { orders: dbOrders, loading, updateOrderStatus, updatePaymentStatus } = useOrders({
+        businessId: currentBusiness?.business?.id
+    })
     const router = useRouter()
     const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
     const [isModalOpen, setIsModalOpen] = useState(false)
+    const [currentPage, setCurrentPage] = useState<1 | 2>(1) // Pagination: 1 or 2
 
     // Only show this page for food businesses, redirect others
     useEffect(() => {
@@ -49,9 +52,7 @@ export default function OrdersPage() {
     }
 
     // Transform database orders to match your UI interface
-    const transformedOrders: Order[] = dbOrders
-        .filter(dbOrder => dbOrder.business_id === currentBusiness?.business?.id) // Filter by current business
-        .map(dbOrder => ({
+    const transformedOrders: Order[] = dbOrders.map(dbOrder => ({
             id: `ORD-${dbOrder.id.slice(-3).toUpperCase()}`, // Show last 3 chars of ID
             customerName: dbOrder.customer_name,
             phone: dbOrder.customer_phone,
@@ -360,11 +361,33 @@ export default function OrdersPage() {
                     </div>
                 </div>
 
-                {/* Orders Dashboard - Vertical Kanban Layout */}
+                {/* Orders Dashboard - Vertical Kanban Layout with Pagination */}
                 <div className="space-y-6">
-                    <h2 className="text-xl font-bold text-stone-800">Orders Dashboard</h2>
+                    <div className="flex items-center justify-between">
+                        <h2 className="text-xl font-bold text-stone-800">Orders Dashboard</h2>
 
-                    <div className="space-y-4">
+                        {/* Pagination Controls */}
+                        <div className="flex items-center gap-2">
+                            <Button
+                                variant={currentPage === 1 ? "default" : "outline"}
+                                size="sm"
+                                onClick={() => setCurrentPage(1)}
+                            >
+                                Active Orders
+                            </Button>
+                            <Button
+                                variant={currentPage === 2 ? "default" : "outline"}
+                                size="sm"
+                                onClick={() => setCurrentPage(2)}
+                            >
+                                History
+                            </Button>
+                        </div>
+                    </div>
+
+                    {/* Page 1: Received, Preparing, Ready */}
+                    {currentPage === 1 && (
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         {/* Received Orders Column */}
                         <div className="bg-white rounded-xl p-4 shadow-sm border border-amber-200">
                             <div className="flex items-center justify-between mb-4">
@@ -374,7 +397,7 @@ export default function OrdersPage() {
                                 </h3>
                                 <Badge className="bg-amber-200 text-amber-800">{getOrdersByStatus("received").length}</Badge>
                             </div>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 max-h-96 overflow-y-auto">
+                            <div className="space-y-3 h-[calc(100vh-300px)] overflow-y-auto">
                                 {getOrdersByStatus("received").map((order) => (
                                     <div
                                         key={order.id}
@@ -417,7 +440,7 @@ export default function OrdersPage() {
                                 </h3>
                                 <Badge className="bg-blue-200 text-blue-800">{getOrdersByStatus("preparing").length}</Badge>
                             </div>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 max-h-96 overflow-y-auto">
+                            <div className="space-y-3 h-[calc(100vh-300px)] overflow-y-auto">
                                 {getOrdersByStatus("preparing").map((order) => (
                                     <div
                                         key={order.id}
@@ -460,7 +483,7 @@ export default function OrdersPage() {
                                 </h3>
                                 <Badge className="bg-green-200 text-green-800">{getOrdersByStatus("ready").length}</Badge>
                             </div>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 max-h-96 overflow-y-auto">
+                            <div className="space-y-3 h-[calc(100vh-300px)] overflow-y-auto">
                                 {getOrdersByStatus("ready").map((order) => (
                                     <div
                                         key={order.id}
@@ -499,7 +522,12 @@ export default function OrdersPage() {
                                 )}
                             </div>
                         </div>
+                        </div>
+                    )}
 
+                    {/* Page 2: Collected, Completed, Unpaid */}
+                    {currentPage === 2 && (
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         {/* Collected Orders Column */}
                         <div className="bg-white rounded-xl p-4 shadow-sm border border-purple-200">
                             <div className="flex items-center justify-between mb-4">
@@ -509,7 +537,7 @@ export default function OrdersPage() {
                                 </h3>
                                 <Badge className="bg-purple-200 text-purple-800">{getOrdersByStatus("collected").length}</Badge>
                             </div>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 max-h-96 overflow-y-auto">
+                            <div className="space-y-3 h-[calc(100vh-300px)] overflow-y-auto">
                                 {getOrdersByStatus("collected").map((order) => (
                                     <div
                                         key={order.id}
@@ -552,7 +580,7 @@ export default function OrdersPage() {
                                 </h3>
                                 <Badge className="bg-stone-200 text-stone-800">{getOrdersByStatus("completed").length}</Badge>
                             </div>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 max-h-96 overflow-y-auto">
+                            <div className="space-y-3 h-[calc(100vh-300px)] overflow-y-auto">
                                 {getOrdersByStatus("completed").map((order) => (
                                     <div
                                         key={order.id}
@@ -585,7 +613,56 @@ export default function OrdersPage() {
                                 )}
                             </div>
                         </div>
-                    </div>
+
+                        {/* Unpaid Orders Column */}
+                        <div className="bg-white rounded-xl p-4 shadow-sm border border-red-200">
+                            <div className="flex items-center justify-between mb-4">
+                                <h3 className="font-bold text-red-800 flex items-center">
+                                    <AlertCircle className="w-5 h-5 mr-2" />
+                                    Unpaid
+                                </h3>
+                                <Badge className="bg-red-200 text-red-800">{stats.unpaid}</Badge>
+                            </div>
+                            <div className="space-y-3 h-[calc(100vh-300px)] overflow-y-auto">
+                                {transformedOrders.filter(order => order.paymentStatus === 'pending').map((order) => (
+                                    <div
+                                        key={order.id}
+                                        onClick={() => openOrderDetails(order)}
+                                        className="bg-white/90 backdrop-blur-sm rounded-xl p-4 shadow-md border border-red-200/50 cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-[1.02]"
+                                    >
+                                        <div className="flex justify-between items-start mb-2">
+                                            <span className="font-semibold text-stone-800">{order.id}</span>
+                                            <span className="text-xs text-stone-600">{order.timestamp}</span>
+                                        </div>
+                                        <p className="text-sm text-stone-700 mb-1">{order.customerName}</p>
+                                        <p className="text-xs text-stone-600 mb-2 flex items-center">
+                                            <MapPin className="w-3 h-3 mr-1" />
+                                            {order.location}
+                                        </p>
+                                        <div className="text-xs text-stone-600 mb-2">
+                                            {order.items.length} item{order.items.length > 1 ? "s" : ""}
+                                        </div>
+                                        <div className="flex justify-between items-center">
+                                            <span className="font-bold text-stone-800">R{order.total}</span>
+                                            <ChevronRight className="w-4 h-4 text-stone-400" />
+                                        </div>
+                                        <div className="mt-2">
+                                            <Badge variant="outline" className="bg-amber-100 text-amber-800 border-amber-200 text-xs">
+                                                {order.status}
+                                            </Badge>
+                                        </div>
+                                    </div>
+                                ))}
+                                {transformedOrders.filter(order => order.paymentStatus === 'pending').length === 0 && (
+                                    <div className="col-span-full text-center py-8 text-red-600">
+                                        <AlertCircle className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                                        <p className="text-sm">No unpaid orders</p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                        </div>
+                    )}
                 </div>
 
                 {/* Order Details Modal */}

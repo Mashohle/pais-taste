@@ -14,7 +14,23 @@ interface UserBusiness {
     id: string
     name: string
     slug: string
+    description?: string | null
+    email?: string | null
+    phone?: string | null
+    website?: string | null
+    address_line1?: string | null
+    address_line2?: string | null
+    city?: string | null
+    state?: string | null
+    postal_code?: string | null
+    country?: string
+    currency?: string
+    timezone?: string
+    logo_url?: string | null
+    primary_color?: string
+    accent_color?: string
     is_active: boolean
+    settings?: Record<string, any>
     business_categories?: {
       id: string
       name: string
