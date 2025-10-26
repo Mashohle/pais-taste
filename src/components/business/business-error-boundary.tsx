@@ -3,7 +3,7 @@
 import { Component, ReactNode } from 'react'
 import { BusinessDataError, BusinessErrorHandler } from '@/lib/utils/business-error-handler'
 import { Button } from '@/components/ui/button'
-import { AlertCircle, RefreshCw, Home, ArrowLeft } from 'lucide-react'
+import { RefreshCw, Home, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 
 interface Props {

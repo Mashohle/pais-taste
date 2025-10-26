@@ -32,8 +32,15 @@ interface BusinessOnboardingData {
   accent_color?: string
 }
 
+interface Business {
+  id: string
+  name: string
+  slug: string
+  category_id: string
+}
+
 interface BusinessOnboardingProps {
-  onComplete?: (business: any) => void
+  onComplete?: (business: Business) => void
 }
 
 export function BusinessOnboarding({ onComplete }: BusinessOnboardingProps) {
@@ -98,8 +105,8 @@ export function BusinessOnboarding({ onComplete }: BusinessOnboardingProps) {
         onComplete?.(business)
         router.push(`/${business.slug}/admin/setup`)
       }
-    } catch (error) {
-      console.error('Error creating business:', error)
+    } catch (_error) {
+      console.error('Error creating business:', _error)
     } finally {
       setLoading(false)
     }

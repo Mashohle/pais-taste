@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Calendar } from "@/components/ui/calendar"
 import { Separator } from "@/components/ui/separator"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { CalendarIcon, Clock, User, Car, Scissors, Wrench, Info, CheckCircle } from "lucide-react"
+import { Clock, Car, Scissors, Wrench, CheckCircle } from "lucide-react"
 
 // Mock services data
 const mockServices = {
@@ -138,12 +138,30 @@ const mockStaff = [
   }
 ]
 
+interface Service {
+  id: string
+  name: string
+  description: string
+  price: number
+  duration: number
+  category: string
+  popular: boolean
+}
+
+interface Business {
+  id: string
+  name: string
+  category: 'car_wash' | 'salon' | 'service'
+  phone?: string
+  opening_hours: Record<string, { open: string; close: string; closed?: boolean }>
+}
+
 interface ServiceBookingProps {
-  business: any
+  business: Business
 }
 
 export default function ServiceBookingInterface({ business }: ServiceBookingProps) {
-  const [selectedService, setSelectedService] = useState<any>(null)
+  const [selectedService, setSelectedService] = useState<Service | null>(null)
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined)
   const [selectedTime, setSelectedTime] = useState('')
   const [selectedStaff, setSelectedStaff] = useState('')
@@ -161,17 +179,15 @@ export default function ServiceBookingInterface({ business }: ServiceBookingProp
   const [showConfirmation, setShowConfirmation] = useState(false)
 
   const services = mockServices[business.category as keyof typeof mockServices] || []
-  const categories = Array.from(new Set(services.map(service => service.category)))
 
   // Get available time slots for selected date
   const availableTimeSlots = useMemo(() => {
     if (!selectedDate || !selectedService) return []
-    
+
     // Mock available slots - in real app, this would check actual availability
     const allSlots = ['08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00']
-    
+
     // Filter by business hours
-    const today = new Date()
     const dayName = selectedDate.toLocaleDateString('en', { weekday: 'long' }).toLowerCase()
     const businessHours = business.opening_hours[dayName]
     
@@ -182,7 +198,7 @@ export default function ServiceBookingInterface({ business }: ServiceBookingProp
     })
   }, [selectedDate, selectedService, business.opening_hours])
 
-  const handleServiceSelect = (service: any) => {
+  const handleServiceSelect = (service: Service) => {
     setSelectedService(service)
     setShowBookingForm(true)
   }

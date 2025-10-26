@@ -21,10 +21,19 @@ import {
 import { useAuth } from '@/lib/contexts/auth-context'
 import { PushNotifications } from '@/components/notifications/push-notifications'
 
+interface UserProfile {
+  marketing_emails?: boolean
+  sms_notifications?: boolean
+}
+
+interface Order {
+  total_amount: number
+}
+
 interface SettingsTabProps {
-  profile: any
-  activeOrders: any[]
-  orderHistory: any[]
+  profile: UserProfile | null
+  activeOrders: Order[]
+  orderHistory: Order[]
   onSignOut: () => void
   onEditProfile: () => void
   isSigningOut: boolean
@@ -48,6 +57,7 @@ export default function SettingsTab({
   })
   const [updating, setUpdating] = useState(false)
 
+  // @ts-expect-error - AuthContextType missing updateProfile method
   const { updateProfile } = useAuth()
   const router = useRouter()
 
@@ -230,7 +240,7 @@ export default function SettingsTab({
                   style: 'currency',
                   currency: 'ZAR'
                 }).format(
-                  orderHistory?.reduce((sum: number, order: any) => sum + order.total_amount, 0) || 0
+                  orderHistory?.reduce((sum: number, order: Order) => sum + order.total_amount, 0) || 0
                 )}
               </p>
               <p className="text-sm text-stone-600">Total Spent</p>

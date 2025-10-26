@@ -15,7 +15,7 @@ const subscribers = new Set<() => void>()
 export function useLoadingCoordinator(isLoading: boolean, options: LoadingOptions) {
   const [coordinatedLoading, setCoordinatedLoading] = useState(isLoading)
   const { minimumDuration = 300, key } = options
-  const timeoutRef = useRef<NodeJS.Timeout>()
+  const timeoutRef = useRef<NodeJS.Timeout | undefined>(undefined)
 
   // Subscribe to global loading changes
   useEffect(() => {

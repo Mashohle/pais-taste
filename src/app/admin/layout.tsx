@@ -73,7 +73,7 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
             }
         ]
 
-        const category = currentBusiness.business.business_categories.id
+        const category = currentBusiness?.business?.business_categories?.id
         const baseItems = [
             {
                 href: '/admin',
@@ -271,8 +271,8 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
                         {/* Business Info */}
                         <div className="mb-6 p-4 bg-gradient-to-br from-stone-100 to-stone-200 rounded-xl">
                             <div className="flex items-center space-x-3">
-                                <div className={`p-3 rounded-xl ${currentBusiness.business?.business_categories?.color || 'bg-stone-200'}`}>
-                                    {currentBusiness.business?.business_categories && (
+                                <div className={`p-3 rounded-xl ${currentBusiness?.business?.business_categories?.color || 'bg-stone-200'}`}>
+                                    {currentBusiness?.business?.business_categories?.icon && (
                                         <DynamicIcon
                                             name={currentBusiness.business.business_categories.icon}
                                             className="h-6 w-6 text-white"
@@ -280,8 +280,8 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
                                     )}
                                 </div>
                                 <div>
-                                    <h3 className="font-semibold text-stone-800">{currentBusiness.name}</h3>
-                                    <p className="text-xs text-stone-600">{currentBusiness.business?.business_categories?.name}</p>
+                                    <h3 className="font-semibold text-stone-800">{currentBusiness?.name}</h3>
+                                    <p className="text-xs text-stone-600">{currentBusiness?.business?.business_categories?.name}</p>
                                 </div>
                             </div>
                         </div>
@@ -341,7 +341,7 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
                                 <div className="flex justify-between">
                                     <span className="text-green-700">Status</span>
                                     <span className="text-green-600 font-medium">
-                                        {currentBusiness.business?.is_active ? 'Active' : 'Inactive'}
+                                        {currentBusiness?.business?.is_active ? 'Active' : 'Inactive'}
                                     </span>
                                 </div>
                                 <div className="flex justify-between">
@@ -351,7 +351,7 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
                                 <div className="flex justify-between">
                                     <span className="text-green-700">Role</span>
                                     <span className="text-green-600 font-medium">
-                                        {currentBusiness.role === 'owner' ? 'Owner' : currentBusiness.role === 'admin' ? 'Admin' : 'Staff'}
+                                        {currentBusiness?.role === 'owner' ? 'Owner' : currentBusiness?.role === 'admin' ? 'Admin' : 'Staff'}
                                     </span>
                                 </div>
                             </div>

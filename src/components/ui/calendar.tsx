@@ -2,7 +2,6 @@
 
 import * as React from "react"
 import { ChevronLeft, ChevronRight } from "lucide-react"
-
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 
@@ -42,10 +41,8 @@ export interface CalendarProps {
 function Calendar({
   className,
   classNames,
-  showOutsideDays = true,
   selected,
   onSelect,
-  mode = "single",
   disabled,
   ...props
 }: CalendarProps) {

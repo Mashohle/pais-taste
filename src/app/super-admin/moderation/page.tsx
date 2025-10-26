@@ -120,7 +120,7 @@ export default function Moderation() {
                 <div className="flex items-start justify-between">
                   <div>
                     <p className="font-medium text-slate-900">New Business Review</p>
-                    <p className="text-sm text-slate-600">Mama Zulu's Kitchen - Content Review</p>
+                    <p className="text-sm text-slate-600">Mama Zulu&apos;s Kitchen - Content Review</p>
                     <p className="text-xs text-slate-500 mt-2">Pending 1 day</p>
                   </div>
                   <div className="flex space-x-2">

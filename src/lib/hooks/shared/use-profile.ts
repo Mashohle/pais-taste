@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useAuth } from '@/lib/contexts/auth-context'
 
 export interface UserProfile {
@@ -39,7 +39,6 @@ export interface ProfileUpdateData {
 }
 
 export function useProfile() {
-  const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [updating, setUpdating] = useState(false)
   const { user, profile, refreshProfile } = useAuth()
@@ -195,7 +194,6 @@ export function useProfile() {
   // Use profile from auth context instead of fetching separately
   return {
     profile,
-    loading,
     error,
     updating,
     updateProfile,

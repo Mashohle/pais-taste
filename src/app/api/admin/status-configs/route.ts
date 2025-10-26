@@ -1,8 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 
+// Status configuration interface
+interface StatusConfig {
+  id: string
+  business_id: string
+  status_type: 'order' | 'booking' | 'payment'
+  status_name: string
+  status_value: string
+  display_order: number
+  color_class: string
+  icon_name: string
+  is_default?: boolean
+  is_final?: boolean
+  can_transition_to?: string[]
+  description?: string
+  created_at?: string
+  updated_at?: string
+}
+
 // In-memory storage for status configs (until database table is created)
-const memoryStorage = new Map<string, any[]>()
+const memoryStorage = new Map<string, StatusConfig[]>()
 
 // Default status configurations by business category
 const getDefaultStatuses = (businessCategory: string, statusType: 'order' | 'booking' | 'payment') => {
@@ -92,7 +110,7 @@ export async function GET(request: NextRequest) {
             if (!dbError && dbStatuses && dbStatuses.length > 0) {
                 return NextResponse.json({ data: dbStatuses })
             }
-        } catch (e) {
+        } catch {
             console.log('Database table not available, using defaults')
         }
 
@@ -117,7 +135,7 @@ export async function GET(request: NextRequest) {
                 is_default: status.is_default || false,
                 is_final: status.is_final || false,
                 can_transition_to: [],
-                description: status.description
+                description: (status as { description?: string }).description || ''
             }))
 
             // Store in memory
@@ -125,7 +143,7 @@ export async function GET(request: NextRequest) {
         }
 
         return NextResponse.json({ data: statuses })
-    } catch (error) {
+    } catch (error: unknown) {
         console.error('Error fetching status configs:', error)
         return NextResponse.json({
             error: 'Failed to fetch status configurations',
@@ -169,13 +187,13 @@ export async function POST(request: NextRequest) {
             if (!dbError && dbStatus) {
                 return NextResponse.json({ data: dbStatus })
             }
-        } catch (e) {
+        } catch {
             console.log('Database table not available, using in-memory storage')
         }
 
         // Use in-memory storage
         const memoryKey = `${business_id}-${status_type}`
-        let statuses = memoryStorage.get(memoryKey) || []
+        const statuses = memoryStorage.get(memoryKey) || []
 
         const newStatus = {
             id: statusData.id || `custom-${Date.now()}`,
@@ -187,7 +205,7 @@ export async function POST(request: NextRequest) {
         }
 
         // Update or add
-        const existingIndex = statuses.findIndex((s: any) => s.id === newStatus.id)
+        const existingIndex = statuses.findIndex((s) => s.id === newStatus.id)
         if (existingIndex >= 0) {
             statuses[existingIndex] = { ...statuses[existingIndex], ...newStatus }
         } else {
@@ -195,13 +213,13 @@ export async function POST(request: NextRequest) {
         }
 
         // Sort by display_order
-        statuses.sort((a: any, b: any) => a.display_order - b.display_order)
+        statuses.sort((a, b) => a.display_order - b.display_order)
 
         // Store back in memory
         memoryStorage.set(memoryKey, statuses)
 
         return NextResponse.json({ data: newStatus })
-    } catch (error) {
+    } catch (error: unknown) {
         console.error('Error creating/updating status config:', error)
         return NextResponse.json({
             error: 'Failed to save status configuration',
@@ -243,7 +261,7 @@ export async function DELETE(request: NextRequest) {
             if (!dbError) {
                 return NextResponse.json({ success: true })
             }
-        } catch (e) {
+        } catch {
             console.log('Database table not available, using in-memory storage')
         }
 
@@ -251,13 +269,13 @@ export async function DELETE(request: NextRequest) {
         const memoryKey = `${businessId}-${statusType}`
         let statuses = memoryStorage.get(memoryKey) || []
 
-        statuses = statuses.filter((s: any) => s.id !== statusId)
+        statuses = statuses.filter((s) => s.id !== statusId)
 
         // Store back in memory
         memoryStorage.set(memoryKey, statuses)
 
         return NextResponse.json({ success: true })
-    } catch (error) {
+    } catch (error: unknown) {
         console.error('Error deleting status config:', error)
         return NextResponse.json({
             error: 'Failed to delete status configuration',

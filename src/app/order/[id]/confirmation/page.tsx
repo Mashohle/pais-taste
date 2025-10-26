@@ -7,33 +7,82 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { supabase } from '@/lib/supabase'
+import { Order } from '@/types/order'
+
+interface BusinessData {
+  id: string
+  name: string
+  phone: string | null
+  address_line1: string | null
+  address_line2: string | null
+  city: string | null
+  state: string | null
+  business_categories?: {
+    id: string
+    name: string
+    description?: string
+    icon?: string
+    color?: string
+  }
+  settings?: {
+    food?: {
+      estimated_prep_time?: string
+    }
+  }
+}
 
 export default function OrderConfirmationPage() {
   const params = useParams()
   const orderId = params.id as string
-  const [order, setOrder] = useState<any>(null)
+  const [order, setOrder] = useState<Order | null>(null)
   const [loading, setLoading] = useState(true)
   const [orderNotFound, setOrderNotFound] = useState(false)
-  const [businessData, setBusinessData] = useState<any>(null)
+  const [businessData, setBusinessData] = useState<BusinessData | null>(null)
   const [showPhoneVerification, setShowPhoneVerification] = useState(false)
   const [phoneNumber, setPhoneNumber] = useState('')
   const [phoneError, setPhoneError] = useState('')
   const [isVerifying, setIsVerifying] = useState(false)
   const [copied, setCopied] = useState(false)
 
-  useEffect(() => {
-    if (!orderId) {
+  const fetchOrder = useCallback(async () => {
+    try {
+      setLoading(true)
+
+      // Fetch order directly by ID (works for both authenticated and guest orders)
+      const { data: orderData, error: orderError } = await supabase
+        .from('orders')
+        .select(`
+          *,
+          order_items (
+            quantity,
+            unit_price,
+            menu_item_id,
+            with_combo,
+            menu_items (name, business_id)
+          )
+        `)
+        .eq('id', orderId)
+        .single()
+
+      if (orderError || !orderData) {
+        setOrderNotFound(true)
+        setLoading(false)
+        return
+      }
+
+      setOrder(orderData)
+      await loadBusinessData(orderData.business_id)
+      setLoading(false)
+    } catch (error) {
+      console.error('Error fetching order:', error)
       setOrderNotFound(true)
       setLoading(false)
-      return
     }
-
-    checkAccessAndFetchOrder()
   }, [orderId])
 
-  const checkAccessAndFetchOrder = () => {
+  const checkAccessAndFetchOrder = useCallback(() => {
     // Check if we have access via session storage (just placed order)
     const accessibleOrders = JSON.parse(sessionStorage.getItem('accessibleOrders') || '[]')
 
@@ -44,7 +93,17 @@ export default function OrderConfirmationPage() {
       setShowPhoneVerification(true)
       setLoading(false)
     }
-  }
+  }, [orderId, fetchOrder])
+
+  useEffect(() => {
+    if (!orderId) {
+      setOrderNotFound(true)
+      setLoading(false)
+      return
+    }
+
+    checkAccessAndFetchOrder()
+  }, [orderId, checkAccessAndFetchOrder])
 
   const verifyPhoneNumber = async () => {
     setPhoneError('')
@@ -83,42 +142,6 @@ export default function OrderConfirmationPage() {
       console.error('Error verifying phone:', error)
       setPhoneError('Verification failed. Please try again.')
       setIsVerifying(false)
-    }
-  }
-
-  const fetchOrder = async () => {
-    try {
-      setLoading(true)
-
-      // Fetch order directly by ID (works for both authenticated and guest orders)
-      const { data: orderData, error: orderError } = await supabase
-        .from('orders')
-        .select(`
-          *,
-          order_items (
-            quantity,
-            unit_price,
-            menu_item_id,
-            with_combo,
-            menu_items (name, business_id)
-          )
-        `)
-        .eq('id', orderId)
-        .single()
-
-      if (orderError || !orderData) {
-        setOrderNotFound(true)
-        setLoading(false)
-        return
-      }
-
-      setOrder(orderData)
-      await loadBusinessData(orderData.business_id)
-      setLoading(false)
-    } catch (error) {
-      console.error('Error fetching order:', error)
-      setOrderNotFound(true)
-      setLoading(false)
     }
   }
 
@@ -275,7 +298,7 @@ export default function OrderConfirmationPage() {
           <div className="text-red-600 text-6xl mb-4">❌</div>
           <h1 className="text-2xl font-bold text-stone-800 mb-2">Order Not Found</h1>
           <p className="text-stone-600 mb-6">
-            We couldn't find an order with that ID. Please check your order number or contact us for assistance.
+            We couldn&apos;t find an order with that ID. Please check your order number or contact us for assistance.
           </p>
           <Link href="/">
             <Button className="bg-stone-700 hover:bg-stone-800">
@@ -369,7 +392,7 @@ export default function OrderConfirmationPage() {
               <h2 className="text-xl sm:text-2xl font-bold text-stone-800 text-center">Order Summary</h2>
 
               <div className="space-y-3">
-                {order.order_items.map((item: any, index: number) => (
+                {order.order_items.map((item, index: number) => (
                   <div
                     key={index}
                     className="flex justify-between items-center bg-white/80 backdrop-blur-sm rounded-lg p-4 border border-stone-200/60"
@@ -445,7 +468,7 @@ export default function OrderConfirmationPage() {
 
               <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
                 <p className="text-emerald-800 text-sm text-center">
-                  💚 We'll call you at {order.customer_phone} within 10 minutes to confirm your order
+                  💚 We&apos;ll call you at {order.customer_phone} within 10 minutes to confirm your order
                 </p>
               </div>
             </div>

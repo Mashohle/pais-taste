@@ -12,7 +12,7 @@ import { Slider } from "@/components/ui/slider"
 import { Switch } from "@/components/ui/switch"
 import { Separator } from "@/components/ui/separator"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Search, MapPin, Clock, Star, ChevronRight, Filter, Map, List, SlidersHorizontal, X, Heart, Phone, Globe, Navigation } from "lucide-react"
+import { Search, MapPin, Clock, Star, ChevronRight, Filter, Map, List, SlidersHorizontal, Heart, Phone } from "lucide-react"
 import Link from 'next/link'
 import { DynamicIcon } from '@/lib/utils/icon-mapper'
 import { useBusinessSwitching } from '@/lib/hooks'
@@ -38,22 +38,14 @@ export default function BusinessDirectory() {
 
   // Use custom hooks
   const {
-    businesses,
     categories,
-    cities,
     isLoading,
-    hasError,
-    error,
     getFilteredBusinesses
   } = useBusinessDirectory()
 
   const {
-    switchToBusinessType,
     getBusinessTypeFromCategory,
-    getBusinessTypeIcon,
-    getBusinessTypeColor,
-    shouldWarnAboutBusinessSwitch,
-    isSwitching
+    getBusinessTypeColor
   } = useBusinessSwitching()
 
   // Filter states
@@ -124,16 +116,6 @@ export default function BusinessDirectory() {
     featuredOnly,
     verifiedOnly
   ].filter(Boolean).length
-
-  const getPriceRangeDisplay = (range: string) => {
-    switch (range) {
-      case '$': return '$'
-      case '$$': return '$$'
-      case '$$$': return '$$$'
-      case '$$$$': return '$$$$'
-      default: return range
-    }
-  }
 
   // Cities are now provided by the hook
 
@@ -260,6 +242,7 @@ export default function BusinessDirectory() {
                           {categories.map(category => (
                             <SelectItem key={category.id} value={category.id}>
                               <div className="flex items-center gap-2">
+                                {/* @ts-expect-error - Category type missing icon property */}
                                 <DynamicIcon name={category.icon} className="w-4 h-4" />
                                 {category.name}
                               </div>
@@ -387,7 +370,7 @@ export default function BusinessDirectory() {
                 </h2>
                 {searchTerm && (
                   <p className="text-sm text-stone-600">
-                    Results for "{searchTerm}"
+                    Results for &quot;{searchTerm}&quot;
                   </p>
                 )}
               </div>
@@ -470,7 +453,7 @@ export default function BusinessDirectory() {
                       {/* Business Image */}
                       <div className="w-40 self-stretch flex-shrink-0 bg-gradient-to-r from-stone-200 to-stone-300 rounded-lg flex items-center justify-center relative overflow-hidden ml-4">
                         <DynamicIcon
-                          name={categories.find(c => c.id === business.category)?.icon || 'building'}
+                          name={(categories.find(c => c.id === (typeof business.category === 'object' ? business.category?.id : business.category)) as {icon?: string})?.icon || 'building'}
                           className="w-12 h-12 text-stone-600"
                         />
 
@@ -527,14 +510,8 @@ export default function BusinessDirectory() {
                             </Badge>
                             <Clock className="w-4 h-4" />
                             <span>
-                              {(() => {
-                                const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
-                                const today = days[new Date().getDay()]
-                                const hours = business.opening_hours?.[today]
-                                if (hours?.closed) return 'Closed today'
-                                if (hours) return `${hours.open} - ${hours.close}`
-                                return 'Hours unavailable'
-                              })()}
+                              {/* TODO: Opening hours - Coming Soon */}
+                              Hours unavailable
                             </span>
                           </div>
                         </div>
@@ -542,9 +519,9 @@ export default function BusinessDirectory() {
                         <div className="flex items-center justify-between mt-3">
                           <div className="flex items-center space-x-2">
                             <Badge
-                              className={`text-xs border ${getBusinessTypeColor(getBusinessTypeFromCategory(business.category_name))}`}
+                              className={`text-xs border ${getBusinessTypeColor(getBusinessTypeFromCategory(business.category?.name))}`}
                             >
-                              {business.category_name}
+                              {business.category?.name}
                             </Badge>
                           </div>
 
@@ -589,7 +566,7 @@ export default function BusinessDirectory() {
                 </div>
                 <h3 className="text-lg font-medium text-stone-800 mb-2">No business found</h3>
                 <p className="text-stone-600 mb-4">
-                  Try adjusting your search criteria or filters to find what you're looking for.
+                  Try adjusting your search criteria or filters to find what you&apos;re looking for.
                 </p>
                 <Button variant="outline" onClick={clearFilters}>
                   Clear All Filters

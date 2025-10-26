@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo } from 'react'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -13,8 +13,9 @@ import { useRouter } from "next/navigation"
 import UniversalOrderCard from './universal-order-card'
 import { useOrderHistory } from '@/lib/hooks/use-order-history'
 
-// Mock data for demo purposes (keeping for reference)
-const mockHistoricalOrdersOld = [
+// Mock data for demo purposes was removed as it's no longer used
+/* eslint-disable @typescript-eslint/no-unused-vars */
+const _mockHistoricalOrdersOld = [
   // Food orders (completed)
   {
     id: "order_1",
@@ -148,11 +149,12 @@ export default function OrderHistoryTab() {
   const filteredOrders = useMemo(() => {
     return apiOrders.filter(order => {
       // Search filter
-      if (searchTerm && !order.business_name.toLowerCase().includes(searchTerm.toLowerCase()) && 
-          !(order.type === 'order' && order.items?.some(item => 
+      if (searchTerm && !order.business_name.toLowerCase().includes(searchTerm.toLowerCase()) &&
+          !(order.type === 'order' && order.items?.some(item =>
             item.name.toLowerCase().includes(searchTerm.toLowerCase())
-          )) &&
-          !(order.type === 'booking' && order.service_name?.toLowerCase().includes(searchTerm.toLowerCase()))) {
+          ))) {
+        // TODO: Add booking search when booking type is implemented
+        // && !(order.type === 'booking' && order.service_name?.toLowerCase().includes(searchTerm.toLowerCase()))
         return false
       }
 
@@ -328,7 +330,7 @@ export default function OrderHistoryTab() {
                 <div className="flex flex-wrap gap-2">
                   {searchTerm && (
                     <Badge variant="secondary" className="text-xs">
-                      Search: "{searchTerm}"
+                      Search: &quot;{searchTerm}&quot;
                     </Badge>
                   )}
                   {selectedBusinessType !== "all" && (
@@ -380,6 +382,7 @@ export default function OrderHistoryTab() {
                 {filteredOrders.map((order) => (
                   <UniversalOrderCard
                     key={order.id}
+                    // @ts-expect-error - OrderHistoryItem type missing estimated_time property
                     order={order}
                     showReorder={true}
                     onReorder={() => handleReorder(order.id, order.business_id)}
@@ -469,7 +472,7 @@ export default function OrderHistoryTab() {
               {/* Help Text */}
               <div className="text-center text-sm text-stone-500">
                 <p>
-                  Looking to repeat a great experience? Use "Reorder" for food orders or "Book Again" for services.
+                  Looking to repeat a great experience? Use &quot;Reorder&quot; for food orders or &quot;Book Again&quot; for services.
                 </p>
               </div>
             </>

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from 'react'
+import { useEffect, useMemo } from 'react'
 import { useCart } from '@/lib/contexts/cart-context'
 import { useBusiness } from '../business/use-business'
 import { useBusinessErrorHandler } from '../business/use-business-error-handler'
@@ -35,15 +35,10 @@ export function useCheckout() {
     [state.items]
   )
 
-  // Track if validation has run to prevent re-running
-  const validationRun = useRef(false)
-  const lastValidatedBusiness = useRef<string | null>(null)
-
   // Validate checkout data
   useEffect(() => {
-    // Only validate if business changed or first time
-    if (businessId && business && lastValidatedBusiness.current !== businessId) {
-      lastValidatedBusiness.current = businessId
+    // Only validate if business is available
+    if (businessId && business) {
 
       executeWithErrorHandling(
         async () => {

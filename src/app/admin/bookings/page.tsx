@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Calendar, Clock, Phone, Mail, Plus, Search, CheckCircle, Clock as ClockIcon, AlertTriangle, XCircle } from "lucide-react"
+import { Calendar, Clock, Phone, Mail, Plus, Search, CheckCircle, Clock as ClockIcon, XCircle } from "lucide-react"
 import { useBusiness } from '@/lib/contexts/business-context'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -76,13 +76,6 @@ const mockBookings = [
     }
 ]
 
-const mockServices = [
-    { id: '1', name: 'Basic Wash', duration: 45, price: 180.00 },
-    { id: '2', name: 'Full Car Wash & Wax', duration: 90, price: 450.00 },
-    { id: '3', name: 'Interior Deep Clean', duration: 120, price: 350.00 },
-    { id: '4', name: 'Premium Detail', duration: 180, price: 650.00 }
-]
-
 const mockStaff = [
     { id: '1', name: 'Mike Thompson', role: 'Senior Detailer' },
     { id: '2', name: 'David Lee', role: 'Car Wash Specialist' },
@@ -96,8 +89,7 @@ export default function BookingsPage() {
     const [selectedStatus, setSelectedStatus] = useState('all')
     const [selectedDate, setSelectedDate] = useState('')
     const [selectedStaff, setSelectedStaff] = useState('all')
-    const [bookings, setBookings] = useState(mockBookings)
-    const [activeTab, setActiveTab] = useState('calendar')
+    const [bookings] = useState(mockBookings)
 
     // Only show this page for service businesses
     useEffect(() => {
@@ -159,15 +151,6 @@ export default function BookingsPage() {
 
     const formatTime = (time: string) => {
         return new Date(`2024-01-01T${time}`).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    }
-
-    const formatDate = (date: string) => {
-        return new Date(date).toLocaleDateString('en-ZA', { 
-            weekday: 'long', 
-            year: 'numeric', 
-            month: 'long', 
-            day: 'numeric' 
-        })
     }
 
     return (
@@ -264,7 +247,7 @@ export default function BookingsPage() {
                     <Card>
                         <CardContent className="p-4">
                             <div className="flex items-center">
-                                <AlertTriangle className="h-8 w-8 text-purple-600" />
+                                <CheckCircle className="h-8 w-8 text-purple-600" />
                                 <div className="ml-3">
                                     <p className="text-sm font-medium text-gray-600">Today&apos;s Revenue</p>
                                     <p className="text-2xl font-bold">R{stats.revenue_today.toFixed(2)}</p>

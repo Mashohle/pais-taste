@@ -10,30 +10,24 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
-import { 
-  Building2, 
-  User, 
-  Mail, 
-  Phone, 
-  MapPin, 
+import {
+  Building2,
+  User,
+  MapPin,
   FileText,
   Upload,
   CheckCircle,
   Clock,
   AlertCircle,
-  Star,
   DollarSign,
-  Calendar,
   Utensils,
   ShoppingBag,
   Wrench,
   Crown
 } from "lucide-react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
 
 export default function BusinessApplication() {
-  const router = useRouter()
   const [currentStep, setCurrentStep] = useState(1)
   const { isSubmitting, submitSuccess, submitError, submitApplication } = useApplicationSubmission()
   const { formData, updateFormData, getApplicationData } = useBusinessApplicationForm()
@@ -516,7 +510,7 @@ export default function BusinessApplication() {
           <div className="border-2 border-dashed border-slate-300 rounded-lg p-6 text-center">
             <Upload className="w-12 h-12 text-slate-400 mx-auto mb-3" />
             <h4 className="font-medium text-slate-900 mb-2">South African ID Document</h4>
-            <p className="text-sm text-slate-600 mb-4">Clear copy of owner's South African ID</p>
+            <p className="text-sm text-slate-600 mb-4">Clear copy of owner&apos;s South African ID</p>
             <Button variant="outline" size="sm">
               Choose File
             </Button>
@@ -623,7 +617,7 @@ export default function BusinessApplication() {
                     <div>
                       <p className="font-medium text-green-800">Application Submitted Successfully!</p>
                       <p className="text-sm text-green-700 mt-1">
-                        Your application has been submitted for review. We'll send you an email confirmation shortly and notify you when our team reviews your application.
+                        Your application has been submitted for review. We&apos;ll send you an email confirmation shortly and notify you when our team reviews your application.
                       </p>
                     </div>
                   </div>

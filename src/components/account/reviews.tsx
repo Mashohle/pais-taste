@@ -2,24 +2,21 @@
 
 import { useState, useMemo } from 'react'
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { 
-  Star, 
-  MessageSquare, 
-  Calendar, 
-  Filter, 
-  Search, 
+import {
+  Star,
+  MessageSquare,
+  Calendar,
+  Filter,
+  Search,
   ThumbsUp,
   Edit,
   Trash2,
   MapPin,
-  CheckCircle,
-  AlertCircle
+  CheckCircle
 } from "lucide-react"
 import { useRouter } from "next/navigation"
 
@@ -39,7 +36,7 @@ const mockReviews = [
     verified: true,
     helpful_votes: 12,
     business_response: {
-      response: "Thank you so much for your wonderful review! We're thrilled you enjoyed our authentic bobotie and malva pudding. Can't wait to serve you again!",
+      response: "Thank you so much for your wonderful review! We&apos;re thrilled you enjoyed our authentic bobotie and malva pudding. Can&apos;t wait to serve you again!",
       date: "2024-08-16T14:20:00Z",
       responder: "Chef Nomsa"
     },
@@ -59,7 +56,7 @@ const mockReviews = [
     verified: true,
     helpful_votes: 8,
     business_response: {
-      response: "Thank you for the feedback! We're glad you were happy with Mike's work. We're working on improving our scheduling to reduce wait times. Your satisfaction is our priority!",
+      response: "Thank you for the feedback! We&apos;re glad you were happy with Mike&apos;s work. We&apos;re working on improving our scheduling to reduce wait times. Your satisfaction is our priority!",
       date: "2024-08-11T09:15:00Z",
       responder: "Manager John"
     }
@@ -78,7 +75,7 @@ const mockReviews = [
     verified: true,
     helpful_votes: 15,
     business_response: {
-      response: "We're so happy you love your new pieces! Supporting our local artisans means the world to us. Thank you for being part of preserving our cultural heritage.",
+      response: "We&apos;re so happy you love your new pieces! Supporting our local artisans means the world to us. Thank you for being part of preserving our cultural heritage.",
       date: "2024-08-09T08:30:00Z",
       responder: "Curator Thabo"
     },
@@ -127,7 +124,6 @@ export default function ReviewsTab() {
   const [selectedRating, setSelectedRating] = useState<string>("all")
   const [selectedTimeRange, setSelectedTimeRange] = useState<string>("all")
   const [showOnlyWithPhotos, setShowOnlyWithPhotos] = useState(false)
-  const [editingReview, setEditingReview] = useState<string | null>(null)
 
   // Get unique businesses for filter dropdown
   const uniqueBusinesses = useMemo(() => {
@@ -228,8 +224,8 @@ export default function ReviewsTab() {
   }
 
   const handleEditReview = (reviewId: string) => {
-    setEditingReview(reviewId)
     // In real app, would open edit dialog with current review data
+    console.log('Edit review:', reviewId)
   }
 
   const handleDeleteReview = (reviewId: string) => {
@@ -414,6 +410,7 @@ export default function ReviewsTab() {
                       {review.photos && review.photos.length > 0 && (
                         <div className="flex gap-2 mb-4">
                           {review.photos.map((photo, index) => (
+                            // eslint-disable-next-line @next/next/no-img-element
                             <img
                               key={index}
                               src={photo}
@@ -532,7 +529,7 @@ export default function ReviewsTab() {
               No Reviews Yet
             </h3>
             <p className="text-stone-600 mb-6">
-              Start sharing your experiences! Write reviews for businesses you've used to help others discover great local services.
+              Start sharing your experiences! Write reviews for businesses you&apos;ve used to help others discover great local services.
             </p>
             <Button 
               onClick={handleWriteReview}

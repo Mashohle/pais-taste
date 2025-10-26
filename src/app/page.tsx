@@ -7,37 +7,16 @@ import { BusinessCard, BusinessCardContent } from "@/components/ui/business-card
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Search, MapPin, Clock, Star, ChevronRight, Utensils, ShoppingBag, Wrench, Car, Scissors, Home, Filter, Menu, User, Heart, Phone, Package } from "lucide-react"
+import { Search, MapPin, Clock, Star, ChevronRight, ShoppingBag, Filter, Menu, User, Heart, Phone, Package } from "lucide-react"
 import Link from 'next/link'
 import { DynamicIcon } from '@/lib/utils/icon-mapper'
 import { useAuth } from '@/lib/contexts/auth-context'
 import { useCustomerPortal } from '@/lib/hooks'
 
-// Dynamic Content API Response Interface (to be consumed from super admin portal)
-interface DynamicScreenContent {
-  screen_id: string
-  screen_type: 'home' | 'category' | 'business_detail' | 'custom'
-  layout: {
-    sections: Array<{
-      type: 'hero' | 'carousel' | 'grid' | 'list' | 'featured' | 'banner' | 'search'
-      config: any
-      content: any
-    }>
-  }
-  metadata: {
-    title: string
-    description: string
-    last_updated: string
-  }
-}
-
-
 export default function CustomerPortalHome() {
   const router = useRouter()
   const [searchTerm, setSearchTerm] = useState('')
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
-  const [dynamicContent, setDynamicContent] = useState<DynamicScreenContent | null>(null)
-  const [isLoadingDynamicContent, setIsLoadingDynamicContent] = useState(true)
+  const [selectedCategory] = useState<string | null>(null)
   const { user } = useAuth()
 
   // Use customer portal hook for real data
@@ -50,28 +29,6 @@ export default function CustomerPortalHome() {
     searchBusinesses,
     filterByCategory
   } = useCustomerPortal()
-
-  // Simulate fetching dynamic content from super admin portal
-  useEffect(() => {
-    const fetchDynamicContent = async () => {
-      try {
-        // This will eventually call your super admin API
-        // const response = await fetch('/api/dynamic-content/home')
-        // const content = await response.json()
-
-        // For now, simulate no dynamic content configured
-        await new Promise(resolve => setTimeout(resolve, 1000))
-        setDynamicContent(null) // No content configured yet
-      } catch (error) {
-        console.error('Failed to load dynamic content:', error)
-        setDynamicContent(null)
-      } finally {
-        setIsLoadingDynamicContent(false)
-      }
-    }
-
-    fetchDynamicContent()
-  }, [])
 
   // Debounce search to avoid excessive API calls and reloading
   useEffect(() => {
@@ -89,38 +46,6 @@ export default function CustomerPortalHome() {
   // Handle search input change (just update state, debounce effect handles API call)
   const handleSearchChange = (term: string) => {
     setSearchTerm(term)
-  }
-
-  // Dynamic Content Renderer (placeholder for super admin built screens)
-  const renderDynamicContent = () => {
-    if (isLoadingDynamicContent) {
-      return (
-        <div className="min-h-screen bg-gradient-to-br from-stone-50 to-stone-100 flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-stone-600 mx-auto mb-4"></div>
-            <p className="text-stone-700">Loading personalized experience...</p>
-          </div>
-        </div>
-      )
-    }
-
-    if (dynamicContent) {
-      // This will render the dynamic content built by super admin
-      return (
-        <div className="min-h-screen">
-          {/* Dynamic screen renderer will go here */}
-          <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-8 text-center">
-            <h1 className="text-3xl font-bold mb-2">Dynamic Content Screen</h1>
-            <p className="text-blue-100">Content ID: {dynamicContent.screen_id}</p>
-            <p className="text-blue-100">Built with Super Admin Portal</p>
-          </div>
-          {/* Dynamic sections will be rendered here based on dynamicContent.layout */}
-        </div>
-      )
-    }
-
-    // Fallback to default static layout when no dynamic content is configured
-    return null
   }
 
   // Show error state
@@ -252,13 +177,7 @@ export default function CustomerPortalHome() {
     )
   }
 
-  // If dynamic content exists, render it instead of default layout
-  const dynamicScreen = renderDynamicContent()
-  if (dynamicScreen) {
-    return dynamicScreen
-  }
-
-  // Default static layout (fallback when no dynamic content configured)
+  // Default static layout
   return (
     <div className="min-h-screen bg-gradient-to-br from-stone-50 to-stone-100">
       {/* Navigation Header */}
@@ -375,6 +294,7 @@ export default function CustomerPortalHome() {
                   {/* Business Image */}
                   <div className="h-48 bg-gradient-to-r from-stone-200 to-stone-300 rounded-t-lg flex items-center justify-center relative overflow-hidden">
                     {business.logo_url ? (
+                      // eslint-disable-next-line @next/next/no-img-element
                       <img
                         src={business.logo_url}
                         alt={business.name}

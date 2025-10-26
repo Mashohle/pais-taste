@@ -2,9 +2,9 @@
 
 import type React from "react"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { ArrowLeft, Upload, X, Plus, ImageIcon } from "lucide-react"
+import { ArrowLeft, Upload, X, Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -223,6 +223,7 @@ export default function AddMenuItem() {
                 <div className="border-2 border-dashed border-stone-300 rounded-lg p-6 text-center bg-stone-50/50 relative">
                   {imagePreview ? (
                     <div className="relative inline-block">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={imagePreview}
                         alt="Preview"

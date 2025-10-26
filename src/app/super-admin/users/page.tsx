@@ -14,7 +14,6 @@ import {
   Phone,
   MapPin,
   Calendar,
-  Shield,
   CheckCircle,
   Eye,
   RefreshCw,

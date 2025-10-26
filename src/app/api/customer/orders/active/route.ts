@@ -86,9 +86,10 @@ export async function GET(request: Request) {
     // Filter by category if specified (post-query filter)
     let filteredOrders = orders || []
     if (categoryId && categoryId !== 'all') {
-      filteredOrders = filteredOrders.filter(order =>
-        order.businesses?.category_id === categoryId
-      )
+      filteredOrders = filteredOrders.filter(order => {
+        const business = Array.isArray(order.businesses) ? order.businesses[0] : order.businesses
+        return business?.category_id === categoryId
+      })
     }
 
     // Get total count for pagination - only active orders
@@ -129,7 +130,9 @@ export async function GET(request: Request) {
       }, {} as Record<string, number>),
       uniqueBusinesses: new Set(allOrders?.map(order => order.business_id)).size,
       ordersByCategory: allOrders?.reduce((acc, order) => {
-        const categoryId = order.businesses?.category_id
+        // businesses is returned as an array from Supabase join
+        const business = Array.isArray(order.businesses) ? order.businesses[0] : order.businesses
+        const categoryId = business?.category_id
         if (categoryId) {
           acc[categoryId] = (acc[categoryId] || 0) + 1
         }

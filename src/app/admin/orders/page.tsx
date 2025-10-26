@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Clock, Users, CheckCircle, AlertCircle, Phone, MapPin, CreditCard, Banknote, ChevronRight, ChevronLeft, X } from "lucide-react"
+import { Clock, Users, CheckCircle, AlertCircle, Phone, MapPin, CreditCard, Banknote, ChevronRight, X } from "lucide-react"
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useOrders } from '@/lib/hooks'

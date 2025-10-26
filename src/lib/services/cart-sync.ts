@@ -2,6 +2,40 @@ import { createClient } from '@/lib/supabase/client'
 
 const supabase = createClient()
 
+// Database response types
+interface CartItemFromDB {
+  id: string
+  business_id: string
+  item_type: 'menu_item' | 'product' | 'service'
+  name: string
+  description?: string | null
+  price: string | number
+  quantity: number
+  menu_item_id?: string | null
+  product_id?: string | null
+  service_id?: string | null
+  booking_details?: Record<string, unknown> | null
+  options?: Record<string, unknown> | null
+  notes?: string | null
+  is_available: boolean
+  created_at?: string
+}
+
+interface BusinessCategory {
+  id?: string
+  name: string
+  icon?: string
+  color?: string
+}
+
+interface BusinessFromDB {
+  id: string
+  name: string
+  slug: string
+  business_categories?: BusinessCategory | BusinessCategory[]
+  logo_url?: string | null
+}
+
 // Types
 export interface CartItem {
   id: string
@@ -23,11 +57,11 @@ export interface CartItem {
     time: string
     duration: number
     staff_id?: string
-    [key: string]: any
+    [key: string]: unknown
   }
 
   // Customization
-  options?: Record<string, any>
+  options?: Record<string, unknown>
   notes?: string
 
   // Availability flag
@@ -209,31 +243,33 @@ export class CartSyncService {
         throw new Error('Business not found')
       }
 
+      const businessFromDB = business as unknown as BusinessFromDB
+
       const businessData: CartBusiness = {
-        id: business.id,
-        name: business.name,
-        slug: business.slug,
-        category: Array.isArray(business.business_categories)
-          ? business.business_categories[0]?.name || 'general'
-          : (business.business_categories as any)?.name || 'general',
-        logo_url: business.logo_url
+        id: businessFromDB.id,
+        name: businessFromDB.name,
+        slug: businessFromDB.slug,
+        category: Array.isArray(businessFromDB.business_categories)
+          ? businessFromDB.business_categories[0]?.name || 'general'
+          : businessFromDB.business_categories?.name || 'general',
+        logo_url: businessFromDB.logo_url || undefined
       }
 
       return {
-        items: cartItems.map((item: any) => ({
+        items: cartItems.map((item: CartItemFromDB) => ({
           id: item.id,
           business_id: item.business_id,
           item_type: item.item_type,
           name: item.name,
-          description: item.description,
-          price: parseFloat(item.price),
+          description: item.description ?? undefined,
+          price: typeof item.price === 'string' ? parseFloat(item.price) : item.price,
           quantity: item.quantity,
-          menu_item_id: item.menu_item_id,
-          product_id: item.product_id,
-          service_id: item.service_id,
-          booking_details: item.booking_details,
-          options: item.options,
-          notes: item.notes,
+          menu_item_id: item.menu_item_id ?? undefined,
+          product_id: item.product_id ?? undefined,
+          service_id: item.service_id ?? undefined,
+          booking_details: item.booking_details as CartItem['booking_details'],
+          options: item.options as Record<string, unknown>,
+          notes: item.notes ?? undefined,
           is_available: item.is_available,
           created_at: item.created_at
         })),

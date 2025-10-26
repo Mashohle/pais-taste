@@ -4,24 +4,19 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
-import { 
-  Clock, 
-  MapPin, 
-  Phone, 
-  Package, 
+import {
+  Clock,
+  MapPin,
+  Phone,
+  Package,
   Calendar,
   User,
   Car,
-  Scissors,
-  Utensils,
-  ShoppingBag,
-  Wrench,
-  ExternalLink,
-  Truck,
   CheckCircle,
   AlertCircle,
   PlayCircle,
-  MessageSquare,
+  ExternalLink,
+  Truck,
   RotateCcw,
   Star
 } from "lucide-react"

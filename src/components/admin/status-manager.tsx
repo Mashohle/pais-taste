@@ -39,7 +39,7 @@ const iconOptions = [
 ]
 
 export function StatusManager({ statusType, title, description }: StatusManagerProps) {
-    const { statuses, loading, error, upsertStatus, deleteStatus, reload } = useStatusConfig(statusType)
+    const { statuses, loading, error, upsertStatus, deleteStatus } = useStatusConfig(statusType)
     const [isDialogOpen, setIsDialogOpen] = useState(false)
     const [editingStatus, setEditingStatus] = useState<StatusConfig | null>(null)
     const [formData, setFormData] = useState<Partial<StatusConfig>>({

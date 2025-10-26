@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { User } from '@supabase/supabase-js'
 
 interface UserBusiness {
   id: string
@@ -30,7 +31,7 @@ interface UserBusiness {
     primary_color?: string
     accent_color?: string
     is_active: boolean
-    settings?: Record<string, any>
+    settings?: Record<string, unknown>
     business_categories?: {
       id: string
       name: string
@@ -48,7 +49,7 @@ interface UserProfile {
 }
 
 interface BusinessProfileData {
-  user: any
+  user: User
   profile: UserProfile
   businesses: UserBusiness[]
   isBusinessUser: boolean
@@ -56,7 +57,7 @@ interface BusinessProfileData {
 
 interface BusinessAdminContextType {
   // Auth state
-  user: any
+  user: User | null
   profile: UserProfile | null
   session: null
 

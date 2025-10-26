@@ -1,5 +1,5 @@
 // lib/hooks/use-menu-items.ts
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useBusinessAdminAuth } from '@/lib/hooks'
 
@@ -24,31 +24,7 @@ export function useMenuItems(forAdmin: boolean = false) {
   const [error, setError] = useState<string | null>(null)
   const { currentBusiness } = useBusinessAdminAuth()
 
-  useEffect(() => {
-    // Only fetch if we have a business context
-    if (!currentBusiness?.business?.id) {
-      setItems([])
-      setLoading(false)
-      return
-    }
-    
-    fetchMenuItems()
-    
-    // Set up real-time subscription
-    const subscription = supabase
-      .channel('menu_items')
-      .on('postgres_changes', 
-        { event: '*', schema: 'public', table: 'menu_items' },
-        () => fetchMenuItems()
-      )
-      .subscribe()
-
-    return () => {
-      subscription.unsubscribe()
-    }
-  }, [forAdmin, currentBusiness?.business?.id])
-
-  async function fetchMenuItems() {
+  const fetchMenuItems = useCallback(async () => {
     try {
       // SECURITY FIX: Always filter by current business to prevent cross-tenant access
       if (!currentBusiness?.business?.id) {
@@ -79,7 +55,31 @@ export function useMenuItems(forAdmin: boolean = false) {
     } finally {
       setLoading(false)
     }
-  }
+  }, [forAdmin, currentBusiness])
+
+  useEffect(() => {
+    // Only fetch if we have a business context
+    if (!currentBusiness?.business?.id) {
+      setItems([])
+      setLoading(false)
+      return
+    }
+
+    fetchMenuItems()
+
+    // Set up real-time subscription
+    const subscription = supabase
+      .channel('menu_items')
+      .on('postgres_changes',
+        { event: '*', schema: 'public', table: 'menu_items' },
+        () => fetchMenuItems()
+      )
+      .subscribe()
+
+    return () => {
+      subscription.unsubscribe()
+    }
+  }, [forAdmin, currentBusiness?.business?.id, fetchMenuItems])
 
   const updateMenuItem = async (id: string, updates: Partial<MenuItem>) => {
     try {
@@ -190,7 +190,7 @@ export function useMenuItems(forAdmin: boolean = false) {
       const fileName = `${menuItemId}-${Date.now()}.${fileExt}`
       const filePath = `menu-items/${fileName}`
 
-      const { data, error } = await supabase.storage
+      const { error } = await supabase.storage
         .from('menu-images')
         .upload(filePath, file, {
           cacheControl: '3600',

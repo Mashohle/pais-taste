@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Separator } from "@/components/ui/separator"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Plus, Minus, Search, ShoppingCart, MapPin, Clock, Info, Package, Star, Truck } from "lucide-react"
+import { Plus, Minus, Search, ShoppingCart, MapPin, Info, Package, Star, Truck } from "lucide-react"
 
 // Mock products data for retail business
 const mockProducts = [
@@ -113,8 +113,32 @@ interface CartItem {
   quantity: number
 }
 
+interface Product {
+  id: string
+  name: string
+  description: string
+  price: number
+  original_price: number
+  category: string
+  image_url: string | null
+  in_stock: boolean
+  stock_quantity: number
+  rating: number
+  review_count: number
+  tags: string[]
+  on_sale: boolean
+}
+
+interface Business {
+  id: string
+  name: string
+  delivery_fee: number
+  minimum_order: number
+  estimated_delivery_time?: string
+}
+
 interface RetailOrderingProps {
-  business: any
+  business: Business
 }
 
 export default function RetailOrderingInterface({ business }: RetailOrderingProps) {
@@ -164,7 +188,7 @@ export default function RetailOrderingInterface({ business }: RetailOrderingProp
   const deliveryFee = orderType === 'delivery' ? business.delivery_fee : 0
   const orderTotal = cartTotal + deliveryFee
 
-  const addToCart = (product: any) => {
+  const addToCart = (product: Product) => {
     if (!product.in_stock) return
 
     setCart(prevCart => {
@@ -229,7 +253,7 @@ export default function RetailOrderingInterface({ business }: RetailOrderingProp
     setShowCheckout(false)
   }
 
-  const getSavingsAmount = (product: any) => {
+  const getSavingsAmount = (product: Product) => {
     return product.on_sale ? product.original_price - product.price : 0
   }
 
@@ -507,17 +531,18 @@ export default function RetailOrderingInterface({ business }: RetailOrderingProp
                   )}
 
                   {/* Delivery Time */}
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                    <div className="flex items-center gap-2">
-                      <Clock className="w-4 h-4 text-blue-600" />
-                      <span className="text-xs text-blue-800">
-                        {orderType === 'delivery' 
-                          ? `Estimated delivery: ${business.estimated_delivery_time}` 
-                          : `Ready for pickup: ${business.estimated_delivery_time}`
-                        }
-                      </span>
+                  {business.estimated_delivery_time && (
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-blue-800">
+                          {orderType === 'delivery'
+                            ? `Estimated delivery: ${business.estimated_delivery_time}`
+                            : `Ready for pickup: ${business.estimated_delivery_time}`
+                          }
+                        </span>
+                      </div>
                     </div>
-                  </div>
+                  )}
 
                   {/* Checkout Button */}
                   <Button

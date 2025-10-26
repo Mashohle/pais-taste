@@ -8,9 +8,9 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Textarea } from "@/components/ui/textarea"
-import { AlertTriangle, Package, TrendingUp, TrendingDown, Plus, Search, Filter, Edit2, History, RefreshCw, FileText } from "lucide-react"
+import { AlertTriangle, Package, TrendingUp, TrendingDown, Plus, Search, Edit2, History, RefreshCw, FileText } from "lucide-react"
 import { useBusiness } from '@/lib/contexts/business-context'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -144,9 +144,9 @@ export default function InventoryPage() {
     const [searchTerm, setSearchTerm] = useState('')
     const [selectedStatus, setSelectedStatus] = useState('all')
     const [selectedSupplier, setSelectedSupplier] = useState('all')
-    const [inventory, setInventory] = useState(mockInventory)
-    const [stockMovements, setStockMovements] = useState(mockStockMovements)
-    const [alerts, setAlerts] = useState(mockAlerts)
+    const [inventory] = useState(mockInventory)
+    const [stockMovements] = useState(mockStockMovements)
+    const [alerts] = useState(mockAlerts)
     const [activeTab, setActiveTab] = useState('inventory')
     const [isAdjustmentOpen, setIsAdjustmentOpen] = useState(false)
     const [selectedItem, setSelectedItem] = useState<typeof mockInventory[0] | null>(null)

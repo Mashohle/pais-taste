@@ -8,18 +8,14 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 // import { Progress } from "@/components/ui/progress" // Removed - not needed
-import { 
-  CheckCircle, 
-  Building2, 
-  Palette, 
-  Clock, 
-  Image,
+import {
+  CheckCircle,
+  Building2,
+  Palette,
   Settings,
   ArrowRight,
   Crown,
   Users,
-  Menu,
-  DollarSign,
   Utensils,
   ShoppingBag,
   Wrench
@@ -35,7 +31,7 @@ interface Business {
   primary_color: string
   accent_color: string
   description?: string
-  settings: any
+  settings: Record<string, unknown>
 }
 
 export default function BusinessSetupPage() {
@@ -84,7 +80,7 @@ export default function BusinessSetupPage() {
     }, 1000)
   }, [])
 
-  const updateSetupData = (field: string, value: any) => {
+  const updateSetupData = (field: string, value: string | Record<string, unknown>) => {
     setSetupData(prev => ({ ...prev, [field]: value }))
   }
 
@@ -148,7 +144,7 @@ export default function BusinessSetupPage() {
         )}
         
         <p className="text-slate-600 mb-8">
-          Let's get your business profile set up so customers can discover and order from you. 
+          Let&apos;s get your business profile set up so customers can discover and order from you.
           This should only take a few minutes.
         </p>
         
@@ -279,7 +275,7 @@ export default function BusinessSetupPage() {
           <Settings className="w-16 h-16 text-slate-400 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-slate-900 mb-2">Features Configuration</h3>
           <p className="text-slate-600 mb-4">
-            Based on your business category, we'll configure the right features for you.
+            Based on your business category, we&apos;ll configure the right features for you.
           </p>
           <Badge variant="outline" className="text-slate-600">
             {businessCategories[business?.category_id as keyof typeof businessCategories]?.name} Features
@@ -329,7 +325,7 @@ export default function BusinessSetupPage() {
           <ul className="text-sm text-green-700 space-y-1">
             <li>• Your business will be visible to customers</li>
             <li>• You can start adding your menu/catalog</li>
-            <li>• You'll have access to your business dashboard</li>
+            <li>• You&apos;ll have access to your business dashboard</li>
             <li>• You can begin receiving orders</li>
           </ul>
         </div>

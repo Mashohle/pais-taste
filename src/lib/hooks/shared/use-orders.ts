@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 import { Order, ReorderItem } from '@/types/order'
 
@@ -18,46 +18,7 @@ export function useOrders(options?: UseOrdersOptions) {
   const businessId = options?.businessId
   const userId = options?.userId
 
-  useEffect(() => {
-    // Fetch orders if we have either businessId or userId
-    if (businessId || userId) {
-      fetchOrders()
-
-      // Real-time subscription
-      const filter = businessId
-        ? `business_id=eq.${businessId}`
-        : userId
-        ? `user_id=eq.${userId}`
-        : null
-
-      if (filter) {
-        const subscription = supabase
-          .channel(businessId ? 'business-orders' : 'user-orders')
-          .on('postgres_changes',
-            {
-              event: '*',
-              schema: 'public',
-              table: 'orders',
-              filter
-            },
-            () => fetchOrders()
-          )
-          .subscribe()
-
-        return () => {
-          subscription.unsubscribe()
-        }
-      }
-    } else {
-      // Clear data if no filter
-      setOrders([])
-      setActiveOrders([])
-      setOrderHistory([])
-      setLoading(false)
-    }
-  }, [businessId, userId])
-
-  const fetchOrders = async () => {
+  const fetchOrders = useCallback(async () => {
     if (!businessId && !userId) return
 
     try {
@@ -137,7 +98,46 @@ export function useOrders(options?: UseOrdersOptions) {
     } finally {
       setLoading(false)
     }
-  }
+  }, [businessId, userId])
+
+  useEffect(() => {
+    // Fetch orders if we have either businessId or userId
+    if (businessId || userId) {
+      fetchOrders()
+
+      // Real-time subscription
+      const filter = businessId
+        ? `business_id=eq.${businessId}`
+        : userId
+        ? `user_id=eq.${userId}`
+        : null
+
+      if (filter) {
+        const subscription = supabase
+          .channel(businessId ? 'business-orders' : 'user-orders')
+          .on('postgres_changes',
+            {
+              event: '*',
+              schema: 'public',
+              table: 'orders',
+              filter
+            },
+            () => fetchOrders()
+          )
+          .subscribe()
+
+        return () => {
+          subscription.unsubscribe()
+        }
+      }
+    } else {
+      // Clear data if no filter
+      setOrders([])
+      setActiveOrders([])
+      setOrderHistory([])
+      setLoading(false)
+    }
+  }, [businessId, userId, fetchOrders])
 
   const updateOrderStatus = async (orderId: string, statusCode: string) => {
     try {
@@ -176,9 +176,9 @@ export function useOrders(options?: UseOrdersOptions) {
         query = query.eq('user_id', userId) // Customer: only update own orders
       }
 
-      const { error } = await query
+      const { error: updateError } = await query
 
-      if (error) throw error
+      if (updateError) throw updateError
 
       await fetchOrders() // Refresh orders
     } catch (error) {

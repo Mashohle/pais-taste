@@ -2,11 +2,11 @@
 
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Plus, ShoppingCartIcon, Package } from "lucide-react"
+import { Plus, Package } from "lucide-react"
 import { useMenuItems } from '@/lib/hooks'
 import { ShoppingCart } from "@/components/cart"
 import { useCart } from '@/lib/contexts/cart-context'
-import { useState, useEffect, useMemo } from 'react'
+import { useMemo } from 'react'
 
 interface ProcessedGroup {
 	id: string
@@ -34,16 +34,14 @@ interface ProcessedGroup {
 export function MenuGrid() {
 	const { items, loading, error } = useMenuItems()
 	const { state, addItem } = useCart()
-	const [processedGroups, setProcessedGroups] = useState<ProcessedGroup[]>([])
 
-	// Process menu items into groups whenever items change
-	useEffect(() => {
+	// Process menu items into groups
+	const processedGroups = useMemo(() => {
 		if (items.length === 0) {
-			setProcessedGroups([])
-			return
+			return []
 		}
 
-		const newProcessedGroups: ProcessedGroup[] = items
+		return items
 			.filter(item => item.category === 'Traditional Dishes' && item.published)
 			.map(item => {
 				const comboItem = items.find(combo =>
@@ -61,7 +59,7 @@ export function MenuGrid() {
 						name: item.name,
 						price: item.price,
 						description: item.description || 'Traditional preparation',
-						image_url: item.image_url || undefined, // Convert null to undefined
+						image_url: item.image_url || undefined,
 						available: item.available,
 						published: item.published
 					},
@@ -69,14 +67,12 @@ export function MenuGrid() {
 						name: comboItem?.name || `${item.name} & Pap`,
 						price: comboItem?.price || item.combo_price || 100,
 						description: comboItem?.description || `${item.name} with pap`,
-						image_url: comboItem?.image_url || undefined, // Convert null to undefined
+						image_url: comboItem?.image_url || undefined,
 						available: comboItem?.available ?? true,
 						published: comboItem?.published ?? true
 					}
 				}
 			})
-
-		setProcessedGroups(newProcessedGroups)
 	}, [items])
 
 	// Memoized counts for performance
@@ -89,10 +85,6 @@ export function MenuGrid() {
 		})
 		return counts
 	}, [state.items])
-
-	const totalItems = useMemo(() =>
-		state.items.reduce((sum, item) => sum + item.quantity, 0)
-		, [state.items])
 
 	if (loading) {
 		return (
@@ -284,7 +276,7 @@ export function MenuGrid() {
 			</div>
 
 			<div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
-				{processedGroups.map((group, index) => (
+				{processedGroups.map((group) => (
 					<div key={group.id} className="relative">
 						<div className="relative bg-gradient-to-r from-stone-100/95 via-stone-50/60 to-stone-25/20 backdrop-blur-md rounded-2xl p-4 sm:p-6 shadow-2xl border border-stone-200/50 overflow-hidden">
 							<div className="absolute inset-0 bg-gradient-to-br from-white/40 via-white/20 to-transparent rounded-2xl"></div>
@@ -295,6 +287,7 @@ export function MenuGrid() {
 								<div className="flex-shrink-0">
 									<div className="w-32 h-32 sm:w-36 sm:h-36 rounded-full overflow-hidden border-4 border-white/90 shadow-2xl backdrop-blur-sm relative">
 										<div className="absolute inset-0 bg-gradient-to-br from-white/30 via-transparent to-black/5 rounded-full z-10"></div>
+										{/* eslint-disable-next-line @next/next/no-img-element */}
 										<img
 											src={group.image || "/placeholder.svg"}
 											alt={group.name}
@@ -325,6 +318,7 @@ export function MenuGrid() {
 														: 'border-stone-300/60 bg-stone-200/60'
 													}`}>
 													{group.traditional.image_url ? (
+														// eslint-disable-next-line @next/next/no-img-element
 														<img
 															src={group.traditional.image_url}
 															alt={group.traditional.name}
@@ -412,6 +406,7 @@ export function MenuGrid() {
 														: 'border-stone-300/60 bg-stone-200/60'
 													}`}>
 													{group.combo.image_url ? (
+														// eslint-disable-next-line @next/next/no-img-element
 														<img
 															src={group.combo.image_url}
 															alt={group.combo.name}

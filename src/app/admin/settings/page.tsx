@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
 import { Separator } from "@/components/ui/separator"
 import { StatusManager } from "@/components/admin/status-manager"
-import { Settings, Building, Users, Bell, Palette, CreditCard, Clock, Shield, Save, Upload, MapPin } from "lucide-react"
+import { Settings, Building, Users, Bell, Clock, Save } from "lucide-react"
 import { useBusinessAdminAuth } from '@/lib/context/business-admin-context'
 
 export default function SettingsPage() {
@@ -147,12 +147,6 @@ export default function SettingsPage() {
         }
     }
 
-    const formatCurrency = (value: number) => {
-        return new Intl.NumberFormat('en-ZA', {
-            style: 'currency',
-            currency: businessSettings.currency
-        }).format(value)
-    }
 
     const daysOfWeek = [
         { key: 'monday', label: 'Monday' },

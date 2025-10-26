@@ -314,6 +314,7 @@ export default function MenuManagement() {
                 <div className="flex items-start space-x-4 mb-4">
                   <div className="w-16 h-16 rounded-lg overflow-hidden border border-stone-200 flex-shrink-0 bg-stone-50">
                     {item.image_url ? (
+                      // eslint-disable-next-line @next/next/no-img-element
                       <img
                         src={item.image_url}
                         alt={item.name}

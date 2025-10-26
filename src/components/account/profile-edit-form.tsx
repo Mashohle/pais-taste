@@ -11,9 +11,22 @@ import {
   Loader2,
 } from "lucide-react"
 
+interface UserProfile {
+  full_name?: string
+  phone?: string
+  preferred_pickup_location?: string
+  address?: string
+  emergency_contact_name?: string
+  emergency_contact_phone?: string
+  dietary_preferences?: string[] | null
+  allergies?: string[] | null
+  marketing_emails?: boolean
+  sms_notifications?: boolean
+}
+
 interface ProfileEditFormProps {
-  profile: any
-  onSave: (data: any) => Promise<void>
+  profile: UserProfile | null
+  onSave: (data: Partial<UserProfile>) => Promise<void>
   onCancel: () => void
   saving: boolean
 }

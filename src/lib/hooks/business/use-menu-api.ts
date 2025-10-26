@@ -180,7 +180,7 @@ export function useMenuApi(forAdmin: boolean = false) {
 
       const data = await response.json()
       return data.url
-    } catch (error) {
+    } catch {
       return null
     }
   }
@@ -208,7 +208,7 @@ export function useMenuApi(forAdmin: boolean = false) {
       }
 
       return true
-    } catch (error) {
+    } catch {
       return false
     }
   }

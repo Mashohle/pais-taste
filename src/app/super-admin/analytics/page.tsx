@@ -5,29 +5,25 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { 
-  BarChart3, 
-  TrendingUp, 
+import {
+  TrendingUp,
   TrendingDown,
-  DollarSign, 
-  Users, 
-  Building2, 
-  Calendar,
+  DollarSign,
+  Users,
+  Building2,
   Download,
-  Filter,
   Eye,
   ShoppingCart,
-  Star,
-  Clock,
   MapPin,
   PieChart,
   Activity,
-  Target
+  Target,
+  Calendar,
+  BarChart3
 } from "lucide-react"
 
 export default function Analytics() {
   const [timeRange, setTimeRange] = useState('30d')
-  const [selectedMetric, setSelectedMetric] = useState('revenue')
 
   // Mock analytics data
   const analyticsData = {
@@ -94,7 +90,7 @@ export default function Analytics() {
     }
   }
 
-  const renderKPICard = (title: string, value: string | number, growth: number, icon: any, color: string) => {
+  const renderKPICard = (title: string, value: string | number, growth: number, icon: React.ComponentType<{ className?: string }>, color: string) => {
     const Icon = icon
     const isPositive = growth >= 0
     
@@ -121,7 +117,7 @@ export default function Analytics() {
     )
   }
 
-  const renderMockChart = (title: string, description: string, icon: any) => {
+  const renderMockChart = (title: string, description: string, icon: React.ComponentType<{ className?: string }>) => {
     const Icon = icon
     return (
       <div className="bg-gradient-to-br from-slate-100 to-slate-50 rounded-lg p-8 border-2 border-dashed border-slate-300">
@@ -184,7 +180,7 @@ export default function Analytics() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {renderMockChart("Revenue & Orders Chart", "Interactive line chart showing revenue and order trends over time")}
+          {renderMockChart("Revenue & Orders Chart", "Interactive line chart showing revenue and order trends over time", BarChart3)}
         </CardContent>
       </Card>
 

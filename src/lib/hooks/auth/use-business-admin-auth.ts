@@ -1,8 +1,8 @@
 "use client"
 
 import { useState, useEffect, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { User } from '@supabase/supabase-js'
 
 interface UserBusiness {
   id: string
@@ -33,7 +33,7 @@ interface UserProfile {
 }
 
 interface BusinessProfileData {
-  user: any
+  user: User
   profile: UserProfile
   businesses: UserBusiness[]
   isBusinessUser: boolean
@@ -93,6 +93,7 @@ export function useBusinessAdminAuth() {
   // Initialize on mount
   useEffect(() => {
     fetchBusinessProfile()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []) // Only run once on mount
 
   // Sign out function

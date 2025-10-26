@@ -1,16 +1,16 @@
 "use client"
 
 import { Badge } from "@/components/ui/badge"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent} from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Clock, Users, CheckCircle, AlertCircle, ChevronRight, Calendar, ShoppingBag, TrendingUp, Plus, Activity } from "lucide-react"
+import { Clock, Users, CheckCircle, AlertCircle, ChevronRight, Calendar, ShoppingBag, TrendingUp, Plus } from "lucide-react"
 import { useBusinessAdminAuth } from '@/lib/context/business-admin-context'
 import { useDashboardStats } from '@/lib/hooks'
 import { DynamicIcon } from '@/lib/utils/icon-mapper'
 import Link from 'next/link'
 
 export default function AdminDashboard() {
-    const { currentBusiness, user } = useBusinessAdminAuth()
+    const { currentBusiness } = useBusinessAdminAuth()
     const { stats, loading: statsLoading } = useDashboardStats(currentBusiness?.business?.id)
 
     if (!currentBusiness) {
@@ -430,37 +430,6 @@ export default function AdminDashboard() {
                 {/* Category-Specific Dashboard Content */}
                 {renderCategoryDashboard()}
 
-                {/* Recent Activity */}
-                <Card className="mt-6">
-                    <CardHeader>
-                        <CardTitle className="flex items-center">
-                            <Activity className="h-5 w-5 mr-2" />
-                            Recent Activity
-                        </CardTitle>
-                        <CardDescription>
-                            Latest updates from your business
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="space-y-3">
-                            <div className="flex items-center space-x-3 text-sm">
-                                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                                <span className="text-gray-600">New order received - #ORD-123</span>
-                                <span className="text-gray-400">2 minutes ago</span>
-                            </div>
-                            <div className="flex items-center space-x-3 text-sm">
-                                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                                <span className="text-gray-600">Menu item updated - Chicken Curry</span>
-                                <span className="text-gray-400">15 minutes ago</span>
-                            </div>
-                            <div className="flex items-center space-x-3 text-sm">
-                                <div className="w-2 h-2 bg-amber-500 rounded-full"></div>
-                                <span className="text-gray-600">Payment received - R450.00</span>
-                                <span className="text-gray-400">1 hour ago</span>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
             </div>
         </div>
     )

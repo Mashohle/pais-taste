@@ -32,7 +32,7 @@ export default function SuperAdminLayout({
   const pathname = usePathname()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [pendingApplicationsCount, setPendingApplicationsCount] = useState(0)
-  const { user, profile, signOut } = useSuperAdminAuth()
+  const { signOut } = useSuperAdminAuth()
 
   // Fetch pending applications count
   useEffect(() => {
@@ -41,7 +41,7 @@ export default function SuperAdminLayout({
         const response = await fetch('/api/applications')
         if (response.ok) {
           const applications = await response.json()
-          const pendingCount = applications.filter((app: any) => app.status === 'pending').length
+          const pendingCount = applications.filter((app: { status: string }) => app.status === 'pending').length
           setPendingApplicationsCount(pendingCount)
         }
       } catch (error) {
@@ -55,12 +55,6 @@ export default function SuperAdminLayout({
   // Don't render layout for login page
   if (pathname === '/super-admin/login') {
     return <>{children}</>
-  }
-
-  const superAdmin = {
-    name: profile?.full_name || user?.email || "System Administrator",
-    email: user?.email || "admin@sidehusl.com",
-    role: "Super Admin"
   }
 
   const navItems = [

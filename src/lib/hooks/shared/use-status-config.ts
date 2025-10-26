@@ -28,7 +28,7 @@ export interface StatusTransition {
 export function useStatusConfig(statusType: 'order' | 'booking' | 'payment') {
     const { currentBusiness } = useBusinessAdminAuth()
     const [statuses, setStatuses] = useState<StatusConfig[]>([])
-    const [transitions, setTransitions] = useState<StatusTransition[]>([])
+    const [transitions] = useState<StatusTransition[]>([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
 
@@ -195,6 +195,7 @@ export function useStatusConfig(statusType: 'order' | 'booking' | 'payment') {
         if (currentBusiness) {
             loadStatuses()
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [currentBusiness, statusType])
 
     return {

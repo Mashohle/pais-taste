@@ -143,7 +143,7 @@ export function useCustomerAuth() {
           }))
         }
       }
-    } catch (err) {
+    } catch {
       setError('Network error. Please try again.')
     } finally {
       setLoading(false)
@@ -171,7 +171,7 @@ export function useCustomerAuth() {
       } else {
         setSuccess('Password reset link sent! Check your email.')
       }
-    } catch (err) {
+    } catch {
       setError('Network error. Please try again.')
     } finally {
       setLoading(false)
@@ -197,7 +197,7 @@ export function useCustomerAuth() {
       } else if (data.redirectUrl) {
         window.location.href = data.redirectUrl
       }
-    } catch (err) {
+    } catch {
       setError('Network error. Please try again.')
     } finally {
       setLoading(false)

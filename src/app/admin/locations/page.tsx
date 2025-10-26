@@ -20,9 +20,7 @@ import {
   Trash2,
   Eye,
   EyeOff,
-  Users,
-  Car,
-  Utensils
+  Users
 } from "lucide-react"
 
 interface Location {
@@ -131,7 +129,6 @@ export default function LocationsManagement() {
   const coordinatedLoading = usePageLoading(loading, 'locations')
   const [searchTerm, setSearchTerm] = useState("")
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
-  const [editingLocation, setEditingLocation] = useState<Location | null>(null)
 
   // Load locations data
   useEffect(() => {
@@ -168,7 +165,6 @@ export default function LocationsManagement() {
   }
 
   const activeLocations = locations.filter(l => l.is_active)
-  const primaryLocation = locations.find(l => l.is_primary)
 
   // Show loading state with skeleton
   if (coordinatedLoading) {
@@ -509,7 +505,7 @@ export default function LocationsManagement() {
                         size="sm"
                         variant="outline"
                         className="border-stone-300 hover:bg-stone-50"
-                        onClick={() => setEditingLocation(location)}
+                        onClick={() => {/* TODO: Implement edit functionality */}}
                       >
                         <Edit className="w-3 h-3" />
                       </Button>

@@ -1,5 +1,46 @@
 import { useState, useEffect, useCallback } from 'react'
 
+// API response types from database
+interface OrderItemFromAPI {
+  id: string
+  order_id: string
+  menu_item_id?: string
+  quantity: number
+  unit_price: number
+  total_price: number
+  special_instructions?: string | null
+  menu_items?: {
+    name: string
+    image_url?: string | null
+  }
+}
+
+interface BusinessFromAPI {
+  id: string
+  name: string
+  slug: string
+  phone?: string | null
+  business_categories?: {
+    id: string
+    name: string
+  } | null
+}
+
+interface OrderFromAPI {
+  id: string
+  reference?: string
+  business_id: string
+  order_status: string
+  order_status_code?: string
+  created_at: string
+  completed_at?: string | null
+  total_amount: number
+  pickup_location?: string | null
+  special_instructions?: string | null
+  businesses?: BusinessFromAPI
+  order_items?: OrderItemFromAPI[]
+}
+
 export interface OrderHistoryItem {
   id: string
   reference?: string
@@ -88,7 +129,7 @@ export function useOrderHistory(filters: OrderHistoryFilters = {}): UseOrderHist
       }
 
       // Transform API data to match component interface
-      const transformedOrders: OrderHistoryItem[] = (data.orders || []).map((order: any) => ({
+      const transformedOrders: OrderHistoryItem[] = (data.orders || []).map((order: OrderFromAPI) => ({
         id: order.id,
         reference: order.reference,
         business_id: order.business_id,
@@ -100,7 +141,7 @@ export function useOrderHistory(filters: OrderHistoryFilters = {}): UseOrderHist
         created_at: order.created_at,
         completed_at: order.completed_at,
         total: order.total_amount || 0,
-        items: (order.order_items || []).map((item: any) => ({
+        items: (order.order_items || []).map((item: OrderItemFromAPI) => ({
           name: item.menu_items?.name || 'Unknown Item',
           price: item.unit_price || 0,
           quantity: item.quantity || 1,

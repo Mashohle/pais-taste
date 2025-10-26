@@ -5,13 +5,10 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-// Removed problematic Select component
 import { Separator } from "@/components/ui/separator"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Plus, Minus, Search, ShoppingCart, MapPin, Clock, Info, Utensils, Phone } from "lucide-react"
+import { Plus, Minus, Search, ShoppingCart, MapPin, Clock, Utensils, Phone } from "lucide-react"
 import { useCart } from '@/lib/contexts/cart-context'
-import { supabase } from '@/lib/supabase'
-// import { toast } from "sonner" // Removed - dependency not installed
 
 // Mock menu data for the food business
 const mockMenu = [
@@ -91,16 +88,37 @@ const mockMenu = [
 
 // Categories are now dynamically generated from menu items
 
-interface CartItem {
+interface MenuItem {
   id: string
   name: string
+  description?: string
   price: number
-  quantity: number
-  special_instructions?: string
+  category?: string
+  image_url?: string | null
+  available?: boolean
+  is_available?: boolean
+  prep_time?: string
+  dietary_info?: string[]
+  popular?: boolean
+}
+
+interface Business {
+  id: string
+  name: string
+  slug?: string
+  category?: string
+  logo_url?: string
+  delivery_fee: number
+  minimum_order?: number
+  estimated_delivery_time?: string
+  menu_items?: MenuItem[]
+  phone?: string
+  address?: string
+  email?: string
 }
 
 interface FoodOrderingProps {
-  business: any
+  business: Business
 }
 
 export default function FoodOrderingInterface({ business }: FoodOrderingProps) {
@@ -109,8 +127,7 @@ export default function FoodOrderingInterface({ business }: FoodOrderingProps) {
   const [showCheckout, setShowCheckout] = useState(false)
   const [deliveryAddress, setDeliveryAddress] = useState('')
   const [orderType, setOrderType] = useState<'delivery' | 'pickup'>('delivery')
-  const [menuItems, setMenuItems] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
+  const [menuItems, setMenuItems] = useState<MenuItem[]>([])
   
   const {
     state: cartState,
@@ -129,7 +146,6 @@ export default function FoodOrderingInterface({ business }: FoodOrderingProps) {
     } else {
       setMenuItems(mockMenu) // Fallback to mock data
     }
-    setLoading(false)
   }, [business?.menu_items])
 
   // Set business context in cart
@@ -173,7 +189,7 @@ export default function FoodOrderingInterface({ business }: FoodOrderingProps) {
   const deliveryFee = orderType === 'delivery' ? business.delivery_fee : 0
   const orderTotal = cartTotal + deliveryFee
 
-  const handleAddToCart = async (menuItem: any) => {
+  const handleAddToCart = async (menuItem: MenuItem) => {
     try {
       const cartItem = {
         business_id: business.id,
@@ -188,7 +204,7 @@ export default function FoodOrderingInterface({ business }: FoodOrderingProps) {
 
       await addItem(cartItem)
       // toast.success(`${menuItem.name} added to cart`)
-    } catch (error: any) {
+    } catch (error) {
       // toast.error(error.message)
       console.error('Error adding to cart:', error)
     }
@@ -200,7 +216,7 @@ export default function FoodOrderingInterface({ business }: FoodOrderingProps) {
       if (newQuantity === 0) {
         // toast.success("Item removed from cart")
       }
-    } catch (error: any) {
+    } catch {
       // toast.error(error.message)
     }
   }
@@ -208,21 +224,6 @@ export default function FoodOrderingInterface({ business }: FoodOrderingProps) {
   const getCartItemQuantity = (menuItemId: string): number => {
     const cartItem = cartState.items.find(item => item.id === menuItemId)
     return cartItem?.quantity || 0
-  }
-
-  const handleCheckout = () => {
-    if (cartState.items.length === 0) {
-      // toast.error("Your cart is empty")
-      return
-    }
-    
-    if (cartTotal < (business.minimum_order || 0)) {
-      // toast.error(`Minimum order amount is R${business.minimum_order}`)
-      return
-    }
-    
-    // Redirect to checkout page with business context
-    window.location.href = '/checkout'
   }
 
   const handlePlaceOrder = () => {
@@ -291,6 +292,7 @@ export default function FoodOrderingInterface({ business }: FoodOrderingProps) {
                 {/* Item Image */}
                 <div className="w-16 h-16 rounded-lg bg-gradient-to-br from-orange-100 to-orange-200 flex items-center justify-center flex-shrink-0 relative overflow-hidden">
                   {item.image_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={item.image_url}
                       alt={item.name}

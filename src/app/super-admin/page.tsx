@@ -4,12 +4,11 @@ import { useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { 
-  TrendingUp, 
-  TrendingDown, 
-  Users, 
-  Building2, 
-  DollarSign, 
+import {
+  TrendingUp,
+  Users,
+  Building2,
+  DollarSign,
   ShoppingCart,
   Star,
   AlertTriangle,
@@ -18,8 +17,7 @@ import {
   Eye,
   ArrowUpRight,
   Activity,
-  MapPin,
-  Calendar
+  MapPin
 } from "lucide-react"
 
 export default function SuperAdminDashboard() {
@@ -145,8 +143,8 @@ export default function SuperAdminDashboard() {
           <p className="text-slate-600 mt-1">Monitor and manage the LocalHub marketplace</p>
         </div>
         <div className="flex items-center space-x-3">
-          <select 
-            value={timeRange} 
+          <select
+            value={timeRange}
             onChange={(e) => setTimeRange(e.target.value)}
             className="px-4 py-2 bg-white border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500"
           >

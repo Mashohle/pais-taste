@@ -330,6 +330,7 @@ export default function EditMenuItem({ params }: EditMenuItemProps) {
                 <div className="border-2 border-dashed border-stone-300 rounded-lg p-6 text-center bg-stone-50/50 relative">
                   {imagePreview ? (
                     <div className="relative inline-block">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={imagePreview}
                         alt="Preview"

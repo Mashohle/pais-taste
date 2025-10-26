@@ -1,5 +1,46 @@
 import { useState, useEffect, useCallback } from 'react'
 
+// API response types from database
+interface OrderItemFromAPI {
+  id: string
+  order_id: string
+  menu_item_id?: string
+  quantity: number
+  unit_price: number
+  total_price: number
+  special_instructions?: string | null
+  menu_items?: {
+    name: string
+    image_url?: string | null
+  }
+}
+
+interface BusinessFromAPI {
+  id: string
+  name: string
+  slug: string
+  phone?: string | null
+  business_categories?: {
+    id: string
+    name: string
+  } | null
+}
+
+interface OrderFromAPI {
+  id: string
+  reference?: string
+  business_id: string
+  order_status: string
+  order_status_code?: string
+  created_at: string
+  estimated_ready_time?: string | null
+  total_amount: number
+  pickup_location?: string | null
+  special_instructions?: string | null
+  businesses?: BusinessFromAPI
+  order_items?: OrderItemFromAPI[]
+}
+
 export interface ActiveOrderItem {
   id: string
   reference?: string
@@ -88,7 +129,7 @@ export function useActiveOrders(filters: ActiveOrderFilters = {}): UseActiveOrde
       }
 
       // Transform API data to match component interface
-      const transformedOrders: ActiveOrderItem[] = (data.orders || []).map((order: any) => ({
+      const transformedOrders: ActiveOrderItem[] = (data.orders || []).map((order: OrderFromAPI) => ({
         id: order.id,
         reference: order.reference,
         business_id: order.business_id,
@@ -101,7 +142,7 @@ export function useActiveOrders(filters: ActiveOrderFilters = {}): UseActiveOrde
         estimated_time: order.estimated_ready_time || 'Pending',
         estimated_ready_time: order.estimated_ready_time,
         total: order.total_amount || 0,
-        items: (order.order_items || []).map((item: any) => ({
+        items: (order.order_items || []).map((item: OrderItemFromAPI) => ({
           name: item.menu_items?.name || 'Unknown Item',
           price: item.unit_price || 0,
           quantity: item.quantity || 1,

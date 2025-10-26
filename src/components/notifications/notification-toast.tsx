@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { X, Bell } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
@@ -17,27 +17,23 @@ interface NotificationToastProps {
   onAction?: (url: string) => void
 }
 
-export function NotificationToast({ 
-  notification, 
-  onClose, 
-  onAction 
+export function NotificationToast({
+  notification,
+  onClose,
+  onAction
 }: NotificationToastProps) {
-  const [isVisible, setIsVisible] = useState(false)
-
   useEffect(() => {
     if (notification) {
-      setIsVisible(true)
       // Auto-hide after 6 seconds
       const timer = setTimeout(() => {
-        handleClose()
+        onClose()
       }, 6000)
       return () => clearTimeout(timer)
     }
-  }, [notification])
+  }, [notification, onClose])
 
   const handleClose = () => {
-    setIsVisible(false)
-    setTimeout(onClose, 300) // Allow animation to complete
+    onClose()
   }
 
   const handleAction = () => {
@@ -50,11 +46,7 @@ export function NotificationToast({
   if (!notification) return null
 
   return (
-    <div className={`
-      fixed top-4 right-4 z-50 max-w-sm w-full bg-white rounded-lg shadow-lg border border-gray-200
-      transform transition-all duration-300 ease-in-out
-      ${isVisible ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'}
-    `}>
+    <div className="fixed top-4 right-4 z-50 max-w-sm w-full bg-white rounded-lg shadow-lg border border-gray-200 transform transition-all duration-300 ease-in-out translate-x-0 opacity-100">
       <div className="p-4">
         <div className="flex items-start gap-3">
           <div className="flex-shrink-0">

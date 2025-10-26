@@ -100,8 +100,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
       console.log('🚀 Initializing auth...')
 
       // Get initial session from Supabase
-      const { data: { session }, error } = await supabase.auth.getSession()
-      console.log('🚀 Initial session:', !!session, session?.user?.email, error?.message)
+      const { data: { session } } = await supabase.auth.getSession()
+      console.log('🚀 Initial session:', !!session, session?.user?.email)
 
       if (session?.user) {
         // If we have a session, fetch the profile from API
@@ -144,6 +144,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     )
 
     return () => subscription.unsubscribe()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // Sign out

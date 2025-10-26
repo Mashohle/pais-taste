@@ -151,7 +151,7 @@ export function useCustomerPortal() {
           setUserLocation(location)
           localStorage.setItem('userLocation', JSON.stringify(location))
         },
-        (error) => {
+        () => {
           // Use default location (Johannesburg) if geolocation fails
           const defaultLocation = {
             lat: -26.2041,

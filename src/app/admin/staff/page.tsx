@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Users, Plus, Search, Mail, Phone, Calendar, Clock, CheckCircle, XCircle, Edit2, Trash2, UserPlus } from "lucide-react"
+import { Users, Search, Mail, Phone, Calendar, Clock, CheckCircle, Edit2, Trash2, UserPlus } from "lucide-react"
 import { useBusiness } from '@/lib/contexts/business-context'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -123,17 +123,19 @@ export default function StaffPage() {
     const [searchTerm, setSearchTerm] = useState('')
     const [selectedRole, setSelectedRole] = useState('all')
     const [statusFilter, setStatusFilter] = useState('all')
-    const [staff, setStaff] = useState(mockStaff)
+    const [staff] = useState(mockStaff)
     const [activeTab, setActiveTab] = useState('list')
 
     // Only show this page for service businesses
     useEffect(() => {
-        if (currentBusiness && !['service', 'car_wash', 'salon'].includes(currentBusiness.business_categories?.id)) {
+        const categoryId = currentBusiness?.business_categories?.id
+        if (currentBusiness && categoryId && !['service', 'car_wash', 'salon'].includes(categoryId)) {
             router.push('/admin')
         }
     }, [currentBusiness, router])
 
-    if (!currentBusiness || !['service', 'car_wash', 'salon'].includes(currentBusiness.business_categories?.id)) {
+    const categoryId = currentBusiness?.business_categories?.id
+    if (!currentBusiness || !categoryId || !['service', 'car_wash', 'salon'].includes(categoryId)) {
         return (
             <div className="min-h-screen bg-gradient-to-br from-stone-50 to-stone-100 flex items-center justify-center">
                 <div className="text-center">
@@ -167,7 +169,7 @@ export default function StaffPage() {
     }
 
     function getTodayAvailability(staffMember: typeof mockStaff[0]) {
-        const today = new Date().toLocaleDateString('en', { weekday: 'long' }).toLowerCase()
+        const today = new Date().toLocaleDateString('en', { weekday: 'long' }).toLowerCase() as keyof typeof staffMember.availability
         return staffMember.availability[today]?.available || false
     }
 
@@ -349,7 +351,7 @@ export default function StaffPage() {
                                                     <div className="flex items-center space-x-4">
                                                         {/* Avatar */}
                                                         <Avatar className="h-12 w-12">
-                                                            <AvatarImage src={member.profile_image} />
+                                                            <AvatarImage src={member.profile_image || undefined} />
                                                             <AvatarFallback>{getInitials(member.name)}</AvatarFallback>
                                                         </Avatar>
                                                         

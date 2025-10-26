@@ -71,7 +71,7 @@ export async function GET(request: Request) {
     // Apply time range filter
     if (timeRange && timeRange !== 'all') {
       const now = new Date()
-      let fromDate = new Date()
+      const fromDate = new Date()
 
       switch (timeRange) {
         case 'week':
@@ -135,7 +135,9 @@ export async function GET(request: Request) {
       ).length || 0,
       uniqueBusinesses: new Set(allOrders?.map(order => order.business_id)).size,
       ordersByCategory: allOrders?.reduce((acc, order) => {
-        const categoryId = order.businesses?.category_id
+        // businesses is returned as an array from Supabase join
+        const business = Array.isArray(order.businesses) ? order.businesses[0] : order.businesses
+        const categoryId = business?.category_id
         if (categoryId) {
           acc[categoryId] = (acc[categoryId] || 0) + 1
         }

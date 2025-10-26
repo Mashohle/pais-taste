@@ -1,11 +1,10 @@
 "use client"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Switch } from "@/components/ui/switch"
-import { Settings, Globe, Shield, Bell, DollarSign, Users, Building2, MapPin, Truck, Clock, AlertTriangle, Save, RotateCcw } from "lucide-react"
+import { Globe, Shield, Bell, DollarSign, Users, Building2, MapPin, Truck, Clock, AlertTriangle, Save, RotateCcw } from "lucide-react"
 
 export default function PlatformSettings() {
   return (

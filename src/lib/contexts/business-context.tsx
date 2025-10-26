@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
+import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/contexts/auth-context'
@@ -97,48 +97,7 @@ export function BusinessProvider({ children, initialBusinessSlug }: BusinessProv
   const router = useRouter()
   const pathname = usePathname()
 
-  // Initialize business context
-  useEffect(() => {
-    if (user) {
-      initializeBusinessContext()
-    } else {
-      // Clear business data when user logs out
-      setCurrentBusiness(null)
-      setUserBusinesses([])
-      setCurrentUserRole(null)
-      setLoading(false)
-      setBusinessesLoading(false)
-    }
-  }, [user])
-
-  // Handle initial business slug or route-based business detection
-  useEffect(() => {
-    if (userBusinesses.length > 0 && !currentBusiness) {
-      if (initialBusinessSlug) {
-        const business = userBusinesses.find(b => b.slug === initialBusinessSlug)
-        if (business) {
-          handleBusinessSwitch(business)
-        }
-      } else {
-        // Try to detect business from current route
-        detectBusinessFromRoute()
-      }
-    }
-  }, [userBusinesses, initialBusinessSlug, pathname])
-
-  const initializeBusinessContext = async () => {
-    try {
-      setBusinessesLoading(true)
-      await fetchUserBusinesses()
-    } catch (error) {
-      console.error('Error initializing business context:', error)
-    } finally {
-      setBusinessesLoading(false)
-      setLoading(false)
-    }
-  }
-
-  const fetchUserBusinesses = async () => {
+  const fetchUserBusinesses = useCallback(async () => {
     if (!user) return
 
     try {
@@ -169,20 +128,49 @@ export function BusinessProvider({ children, initialBusinessSlug }: BusinessProv
 
       const businesses = businessUsers?.map(bu => bu.businesses).filter(Boolean) || []
       setUserBusinesses(businesses as Business[])
-      
+
       console.log('Fetched businesses:', { businessUsers, businesses }) // Debug log
-      
+
       // Set current business role if we have a current business
       if (currentBusiness) {
         const userRole = businessUsers?.find(bu => bu.business_id === currentBusiness.id)
         setCurrentUserRole(userRole as BusinessUser)
       }
-    } catch (error) {
-      console.error('Error fetching user businesses:', error)
+    } catch (_error) {
+      console.error('Error fetching user businesses:', _error)
     }
-  }
+  }, [user, currentBusiness])
 
-  const detectBusinessFromRoute = () => {
+  const initializeBusinessContext = useCallback(async () => {
+    try {
+      setBusinessesLoading(true)
+      await fetchUserBusinesses()
+    } catch (_error) {
+      console.error('Error initializing business context:', _error)
+    } finally {
+      setBusinessesLoading(false)
+      setLoading(false)
+    }
+  }, [fetchUserBusinesses])
+
+  const handleBusinessSwitch = useCallback(async (business: Business) => {
+    setCurrentBusiness(business)
+
+    // Update current user role for this business
+    if (user) {
+      const { data: userRole } = await supabase
+        .from('business_users')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('business_id', business.id)
+        .eq('is_active', true)
+        .single()
+
+      setCurrentUserRole(userRole)
+    }
+  }, [user])
+
+  const detectBusinessFromRoute = useCallback(() => {
     // Extract business slug from URL patterns like /business/[slug] or /[slug]
     const pathSegments = pathname.split('/')
     let potentialSlug: string | null = null
@@ -202,24 +190,36 @@ export function BusinessProvider({ children, initialBusinessSlug }: BusinessProv
         handleBusinessSwitch(business)
       }
     }
-  }
+  }, [pathname, userBusinesses, handleBusinessSwitch])
 
-  const handleBusinessSwitch = async (business: Business) => {
-    setCurrentBusiness(business)
-    
-    // Update current user role for this business
+  // Initialize business context
+  useEffect(() => {
     if (user) {
-      const { data: userRole } = await supabase
-        .from('business_users')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('business_id', business.id)
-        .eq('is_active', true)
-        .single()
-      
-      setCurrentUserRole(userRole)
+      initializeBusinessContext()
+    } else {
+      // Clear business data when user logs out
+      setCurrentBusiness(null)
+      setUserBusinesses([])
+      setCurrentUserRole(null)
+      setLoading(false)
+      setBusinessesLoading(false)
     }
-  }
+  }, [user, initializeBusinessContext])
+
+  // Handle initial business slug or route-based business detection
+  useEffect(() => {
+    if (userBusinesses.length > 0 && !currentBusiness) {
+      if (initialBusinessSlug) {
+        const business = userBusinesses.find(b => b.slug === initialBusinessSlug)
+        if (business) {
+          handleBusinessSwitch(business)
+        }
+      } else {
+        // Try to detect business from current route
+        detectBusinessFromRoute()
+      }
+    }
+  }, [userBusinesses, initialBusinessSlug, currentBusiness, handleBusinessSwitch, detectBusinessFromRoute])
 
   const switchBusiness = async (businessSlug: string) => {
     const business = userBusinesses.find(b => b.slug === businessSlug)
@@ -255,10 +255,10 @@ export function BusinessProvider({ children, initialBusinessSlug }: BusinessProv
 
       // Refresh businesses list
       await fetchUserBusinesses()
-      
+
       return business as Business
-    } catch (error) {
-      console.error('Error creating business:', error)
+    } catch (_error) {
+      console.error('Error creating business:', _error)
       return null
     }
   }
@@ -279,10 +279,10 @@ export function BusinessProvider({ children, initialBusinessSlug }: BusinessProv
 
       // Refresh businesses list
       await fetchUserBusinesses()
-      
+
       return true
-    } catch (error) {
-      console.error('Error updating business:', error)
+    } catch (_error) {
+      console.error('Error updating business:', _error)
       return false
     }
   }
@@ -307,8 +307,8 @@ export function BusinessProvider({ children, initialBusinessSlug }: BusinessProv
 
       if (error) throw error
       return business as Business
-    } catch (error) {
-      console.error('Error fetching business:', error)
+    } catch (_error) {
+      console.error('Error fetching business:', _error)
       return null
     }
   }

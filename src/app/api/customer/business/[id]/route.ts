@@ -1,6 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 
+// Type for operating hours
+interface DayHours {
+  open: string
+  close: string
+  closed?: boolean
+}
+
+type OperatingHours = {
+  [key: string]: DayHours
+}
+
 // Haversine formula to calculate distance between two coordinates in kilometers
 function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
   const R = 6371 // Earth's radius in kilometers
@@ -15,7 +26,7 @@ function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: numbe
 }
 
 // Helper functions for business status calculation
-function calculateBusinessStatus(operatingHours: any): boolean {
+function calculateBusinessStatus(operatingHours: OperatingHours | null | undefined): boolean {
   if (!operatingHours) return true // Default to open if no hours set
 
   const now = new Date()
@@ -30,7 +41,7 @@ function calculateBusinessStatus(operatingHours: any): boolean {
   return currentTime >= todayHours.open && currentTime <= todayHours.close
 }
 
-function getStatusText(operatingHours: any): string {
+function getStatusText(operatingHours: OperatingHours | null | undefined): string {
   if (!operatingHours) return 'Open'
 
   const now = new Date()
@@ -198,7 +209,7 @@ export async function GET(
       data: businessData
     })
 
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('API Error:', error)
     return NextResponse.json(
       { error: 'Internal server error' },

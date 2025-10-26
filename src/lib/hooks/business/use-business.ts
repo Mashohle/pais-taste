@@ -1,4 +1,50 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
+
+interface MenuItem {
+  id: string
+  name: string
+  description: string | null
+  price: number
+  category: string
+  combo_with: string | null
+  combo_price: number | null
+  published: boolean
+  available: boolean
+  image_url?: string | null
+  created_at?: string
+  updated_at?: string
+}
+
+interface Review {
+  id: string
+  user_id: string
+  business_id: string
+  rating: number
+  comment: string | null
+  created_at: string
+  updated_at?: string
+}
+
+interface GalleryItem {
+  id: string
+  business_id: string
+  image_url: string
+  caption?: string | null
+  display_order?: number
+  created_at?: string
+}
+
+interface Service {
+  id: string
+  business_id: string
+  name: string
+  description: string | null
+  price: number
+  duration?: number
+  available: boolean
+  created_at?: string
+  updated_at?: string
+}
 
 export interface BusinessData {
   id: string
@@ -34,10 +80,10 @@ export interface BusinessData {
   distance?: number | null
   features?: string[]
   // Additional data for business page
-  reviews?: any[]
-  menu_items?: any[]
-  gallery?: any[]
-  services?: any[]
+  reviews?: Review[]
+  menu_items?: MenuItem[]
+  gallery?: GalleryItem[]
+  services?: Service[]
 }
 
 export function useBusiness(businessId: string | null) {
@@ -73,24 +119,14 @@ export function useBusiness(businessId: string | null) {
           // Save to localStorage for future page loads
           localStorage.setItem('userLocation', JSON.stringify(location))
         },
-        (error) => {
-          console.log('Location access denied or unavailable:', error)
+        (_error) => {
+          console.log('Location access denied or unavailable:', _error)
         }
       )
     }
   }, [])
 
-  useEffect(() => {
-    if (!businessId) {
-      setBusiness(null)
-      setLoading(false)
-      return
-    }
-
-    fetchBusiness()
-  }, [businessId, userLocation])
-
-  async function fetchBusiness() {
+  const fetchBusiness = useCallback(async () => {
     try {
       setLoading(true)
       setError(null)
@@ -114,7 +150,17 @@ export function useBusiness(businessId: string | null) {
     } finally {
       setLoading(false)
     }
-  }
+  }, [businessId, userLocation])
+
+  useEffect(() => {
+    if (!businessId) {
+      setBusiness(null)
+      setLoading(false)
+      return
+    }
+
+    fetchBusiness()
+  }, [businessId, userLocation, fetchBusiness])
 
   const refetch = () => {
     if (businessId) {

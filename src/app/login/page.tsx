@@ -2,8 +2,6 @@
 
 export const dynamic = 'force-dynamic'
 
-import type React from "react"
-
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -29,8 +27,7 @@ export default function AuthPage() {
     toggleForgotPassword,
     handleSubmit,
     handleForgotPassword,
-    handleSocialLogin,
-    canSubmit
+    handleSocialLogin
   } = useCustomerAuth()
 
   // Show redirecting state if user is already logged in
@@ -40,7 +37,7 @@ export default function AuthPage() {
         <Card className="w-full max-w-md">
           <CardContent className="flex flex-col items-center justify-center p-8">
             <div className="w-8 h-8 border-4 border-stone-300 border-t-stone-600 rounded-full animate-spin mb-4"></div>
-            <p className="text-stone-600 text-center">You're already signed in! Redirecting to your account...</p>
+            <p className="text-stone-600 text-center">You&apos;re already signed in! Redirecting to your account...</p>
           </CardContent>
         </Card>
       </div>
@@ -302,7 +299,7 @@ export default function AuthPage() {
 
               <div className="text-center pt-4">
                 <p className="text-sm text-stone-600">
-                  {isLogin ? "Don't have an account?" : "Already have an account?"}
+                  {isLogin ? "Don&apos;t have an account?" : "Already have an account?"}
                   <button
                     type="button"
                     onClick={toggleAuthMode}
@@ -327,7 +324,7 @@ export default function AuthPage() {
               <div className="space-y-2">
                 <CardTitle className="text-2xl font-bold text-stone-800 drop-shadow-sm">Reset Password</CardTitle>
                 <CardDescription className="text-stone-600 text-sm">
-                  Enter your email address and we'll send you a link to reset your password
+                  Enter your email address and we&apos;ll send you a link to reset your password
                 </CardDescription>
               </div>
             </CardHeader>

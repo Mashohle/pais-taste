@@ -1,6 +1,36 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 
+// Type for business data from Supabase
+interface BusinessData {
+  id: string
+  name: string
+  slug: string
+  description: string | null
+  email: string | null
+  phone: string | null
+  website: string | null
+  address_line1: string | null
+  address_line2: string | null
+  city: string | null
+  state: string | null
+  postal_code: string | null
+  country: string | null
+  currency: string | null
+  timezone: string | null
+  logo_url: string | null
+  primary_color: string | null
+  accent_color: string | null
+  is_active: boolean
+  settings: Record<string, unknown> | null
+  business_categories: {
+    id: string
+    name: string
+    icon: string | null
+    color: string | null
+  }[]
+}
+
 /**
  * Combined endpoint that returns user profile AND their businesses in a single call
  * This is more efficient than making separate calls to /profile and /businesses
@@ -40,7 +70,7 @@ export async function GET() {
     // Check if user is a business user
     const isBusinessUser = profile.role_id === 'business-owner' || profile.role_id === 'business-admin'
 
-    let businesses = []
+    let businesses: unknown[] = []
 
     if (isBusinessUser) {
       console.log('🏢 API: User is business user, fetching businesses')
@@ -91,37 +121,49 @@ export async function GET() {
         businesses = []
       } else {
         // Transform the data to match the expected format
-        businesses = (businessUsers || []).map((bu: any) => ({
-          id: bu.id,
-          name: bu.businesses.name,
-          slug: bu.businesses.slug,
-          role: bu.role,
-          is_active: bu.is_active,
-          permissions: bu.permissions,
-          business: {
-            id: bu.businesses.id,
-            name: bu.businesses.name,
-            slug: bu.businesses.slug,
-            description: bu.businesses.description,
-            email: bu.businesses.email,
-            phone: bu.businesses.phone,
-            website: bu.businesses.website,
-            address_line1: bu.businesses.address_line1,
-            address_line2: bu.businesses.address_line2,
-            city: bu.businesses.city,
-            state: bu.businesses.state,
-            postal_code: bu.businesses.postal_code,
-            country: bu.businesses.country,
-            currency: bu.businesses.currency,
-            timezone: bu.businesses.timezone,
-            logo_url: bu.businesses.logo_url,
-            primary_color: bu.businesses.primary_color,
-            accent_color: bu.businesses.accent_color,
-            is_active: bu.businesses.is_active,
-            settings: bu.businesses.settings,
-            business_categories: bu.businesses.business_categories,
-          },
-        }))
+        // Supabase returns businesses as an array even with !inner join
+        businesses = (businessUsers || []).map((bu: {
+          id: string
+          role: string
+          is_active: boolean
+          permissions: Record<string, unknown> | null
+          businesses: BusinessData[]
+        }) => {
+          const business = bu.businesses[0] // Take first element from array
+          const category = business?.business_categories?.[0] // Take first category from array
+
+          return {
+            id: bu.id,
+            name: business?.name || '',
+            slug: business?.slug || '',
+            role: bu.role,
+            is_active: bu.is_active,
+            permissions: bu.permissions,
+            business: {
+              id: business?.id || '',
+              name: business?.name || '',
+              slug: business?.slug || '',
+              description: business?.description || null,
+              email: business?.email || null,
+              phone: business?.phone || null,
+              website: business?.website || null,
+              address_line1: business?.address_line1 || null,
+              address_line2: business?.address_line2 || null,
+              city: business?.city || null,
+              state: business?.state || null,
+              postal_code: business?.postal_code || null,
+              country: business?.country || null,
+              currency: business?.currency || null,
+              timezone: business?.timezone || null,
+              logo_url: business?.logo_url || null,
+              primary_color: business?.primary_color || null,
+              accent_color: business?.accent_color || null,
+              is_active: business?.is_active || false,
+              settings: business?.settings || null,
+              business_categories: category || null,
+            },
+          }
+        })
 
         console.log('✅ API: Found', businesses.length, 'businesses for user')
       }
@@ -145,7 +187,7 @@ export async function GET() {
       businesses,
       isBusinessUser,
     })
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('💥 API: Business profile error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }

@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react'
 import { useAuth } from '@/lib/contexts/auth-context'
-// import { requestForToken, onMessageListener } from '@/lib/firebase' // Firebase disabled
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
 import { Bell, BellOff } from 'lucide-react'
@@ -13,7 +12,6 @@ export function PushNotifications() {
   const { user } = useAuth()
   const [isSupported, setIsSupported] = useState(false)
   const [permission, setPermission] = useState<NotificationPermission>('default')
-  const [token, setToken] = useState<string | null>(null)
 
   useEffect(() => {
     // Check if push notifications are supported
@@ -36,6 +34,7 @@ export function PushNotifications() {
     alert('Push notifications are temporarily disabled.')
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const saveTokenToDatabase = async (token: string): Promise<void> => {
     try {
       const { data: { session } } = await supabase.auth.getSession()
@@ -55,7 +54,7 @@ export function PushNotifications() {
       if (!response.ok) {
         throw new Error('Failed to save token')
       }
-    } catch (error: unknown) {
+    } catch (error) {
       console.error('Error saving token:', error)
       throw error
     }

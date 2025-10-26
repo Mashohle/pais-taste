@@ -6,13 +6,11 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { 
-  Building2, 
-  User, 
-  Mail, 
-  Phone, 
-  MapPin, 
-  FileText,
+import {
+  Building2,
+  User,
+  Mail,
+  MapPin,
   Clock,
   CheckCircle,
   XCircle,
@@ -59,8 +57,8 @@ interface BusinessApplication {
   bank_name?: string
   account_number?: string
   branch_code?: string
-  operating_hours: Record<string, any>
-  documents: any[]
+  operating_hours: Record<string, { open: string; close: string; closed?: boolean }>
+  documents: Array<{ id: string; name: string; url: string; type: string }>
   agree_to_terms: boolean
   agree_to_commission: boolean
   reviewed_by?: string

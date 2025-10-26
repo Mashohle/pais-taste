@@ -98,11 +98,18 @@ export class BusinessErrorHandler {
       throw new BusinessDataError('missing_business', context)
     }
 
-    if (!businessData.id || !businessData.name) {
+    // Type guard: check if businessData is an object with required properties
+    if (typeof businessData !== 'object') {
+      throw new BusinessDataError('invalid_business', context, 'Business data is not a valid object.')
+    }
+
+    const data = businessData as Record<string, unknown>
+
+    if (!data.id || !data.name) {
       throw new BusinessDataError('invalid_business', context, 'Business is missing essential information.')
     }
 
-    if (businessData.is_active === false) {
+    if (data.is_active === false) {
       throw new BusinessDataError('business_inactive', context)
     }
   }

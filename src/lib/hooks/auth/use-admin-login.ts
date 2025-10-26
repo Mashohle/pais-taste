@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useBusinessAdminAuth } from '@/lib/hooks'
-import { useAuth } from '@/lib/contexts/auth-context'
 
 interface AdminLoginState {
   email: string
@@ -25,7 +24,6 @@ export function useAdminLogin() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { user, hasBusinessAccess } = useBusinessAdminAuth()
-  const { refreshProfile } = useAuth()
 
   // Handle form field updates
   const updateField = (field: keyof AdminLoginState, value: string | boolean) => {
@@ -99,7 +97,7 @@ export function useAdminLogin() {
           setError('Access denied: Your account does not have business admin permissions.')
         }
       }
-    } catch (err) {
+    } catch {
       setError('Network error. Please try again.')
       updateField('password', '')
     } finally {

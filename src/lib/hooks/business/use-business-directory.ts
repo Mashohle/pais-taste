@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useBusinessErrorHandler } from './use-business-error-handler'
 import { BusinessData } from './use-business'
@@ -77,8 +77,8 @@ export function useBusinessDirectory() {
           // Save to localStorage for future page loads
           localStorage.setItem('userLocation', JSON.stringify(location))
         },
-        (error) => {
-          console.log('Location access denied or unavailable:', error)
+        (_error) => {
+          console.log('Location access denied or unavailable:', _error)
           // Continue without location - distance will just be undefined
         }
       )
@@ -116,13 +116,30 @@ export function useBusinessDirectory() {
 
       if (!businessData) return
 
+      // Define operating hours types
+      interface DayHours {
+        open: string
+        close: string
+        closed?: boolean
+      }
+
+      interface OperatingHours {
+        sunday?: DayHours
+        monday?: DayHours
+        tuesday?: DayHours
+        wednesday?: DayHours
+        thursday?: DayHours
+        friday?: DayHours
+        saturday?: DayHours
+      }
+
       // Helper function to calculate if business is currently open
-      const isCurrentlyOpen = (operatingHours: any): boolean => {
+      const isCurrentlyOpen = (operatingHours: OperatingHours | null | undefined): boolean => {
         if (!operatingHours) return false
 
         const now = new Date()
-        const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
-        const today = days[now.getDay()]
+        const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'] as const
+        const today = days[now.getDay()] as keyof OperatingHours
         const todayHours = operatingHours[today]
 
         if (!todayHours || todayHours.closed) return false
@@ -244,12 +261,12 @@ export function useBusinessDirectory() {
           const matchesSearch = 
             business.name.toLowerCase().includes(searchLower) ||
             business.description.toLowerCase().includes(searchLower) ||
-            business.category_name.toLowerCase().includes(searchLower)
+            business.category?.name.toLowerCase().includes(searchLower)
           if (!matchesSearch) return false
         }
 
         // Category filter
-        if (filters.selectedCategory !== 'all' && business.category !== filters.selectedCategory) {
+        if (filters.selectedCategory !== 'all' && business.category?.id !== filters.selectedCategory) {
           return false
         }
 
@@ -367,7 +384,7 @@ export function useBusinessDirectory() {
     totalBusinesses: businesses.length,
     businessesByCategory: categories.map(cat => ({
       category: cat,
-      count: businesses.filter(b => b.category === cat.id).length
+      count: businesses.filter(b => b.category?.id === cat.id).length
     }))
   }
 }

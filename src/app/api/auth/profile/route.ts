@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { SupabaseClient } from '@supabase/supabase-js'
+import { User } from '@supabase/auth-js'
 
 export async function GET() {
   try {
@@ -72,7 +74,7 @@ export async function GET() {
           profile = profileData
         }
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('🔍 API: Error handling profile:', error)
       // Create fallback profile if database issues
       profile = createFallbackProfile(user)
@@ -85,7 +87,7 @@ export async function GET() {
       error: null
     })
 
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('💥 API: Unexpected error:', error)
     return NextResponse.json({
       user: null,
@@ -96,7 +98,7 @@ export async function GET() {
   }
 }
 
-async function createProfile(supabase: any, user: any) {
+async function createProfile(supabase: SupabaseClient, user: User) {
   console.log('🏗️ API: Creating new profile for:', user.email)
 
   const isSuperAdminEmail = user.email === '414hustlerz@gmail.com' ||
@@ -135,13 +137,13 @@ async function createProfile(supabase: any, user: any) {
 
     console.log('✅ API: Profile created successfully:', { role_id: data.role_id })
     return data
-  } catch (err) {
+  } catch {
     console.log('🏗️ API: Profile creation error, using fallback')
     return createFallbackProfile(user)
   }
 }
 
-function createFallbackProfile(user: any) {
+function createFallbackProfile(user: User) {
   const isSuperAdminEmail = user.email === '414hustlerz@gmail.com' ||
                             user.email === 'superadmin@sidehusl.com'
   const defaultRole = isSuperAdminEmail ? 'super-admin' : 'customer'
@@ -188,7 +190,8 @@ export async function PATCH(request: Request) {
     const updates = await request.json()
 
     // Remove fields that shouldn't be updated via this endpoint
-    const { id, email, role_id, created_at, ...allowedUpdates } = updates
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { id: _id, email: _email, role_id: _role_id, created_at: _created_at, ...allowedUpdates } = updates
 
     // Add updated timestamp
     const profileUpdates = {
@@ -221,7 +224,7 @@ export async function PATCH(request: Request) {
       error: null
     })
 
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('💥 API: Unexpected error updating profile:', error)
     return NextResponse.json({
       error: 'Internal server error'

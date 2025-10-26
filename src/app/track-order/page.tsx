@@ -207,7 +207,7 @@ export default function TrackOrderPage() {
             </li>
             <li className="flex items-start gap-2">
               <span className="text-stone-800 font-bold">3.</span>
-              <span>Contact support with your phone number if you can't find it</span>
+              <span>Contact support with your phone number if you can&apos;t find it</span>
             </li>
           </ul>
         </div>
