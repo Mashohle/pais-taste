@@ -2,11 +2,12 @@
 
 import { ProtectedRoute } from '@/components/auth/protected-route'
 import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
 import { useAuth } from '@/lib/contexts/auth-context'
 import { useRouter, usePathname } from 'next/navigation'
-import { LogOut, User, Package, History, Settings, AlertCircle, UtensilsCrossed, MessageSquare } from 'lucide-react'
+import { LogOut, User, Package, History, Settings, AlertCircle, UtensilsCrossed, MessageSquare, Menu, X } from 'lucide-react'
 import Link from 'next/link'
-import Image from 'next/image'
+import { useState } from 'react'
 
 export default function AccountLayout({
     children,
@@ -46,70 +47,34 @@ function AccountLayoutContent({ children }: { children: React.ReactNode }) {
         { href: '/account/settings', label: 'Settings', icon: Settings },
     ]
 
+    const [sidebarOpen, setSidebarOpen] = useState(false)
+
     return (
         <div className="min-h-screen bg-gradient-to-br from-stone-50 via-stone-100 to-stone-200">
-            {/* Traditional African decorative background patterns */}
-            <div className="fixed right-0 top-0 h-full w-48 sm:w-64 lg:w-96 pointer-events-none overflow-hidden">
-                <div className="absolute inset-0 opacity-15">
-                    <svg className="absolute top-10 right-4 w-16 h-16 text-stone-600" viewBox="0 0 100 100">
-                        <circle cx="50" cy="50" r="40" fill="none" stroke="currentColor" strokeWidth="2" />
-                        <circle cx="50" cy="50" r="25" fill="none" stroke="currentColor" strokeWidth="1.5" />
-                        <circle cx="50" cy="50" r="10" fill="currentColor" opacity="0.4" />
-                    </svg>
-
-                    <svg className="absolute top-48 right-16 w-14 h-14 text-stone-500" viewBox="0 0 100 100">
-                        <polygon points="50,10 90,90 10,90" fill="none" stroke="currentColor" strokeWidth="2" />
-                        <polygon points="50,30 70,70 30,70" fill="currentColor" opacity="0.3" />
-                    </svg>
-
-                    <div className="absolute top-32 right-0 w-32 h-0.5 bg-gradient-to-l from-stone-600/40 to-transparent"></div>
-                    <div className="absolute top-64 right-8 w-24 h-0.5 bg-gradient-to-l from-stone-500/35 to-transparent"></div>
-                    <div className="absolute top-96 right-4 w-28 h-0.5 bg-gradient-to-l from-stone-600/30 to-transparent"></div>
-                </div>
-            </div>
-
-            {/* Navigation Bar */}
-            <nav className="bg-white/80 backdrop-blur-md border-b border-stone-200 sticky top-0 z-40">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            {/* Header - Matches Admin Portal Style */}
+            <nav className="bg-white/90 backdrop-blur-md border-b border-stone-200 sticky top-0 z-50">
+                <div className="px-4 sm:px-6 lg:px-8">
                     <div className="flex justify-between items-center h-16">
-                        <div className="flex items-center space-x-8">
-                            <Link href="/" className="flex items-center space-x-3">
-                                <div className="w-12 h-12 bg-gradient-to-br from-stone-200 via-stone-100 to-stone-300 rounded-full flex items-center justify-center shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-110 ring-4 ring-stone-200/50">
-                                    <Image
-                                        src="/logo.svg"
-                                        alt="SideHusl"
-                                        width={120}
-                                        height={87}
-                                        className="scale-75"
-                                    />
-                                </div>
-                                <div className="hidden sm:block">
-                                    <h2 className="text-lg font-bold text-stone-800">SideHusl Account</h2>
-                                    <p className="text-xs text-stone-600">Welcome, {getDisplayName()}</p>
-                                </div>
+                        {/* Left Section: Logo + Portal Badge */}
+                        <div className="flex items-center space-x-4">
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="lg:hidden"
+                                onClick={() => setSidebarOpen(!sidebarOpen)}
+                            >
+                                {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+                            </Button>
+
+                            <Link href="/" className="text-2xl font-bold bg-gradient-to-r from-stone-600 to-stone-800 bg-clip-text text-transparent">
+                                SideHusl
                             </Link>
+                            <Badge variant="secondary" className="text-xs">
+                                Customer Portal
+                            </Badge>
                         </div>
 
-                        {/* Desktop Navigation */}
-                        <div className="hidden md:flex space-x-4">
-                            {navItems.map(({ href, label, icon: Icon }) => (
-                                <Link key={href} href={href}>
-                                    <Button 
-                                        variant={pathname === href ? "default" : "ghost"} 
-                                        size="sm" 
-                                        className={`flex items-center gap-2 ${
-                                            pathname === href 
-                                                ? "bg-stone-700 text-white" 
-                                                : ""
-                                        }`}
-                                    >
-                                        <Icon className="w-4 h-4" />
-                                        {label}
-                                    </Button>
-                                </Link>
-                            ))}
-                        </div>
-
+                        {/* Right Section: Welcome + Sign Out */}
                         <div className="flex items-center space-x-4">
                             {/* Profile completion alert */}
                             {!isProfileComplete() && (
@@ -118,17 +83,16 @@ function AccountLayoutContent({ children }: { children: React.ReactNode }) {
                                     <span>Complete profile</span>
                                 </div>
                             )}
-                            
-                            <span className="text-sm text-stone-600 hidden sm:block">
-                                {user?.email}
-                            </span>
+
+                            <p className="text-sm text-stone-600 hidden md:block">
+                                Welcome, <span className="font-medium text-stone-800">{getDisplayName()}</span>
+                            </p>
                             <Button
                                 onClick={handleSignOut}
                                 variant="outline"
                                 size="sm"
-                                className="flex items-center gap-2"
                             >
-                                <LogOut className="w-4 h-4" />
+                                <LogOut className="w-4 h-4 mr-2" />
                                 <span className="hidden sm:inline">Sign Out</span>
                             </Button>
                         </div>
@@ -136,34 +100,84 @@ function AccountLayoutContent({ children }: { children: React.ReactNode }) {
                 </div>
             </nav>
 
-            {/* Mobile Navigation */}
-            <div className="md:hidden bg-white/80 backdrop-blur-md border-b border-stone-200">
-                <div className="max-w-7xl mx-auto px-4">
-                    <div className="flex space-x-1 py-2 overflow-x-auto">
-                        {navItems.map(({ href, label, icon: Icon }) => (
-                            <Link key={href} href={href}>
-                                <Button 
-                                    variant={pathname === href ? "default" : "ghost"} 
-                                    size="sm" 
-                                    className={`flex items-center gap-2 whitespace-nowrap ${
-                                        pathname === href 
-                                            ? "bg-stone-700 text-white" 
-                                            : ""
-                                    }`}
-                                >
-                                    <Icon className="w-4 h-4" />
-                                    {label}
-                                </Button>
-                            </Link>
-                        ))}
-                    </div>
-                </div>
-            </div>
+            <div className="flex">
+                {/* Sidebar */}
+                <aside className={`
+                    fixed lg:static inset-y-0 left-0 z-40 w-80 bg-white/80 backdrop-blur-md border-r border-stone-200 transform transition-transform duration-300 ease-in-out mt-16 lg:mt-0
+                    ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+                `}>
+                    <div className="p-6">
+                        {/* User Info */}
+                        <div className="mb-6 p-4 bg-gradient-to-br from-stone-100 to-stone-200 rounded-xl">
+                            <div className="flex items-center space-x-3">
+                                <div className="p-3 rounded-xl bg-stone-700">
+                                    <User className="h-6 w-6 text-white" />
+                                </div>
+                                <div>
+                                    <h3 className="font-semibold text-stone-800">{getDisplayName()}</h3>
+                                    <p className="text-xs text-stone-600">{user?.email}</p>
+                                </div>
+                            </div>
+                        </div>
 
-            {/* Main Content */}
-            <main className="relative z-10">
-                {children}
-            </main>
+                        {/* Navigation */}
+                        <nav className="space-y-2">
+                            {navItems.map(({ href, label, icon: Icon }) => (
+                                <Link key={href} href={href}>
+                                    <div className={`
+                                        group flex items-start space-x-3 p-4 rounded-xl transition-all duration-200 hover:bg-stone-100 cursor-pointer
+                                        ${pathname === href ? 'bg-stone-50 border-l-4 border-stone-500' : ''}
+                                    `}>
+                                        <Icon className={`
+                                            w-5 h-5 mt-0.5 transition-colors
+                                            ${pathname === href ? 'text-stone-600' : 'text-stone-500 group-hover:text-stone-700'}
+                                        `} />
+                                        <div className="flex-1 min-w-0">
+                                            <p className={`
+                                                text-sm font-medium transition-colors
+                                                ${pathname === href ? 'text-stone-700' : 'text-stone-700 group-hover:text-stone-900'}
+                                            `}>
+                                                {label}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </Link>
+                            ))}
+                        </nav>
+
+                        {/* Profile Status */}
+                        {!isProfileComplete() && (
+                            <div className="mt-8 p-4 bg-amber-50 rounded-xl border border-amber-200">
+                                <h3 className="text-sm font-medium text-amber-800 mb-2 flex items-center gap-2">
+                                    <AlertCircle className="w-4 h-4" />
+                                    Complete Your Profile
+                                </h3>
+                                <p className="text-xs text-amber-700 mb-3">
+                                    Complete your profile to get the best experience
+                                </p>
+                                <Link href="/account">
+                                    <Button size="sm" variant="outline" className="w-full text-amber-700 border-amber-300 hover:bg-amber-100">
+                                        Complete Now
+                                    </Button>
+                                </Link>
+                            </div>
+                        )}
+                    </div>
+                </aside>
+
+                {/* Sidebar Overlay */}
+                {sidebarOpen && (
+                    <div
+                        className="fixed inset-0 bg-stone-600 bg-opacity-50 z-30 lg:hidden"
+                        onClick={() => setSidebarOpen(false)}
+                    />
+                )}
+
+                {/* Main Content */}
+                <main className="flex-1 p-4 sm:p-6 lg:p-8">
+                    {children}
+                </main>
+            </div>
         </div>
     )
 }

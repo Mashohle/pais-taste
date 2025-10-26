@@ -33,7 +33,7 @@ interface UniversalOrderProps {
     business_id: string
     business_name: string
     business_category: string
-    business_phone: string
+    business_phone?: string
     type: 'order' | 'booking'
     status: string
     created_at: string
@@ -301,11 +301,11 @@ export default function UniversalOrderCard({
             )}
 
             {/* Contact Business */}
-            {onContact && (
+            {onContact && order.business_phone && (
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => onContact(order.business_phone)}
+                onClick={() => onContact(order.business_phone!)}
                 className="flex items-center gap-2"
               >
                 <Phone className="w-4 h-4" />

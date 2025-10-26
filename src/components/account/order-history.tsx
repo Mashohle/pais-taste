@@ -1,18 +1,20 @@
 "use client"
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
-import { History, Filter, Search, Calendar, MapPin, Star } from "lucide-react"
+import { Skeleton } from "@/components/ui/skeleton"
+import { History, Filter, Search, Calendar, MapPin, Star, Loader2 } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import UniversalOrderCard from './universal-order-card'
+import { useOrderHistory } from '@/lib/hooks/use-order-history'
 
-// Mock data representing complete order/booking history across all business types
-const mockHistoricalOrders = [
+// Mock data for demo purposes (keeping for reference)
+const mockHistoricalOrdersOld = [
   // Food orders (completed)
   {
     id: "order_1",
@@ -122,19 +124,29 @@ export default function OrderHistoryTab() {
   const [selectedStatus, setSelectedStatus] = useState<string>("all")
   const [selectedTimeRange, setSelectedTimeRange] = useState<string>("all")
 
+  // Memoize filters to prevent infinite loop
+  const filters = useMemo(() => ({
+    status: selectedStatus !== 'all' ? selectedStatus : undefined,
+    businessId: selectedBusiness !== 'all' ? selectedBusiness : undefined,
+    timeRange: selectedTimeRange !== 'all' ? selectedTimeRange : undefined
+  }), [selectedStatus, selectedBusiness, selectedTimeRange])
+
+  // Fetch real order history from API (automatically refetches when filters change)
+  const { orders: apiOrders, stats, loading, error, hasMore, fetchMore, refetch } = useOrderHistory(filters)
+
   // Get unique businesses for filter dropdown
   const uniqueBusinesses = useMemo(() => {
-    const businesses = mockHistoricalOrders.map(order => ({
+    const businesses = apiOrders.map(order => ({
       id: order.business_id,
       name: order.business_name,
       category: order.business_category
     }))
     return Array.from(new Map(businesses.map(b => [b.id, b])).values())
-  }, [])
+  }, [apiOrders])
 
-  // Filter historical orders
+  // Filter orders locally by search term and business type
   const filteredOrders = useMemo(() => {
-    return mockHistoricalOrders.filter(order => {
+    return apiOrders.filter(order => {
       // Search filter
       if (searchTerm && !order.business_name.toLowerCase().includes(searchTerm.toLowerCase()) && 
           !(order.type === 'order' && order.items?.some(item => 
@@ -144,46 +156,14 @@ export default function OrderHistoryTab() {
         return false
       }
 
-      // Business type filter
+      // Business type filter (only applies locally, API filters by status/business/time)
       if (selectedBusinessType !== "all" && order.business_category !== selectedBusinessType) {
         return false
       }
 
-      // Specific business filter
-      if (selectedBusiness !== "all" && order.business_id !== selectedBusiness) {
-        return false
-      }
-
-      // Status filter
-      if (selectedStatus !== "all" && order.status !== selectedStatus) {
-        return false
-      }
-
-      // Time range filter
-      if (selectedTimeRange !== "all") {
-        const orderDate = new Date(order.created_at)
-        const now = new Date()
-        const diffInDays = Math.floor((now.getTime() - orderDate.getTime()) / (1000 * 60 * 60 * 24))
-        
-        switch (selectedTimeRange) {
-          case "week":
-            if (diffInDays > 7) return false
-            break
-          case "month":
-            if (diffInDays > 30) return false
-            break
-          case "3months":
-            if (diffInDays > 90) return false
-            break
-          case "year":
-            if (diffInDays > 365) return false
-            break
-        }
-      }
-
       return true
     })
-  }, [searchTerm, selectedBusinessType, selectedBusiness, selectedStatus, selectedTimeRange])
+  }, [apiOrders, searchTerm, selectedBusinessType])
 
   const handleViewDetails = (orderId: string, orderType: string) => {
     if (orderType === 'booking') {
@@ -208,6 +188,28 @@ export default function OrderHistoryTab() {
     router.push(`/account/reviews/write?order=${orderId}&business=${businessId}&name=${encodeURIComponent(businessName)}`)
   }
 
+  // Show error state
+  if (error) {
+    return (
+      <Card className="bg-red-50/50 backdrop-blur-sm border-red-200">
+        <CardContent className="text-center py-12">
+          <History className="w-12 h-12 text-red-400 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-red-800 mb-2">
+            Error Loading History
+          </h3>
+          <p className="text-red-600 mb-4">{error}</p>
+          <Button
+            variant="outline"
+            onClick={() => refetch()}
+            className="border-red-300 text-red-700 hover:bg-red-100"
+          >
+            Try Again
+          </Button>
+        </CardContent>
+      </Card>
+    )
+  }
+
   return (
     <div className="space-y-6">
       {/* Header with Order Count */}
@@ -219,11 +221,33 @@ export default function OrderHistoryTab() {
           </h2>
         </div>
         <Badge variant="outline" className="text-stone-700 border-stone-300">
-          {mockHistoricalOrders.length} Total
+          {stats?.totalOrders || 0} Total
         </Badge>
       </div>
 
-      {mockHistoricalOrders.length > 0 ? (
+      {loading && apiOrders.length === 0 ? (
+        /* Loading State */
+        <div className="space-y-4">
+          {[...Array(3)].map((_, i) => (
+            <Card key={i}>
+              <CardContent className="p-6">
+                <div className="flex justify-between items-start mb-4">
+                  <div className="space-y-2">
+                    <Skeleton className="h-6 w-48" />
+                    <Skeleton className="h-4 w-32" />
+                  </div>
+                  <Skeleton className="h-6 w-20" />
+                </div>
+                <Skeleton className="h-20 w-full mb-4" />
+                <div className="flex justify-between">
+                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-10 w-32" />
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : apiOrders.length > 0 ? (
         <>
           {/* Filters */}
           <Card className="p-6 bg-white/50 backdrop-blur-sm border-stone-200">
@@ -269,7 +293,7 @@ export default function OrderHistoryTab() {
                 </SelectContent>
               </Select>
 
-              {/* Status */}
+              {/* Status - Only final/ended statuses */}
               <Select value={selectedStatus} onValueChange={setSelectedStatus}>
                 <SelectTrigger className="border-stone-300">
                   <SelectValue placeholder="Status" />
@@ -278,7 +302,6 @@ export default function OrderHistoryTab() {
                   <SelectItem value="all">All Statuses</SelectItem>
                   <SelectItem value="completed">Completed</SelectItem>
                   <SelectItem value="cancelled">Cancelled</SelectItem>
-                  <SelectItem value="refunded">Refunded</SelectItem>
                 </SelectContent>
               </Select>
 
@@ -368,61 +391,80 @@ export default function OrderHistoryTab() {
               </div>
 
               {/* Historical Summary Stats */}
-              <Card className="bg-gradient-to-r from-stone-100/95 via-stone-50/60 to-stone-25/20 backdrop-blur-md border-stone-200/50 shadow-lg">
-                <CardContent className="py-6">
-                  <h3 className="text-lg font-semibold text-stone-800 mb-4 flex items-center gap-2">
-                    <Star className="w-5 h-5" />
-                    Your History Summary
-                  </h3>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
-                    <div>
-                      <p className="text-2xl font-bold text-stone-800">{mockHistoricalOrders.length}</p>
-                      <p className="text-sm text-stone-600">Total Orders & Bookings</p>
+              {stats && (
+                <Card className="bg-gradient-to-r from-stone-100/95 via-stone-50/60 to-stone-25/20 backdrop-blur-md border-stone-200/50 shadow-lg">
+                  <CardContent className="py-6">
+                    <h3 className="text-lg font-semibold text-stone-800 mb-4 flex items-center gap-2">
+                      <Star className="w-5 h-5" />
+                      Your History Summary
+                    </h3>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+                      <div>
+                        <p className="text-2xl font-bold text-stone-800">{stats.totalOrders}</p>
+                        <p className="text-sm text-stone-600">Total Orders & Bookings</p>
+                      </div>
+                      <div>
+                        <p className="text-2xl font-bold text-stone-800">
+                          {new Intl.NumberFormat('en-ZA', {
+                            style: 'currency',
+                            currency: 'ZAR'
+                          }).format(stats.totalSpent)}
+                        </p>
+                        <p className="text-sm text-stone-600">Total Spent</p>
+                      </div>
+                      <div>
+                        <p className="text-2xl font-bold text-stone-800">
+                          {stats.completedOrders}
+                        </p>
+                        <p className="text-sm text-stone-600">Completed</p>
+                      </div>
+                      <div>
+                        <p className="text-2xl font-bold text-stone-800">
+                          {stats.uniqueBusinesses}
+                        </p>
+                        <p className="text-sm text-stone-600">Businesses Used</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-2xl font-bold text-stone-800">
-                        {new Intl.NumberFormat('en-ZA', {
-                          style: 'currency',
-                          currency: 'ZAR'
-                        }).format(
-                          mockHistoricalOrders.reduce((sum, order) => sum + order.total, 0)
-                        )}
-                      </p>
-                      <p className="text-sm text-stone-600">Total Spent</p>
-                    </div>
-                    <div>
-                      <p className="text-2xl font-bold text-stone-800">
-                        {mockHistoricalOrders.filter(order => order.status === 'completed').length}
-                      </p>
-                      <p className="text-sm text-stone-600">Completed</p>
-                    </div>
-                    <div>
-                      <p className="text-2xl font-bold text-stone-800">
-                        {uniqueBusinesses.length}
-                      </p>
-                      <p className="text-sm text-stone-600">Businesses Used</p>
-                    </div>
-                  </div>
-                  
-                  {/* Business Type Breakdown */}
-                  <div className="mt-6 pt-6 border-t border-stone-300/50">
-                    <p className="text-sm font-medium text-stone-700 mb-3">Your Activity by Type:</p>
-                    <div className="flex flex-wrap gap-3">
-                      {['food', 'retail', 'services'].map(type => {
-                        const count = mockHistoricalOrders.filter(order => order.business_category === type).length
-                        if (count === 0) return null
-                        return (
-                          <div key={type} className="flex items-center gap-2 text-sm">
-                            <Badge variant="outline" className="capitalize">
-                              {type}: {count}
-                            </Badge>
-                          </div>
-                        )
-                      })}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+
+                    {/* Business Type Breakdown */}
+                    {stats.ordersByCategory && Object.keys(stats.ordersByCategory).length > 0 && (
+                      <div className="mt-6 pt-6 border-t border-stone-300/50">
+                        <p className="text-sm font-medium text-stone-700 mb-3">Your Activity by Type:</p>
+                        <div className="flex flex-wrap gap-3">
+                          {Object.entries(stats.ordersByCategory).map(([categoryId, count]) => (
+                            <div key={categoryId} className="flex items-center gap-2 text-sm">
+                              <Badge variant="outline" className="capitalize">
+                                {categoryId}: {count}
+                              </Badge>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Load More Button */}
+              {hasMore && (
+                <div className="text-center">
+                  <Button
+                    onClick={fetchMore}
+                    disabled={loading}
+                    variant="outline"
+                    className="border-stone-300 text-stone-700 hover:bg-stone-100"
+                  >
+                    {loading ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Loading...
+                      </>
+                    ) : (
+                      'Load More Orders'
+                    )}
+                  </Button>
+                </div>
+              )}
 
               {/* Help Text */}
               <div className="text-center text-sm text-stone-500">
