@@ -1,22 +1,23 @@
 "use client"
 
+import { Suspense } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { 
-  Crown, 
-  Mail, 
-  Lock, 
-  Eye, 
-  EyeOff, 
-  Shield, 
+import {
+  Crown,
+  Mail,
+  Lock,
+  Eye,
+  EyeOff,
+  Shield,
   AlertTriangle,
-  Loader2 
+  Loader2
 } from "lucide-react"
 import Link from "next/link"
 import { useSuperAdminLogin } from '@/lib/hooks'
 
-export default function SuperAdminLogin() {
+function SuperAdminLoginForm() {
   const {
     formData,
     showPassword,
@@ -151,5 +152,19 @@ export default function SuperAdminLogin() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function SuperAdminLogin() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-stone-50 to-stone-100 flex items-center justify-center">
+        <div className="w-16 h-16 bg-gradient-to-br from-stone-600 to-stone-800 rounded-2xl flex items-center justify-center shadow-xl">
+          <Loader2 className="w-8 h-8 text-white animate-spin" />
+        </div>
+      </div>
+    }>
+      <SuperAdminLoginForm />
+    </Suspense>
   )
 }

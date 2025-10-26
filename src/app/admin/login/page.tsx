@@ -1,7 +1,8 @@
 "use client"
 
+import { Suspense } from "react"
 import type React from "react"
-import { Lock, Eye, EyeOff, Mail } from "lucide-react"
+import { Lock, Eye, EyeOff, Mail, Loader2 } from "lucide-react"
 import Link from 'next/link'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
@@ -10,7 +11,7 @@ import { Label } from "@/components/ui/label"
 import Image from 'next/image'
 import { useAdminLogin } from '@/lib/hooks'
 
-export default function AdminLogin() {
+function AdminLoginForm() {
   console.log('🔑 LOGIN PAGE: AdminLogin component rendering')
 
   const {
@@ -168,5 +169,19 @@ export default function AdminLogin() {
         </CardContent>
       </Card>
     </div>
+  )
+}
+
+export default function AdminLogin() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-stone-50 via-stone-100 to-stone-200 flex items-center justify-center">
+        <div className="w-16 h-16 bg-gradient-to-br from-stone-600 to-stone-800 rounded-2xl flex items-center justify-center shadow-xl">
+          <Loader2 className="w-8 h-8 text-white animate-spin" />
+        </div>
+      </div>
+    }>
+      <AdminLoginForm />
+    </Suspense>
   )
 }
