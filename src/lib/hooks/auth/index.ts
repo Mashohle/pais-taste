@@ -1,6 +1,6 @@
 // Auth hooks
 export * from './use-admin-login'
-export * from './use-business-admin-auth'
+// use-business-admin-auth is now in context (use @/lib/context/business-admin-context)
 export * from './use-customer-auth'
 export * from './use-super-admin-auth'
 export * from './use-super-admin-login'

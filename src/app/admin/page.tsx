@@ -11,7 +11,7 @@ import Link from 'next/link'
 
 export default function AdminDashboard() {
     const { currentBusiness } = useBusinessAdminAuth()
-    const { stats, loading: statsLoading } = useDashboardStats(currentBusiness?.business?.id)
+    const { stats, loading: statsLoading } = useDashboardStats()
 
     if (!currentBusiness) {
         return null // Loading handled by layout

@@ -77,6 +77,12 @@ export default function SettingsPage() {
             ].filter(Boolean) // Remove null/undefined/empty values
             const combinedAddress = addressParts.join(', ')
 
+            // Load opening hours from settings if available
+            const savedHours = (business.settings as { opening_hours?: typeof businessSettings.opening_hours })?.opening_hours
+
+            // Load system settings from settings if available
+            const savedSystemSettings = (business.settings as { system?: typeof systemSettings })?.system
+
             setBusinessSettings(prev => ({
                 ...prev,
                 name: currentBusiness.name || '',
@@ -96,8 +102,15 @@ export default function SettingsPage() {
                 accent_color: business.accent_color || '#0066CC',
                 timezone: business.timezone || 'Africa/Johannesburg',
                 currency: business.currency || 'ZAR',
+                opening_hours: savedHours || prev.opening_hours, // Load saved hours or keep defaults
             }))
+
+            // Load system settings if available
+            if (savedSystemSettings) {
+                setSystemSettings(savedSystemSettings)
+            }
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [currentBusiness])
 
     // Notification settings
@@ -163,6 +176,60 @@ export default function SettingsPage() {
                 const data = await response.json()
                 console.log('✅ Settings saved:', data)
                 alert('Settings saved successfully!')
+            } else if (section === 'hours') {
+                // Save opening hours in the settings field
+                const currentSettings = currentBusiness?.business?.settings || {}
+                const response = await fetch('/api/admin/business', {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        businessId: currentBusiness?.business?.id,
+                        updates: {
+                            settings: {
+                                ...currentSettings,
+                                opening_hours: businessSettings.opening_hours
+                            }
+                        }
+                    })
+                })
+
+                if (!response.ok) {
+                    const errorData = await response.json()
+                    throw new Error(errorData.error || 'Failed to save hours')
+                }
+
+                const data = await response.json()
+                console.log('✅ Hours saved:', data)
+                alert('Opening hours saved successfully!')
+            } else if (section === 'system') {
+                // Save system configuration settings
+                const currentSettings = currentBusiness?.business?.settings || {}
+                const response = await fetch('/api/admin/business', {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        businessId: currentBusiness?.business?.id,
+                        updates: {
+                            settings: {
+                                ...currentSettings,
+                                system: systemSettings
+                            }
+                        }
+                    })
+                })
+
+                if (!response.ok) {
+                    const errorData = await response.json()
+                    throw new Error(errorData.error || 'Failed to save system settings')
+                }
+
+                const data = await response.json()
+                console.log('✅ System settings saved:', data)
+                alert('System configuration saved successfully!')
             } else {
                 // For other sections, use placeholder for now
                 console.log(`Saving ${section} settings:`, {
@@ -672,9 +739,9 @@ export default function SettingsPage() {
                                 <Separator />
 
                                 <div>
-                                    <h4 className="font-medium mb-3">Pricing & Fees</h4>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div>
+                                    <h4 className="font-medium mb-4">Pricing & Fees</h4>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div className="space-y-2">
                                             <Label htmlFor="tax_rate">Tax Rate (%)</Label>
                                             <Input
                                                 id="tax_rate"
@@ -686,9 +753,10 @@ export default function SettingsPage() {
                                                     tax_rate: parseFloat(e.target.value) || 0
                                                 }))}
                                                 disabled={!isAdmin}
+                                                placeholder="15.0"
                                             />
                                         </div>
-                                        <div>
+                                        <div className="space-y-2">
                                             <Label htmlFor="service_fee">Service Fee ({businessSettings.currency})</Label>
                                             <Input
                                                 id="service_fee"
@@ -700,9 +768,10 @@ export default function SettingsPage() {
                                                     service_fee: parseFloat(e.target.value) || 0
                                                 }))}
                                                 disabled={!isAdmin}
+                                                placeholder="0.00"
                                             />
                                         </div>
-                                        <div>
+                                        <div className="space-y-2">
                                             <Label htmlFor="delivery_fee">Delivery Fee ({businessSettings.currency})</Label>
                                             <Input
                                                 id="delivery_fee"
@@ -714,9 +783,10 @@ export default function SettingsPage() {
                                                     delivery_fee: parseFloat(e.target.value) || 0
                                                 }))}
                                                 disabled={!isAdmin}
+                                                placeholder="50.00"
                                             />
                                         </div>
-                                        <div>
+                                        <div className="space-y-2">
                                             <Label htmlFor="minimum_order">Minimum Order Value ({businessSettings.currency})</Label>
                                             <Input
                                                 id="minimum_order"
@@ -728,6 +798,7 @@ export default function SettingsPage() {
                                                     minimum_order_value: parseFloat(e.target.value) || 0
                                                 }))}
                                                 disabled={!isAdmin}
+                                                placeholder="100.00"
                                             />
                                         </div>
                                     </div>

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useBusinessAdminAuth } from '@/lib/hooks'
+import { useBusinessAdminAuth } from '@/lib/context/business-admin-context'
 
 interface AdminLoginState {
   email: string

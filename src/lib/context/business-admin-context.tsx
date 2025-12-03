@@ -122,10 +122,11 @@ export function BusinessAdminProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
-  // Initialize on mount
+  // Initialize on mount - only run once
   useEffect(() => {
     fetchBusinessProfile()
-  }, [fetchBusinessProfile])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // Sign out function
   const signOut = async () => {

@@ -26,7 +26,7 @@ interface Order {
 export default function OrdersPage() {
     const { currentBusiness } = useBusinessAdminAuth()
     const { orders: dbOrders, loading, updateOrderStatus, updatePaymentStatus } = useOrders({
-        businessId: currentBusiness?.business?.id
+        forAdmin: true
     })
     const router = useRouter()
     const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)

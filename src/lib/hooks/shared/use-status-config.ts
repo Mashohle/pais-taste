@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from 'react'
-import { useBusinessAdminAuth } from '@/lib/hooks'
+import { useBusinessAdminAuth } from '@/lib/context/business-admin-context'
 
 export interface StatusConfig {
     id: string

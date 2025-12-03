@@ -1,21 +1,23 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 import { Order, ReorderItem } from '@/types/order'
+import { useBusinessAdminAuth } from '@/lib/context/business-admin-context'
 
 interface UseOrdersOptions {
-  businessId?: string // For admin view - filter by business instead of user
   userId?: string // For customer view - filter by user
+  forAdmin?: boolean // Flag to indicate this is being used in admin context
 }
 
 export function useOrders(options?: UseOrdersOptions) {
+  const { currentBusiness, loading: businessLoading } = useBusinessAdminAuth()
   const [orders, setOrders] = useState<Order[]>([])
   const [activeOrders, setActiveOrders] = useState<Order[]>([])
   const [orderHistory, setOrderHistory] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  // Use provided options or get from auth context (for backward compatibility)
-  const businessId = options?.businessId
+  // Get businessId from context for admin view, or use provided userId for customer view
+  const businessId = options?.forAdmin ? currentBusiness?.business?.id : undefined
   const userId = options?.userId
 
   const fetchOrders = useCallback(async () => {
@@ -101,6 +103,21 @@ export function useOrders(options?: UseOrdersOptions) {
   }, [businessId, userId])
 
   useEffect(() => {
+    // Keep loading while business context is still loading (for admin view)
+    if (options?.forAdmin && businessLoading) {
+      setLoading(true)
+      return
+    }
+
+    // If business loading is done but no business (for admin view), stop loading
+    if (options?.forAdmin && !businessId) {
+      setOrders([])
+      setActiveOrders([])
+      setOrderHistory([])
+      setLoading(false)
+      return
+    }
+
     // Fetch orders if we have either businessId or userId
     if (businessId || userId) {
       fetchOrders()
@@ -137,7 +154,7 @@ export function useOrders(options?: UseOrdersOptions) {
       setOrderHistory([])
       setLoading(false)
     }
-  }, [businessId, userId, fetchOrders])
+  }, [businessId, userId, fetchOrders, options?.forAdmin, businessLoading])
 
   const updateOrderStatus = async (orderId: string, statusCode: string) => {
     try {

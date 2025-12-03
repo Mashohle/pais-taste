@@ -1,6 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 
+// Map status types to their respective table names
+const STATUS_TABLES = {
+  order: 'order_statuses',
+  booking: 'booking_statuses',
+  payment: 'payment_statuses',
+} as const
+
+type StatusType = keyof typeof STATUS_TABLES
+
 // Status configuration interface
 interface StatusConfig {
   id: string
@@ -19,132 +28,108 @@ interface StatusConfig {
   updated_at?: string
 }
 
-// In-memory storage for status configs (until database table is created)
-const memoryStorage = new Map<string, StatusConfig[]>()
-
-// Default status configurations by business category
-const getDefaultStatuses = (businessCategory: string, statusType: 'order' | 'booking' | 'payment') => {
-    if (statusType === 'order') {
-        switch (businessCategory) {
-            case 'food':
-                return [
-                    { status_value: 'pending', status_name: 'Pending', display_order: 1, color_class: 'bg-yellow-100 text-yellow-800', icon_name: 'clock', is_default: true },
-                    { status_value: 'confirmed', status_name: 'Confirmed', display_order: 2, color_class: 'bg-blue-100 text-blue-800', icon_name: 'check-circle' },
-                    { status_value: 'preparing', status_name: 'Preparing', display_order: 3, color_class: 'bg-orange-100 text-orange-800', icon_name: 'chef-hat' },
-                    { status_value: 'ready', status_name: 'Ready for Pickup', display_order: 4, color_class: 'bg-green-100 text-green-800', icon_name: 'package' },
-                    { status_value: 'completed', status_name: 'Completed', display_order: 5, color_class: 'bg-emerald-100 text-emerald-800', icon_name: 'check-circle-2', is_final: true },
-                    { status_value: 'cancelled', status_name: 'Cancelled', display_order: 6, color_class: 'bg-red-100 text-red-800', icon_name: 'x-circle', is_final: true }
-                ]
-            case 'retail':
-                return [
-                    { status_value: 'pending', status_name: 'Pending Payment', display_order: 1, color_class: 'bg-yellow-100 text-yellow-800', icon_name: 'clock', is_default: true },
-                    { status_value: 'paid', status_name: 'Paid', display_order: 2, color_class: 'bg-blue-100 text-blue-800', icon_name: 'credit-card' },
-                    { status_value: 'processing', status_name: 'Processing', display_order: 3, color_class: 'bg-purple-100 text-purple-800', icon_name: 'package' },
-                    { status_value: 'shipped', status_name: 'Shipped', display_order: 4, color_class: 'bg-indigo-100 text-indigo-800', icon_name: 'truck' },
-                    { status_value: 'delivered', status_name: 'Delivered', display_order: 5, color_class: 'bg-green-100 text-green-800', icon_name: 'check-circle', is_final: true },
-                    { status_value: 'cancelled', status_name: 'Cancelled', display_order: 6, color_class: 'bg-red-100 text-red-800', icon_name: 'x-circle', is_final: true }
-                ]
-            default:
-                return [
-                    { status_value: 'pending', status_name: 'Pending', display_order: 1, color_class: 'bg-yellow-100 text-yellow-800', icon_name: 'clock', is_default: true },
-                    { status_value: 'completed', status_name: 'Completed', display_order: 2, color_class: 'bg-green-100 text-green-800', icon_name: 'check-circle', is_final: true },
-                    { status_value: 'cancelled', status_name: 'Cancelled', display_order: 3, color_class: 'bg-red-100 text-red-800', icon_name: 'x-circle', is_final: true }
-                ]
-        }
-    } else if (statusType === 'booking') {
-        return [
-            { status_value: 'scheduled', status_name: 'Scheduled', display_order: 1, color_class: 'bg-blue-100 text-blue-800', icon_name: 'calendar', is_default: true },
-            { status_value: 'confirmed', status_name: 'Confirmed', display_order: 2, color_class: 'bg-green-100 text-green-800', icon_name: 'check-circle' },
-            { status_value: 'in_progress', status_name: 'In Progress', display_order: 3, color_class: 'bg-orange-100 text-orange-800', icon_name: 'play-circle' },
-            { status_value: 'completed', status_name: 'Completed', display_order: 4, color_class: 'bg-emerald-100 text-emerald-800', icon_name: 'check-circle-2', is_final: true },
-            { status_value: 'no_show', status_name: 'No Show', display_order: 5, color_class: 'bg-gray-100 text-gray-800', icon_name: 'user-x', is_final: true },
-            { status_value: 'cancelled', status_name: 'Cancelled', display_order: 6, color_class: 'bg-red-100 text-red-800', icon_name: 'x-circle', is_final: true }
-        ]
-    } else if (statusType === 'payment') {
-        return [
-            { status_value: 'pending', status_name: 'Pending', display_order: 1, color_class: 'bg-yellow-100 text-yellow-800', icon_name: 'clock', is_default: true },
-            { status_value: 'processing', status_name: 'Processing', display_order: 2, color_class: 'bg-blue-100 text-blue-800', icon_name: 'loader' },
-            { status_value: 'completed', status_name: 'Completed', display_order: 3, color_class: 'bg-green-100 text-green-800', icon_name: 'check-circle', is_final: true },
-            { status_value: 'failed', status_name: 'Failed', display_order: 4, color_class: 'bg-red-100 text-red-800', icon_name: 'x-circle', is_final: true },
-            { status_value: 'refunded', status_name: 'Refunded', display_order: 5, color_class: 'bg-purple-100 text-purple-800', icon_name: 'rotate-ccw', is_final: true }
-        ]
-    }
-    return []
+// Database status structure (from Supabase tables)
+interface DbStatus {
+  id: string
+  business_id: string | null
+  code: string
+  name: string
+  description: string | null
+  color: string
+  is_active: boolean
+  is_default: boolean
+  is_final: boolean
+  sort_order: number
+  can_transition_to: string[] | null
+  created_at?: string
+  updated_at?: string
 }
 
 export async function GET(request: NextRequest) {
     try {
         const supabase = await createClient()
-        const { data: { session } } = await supabase.auth.getSession()
+        const searchParams = request.nextUrl.searchParams
+        const businessId = searchParams.get('business_id')
+        const statusType = searchParams.get('status_type') as StatusType
 
-        if (!session) {
+        if (!businessId || !statusType) {
+            return NextResponse.json(
+                { error: 'Missing required parameters: business_id and status_type' },
+                { status: 400 }
+            )
+        }
+
+        if (!STATUS_TABLES[statusType]) {
+            return NextResponse.json(
+                { error: 'Invalid status_type. Must be: order, booking, or payment' },
+                { status: 400 }
+            )
+        }
+
+        // Get user session
+        const {
+            data: { user },
+            error: userError,
+        } = await supabase.auth.getUser()
+
+        if (userError || !user) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }
 
-        const searchParams = request.nextUrl.searchParams
-        const businessId = searchParams.get('business_id')
-        const statusType = searchParams.get('status_type') as 'order' | 'booking' | 'payment'
+        // Verify business access
+        const { data: businessUser } = await supabase
+            .from('business_users')
+            .select('id, role, is_active')
+            .eq('user_id', user.id)
+            .eq('business_id', businessId)
+            .eq('is_active', true)
+            .single()
 
-        console.log('Status config API called:', { businessId, statusType, userId: session.user.id })
-
-        if (!businessId || !statusType) {
-            return NextResponse.json({ error: 'Missing required parameters' }, { status: 400 })
+        if (!businessUser) {
+            return NextResponse.json(
+                { error: 'You do not have access to this business' },
+                { status: 403 }
+            )
         }
 
-        // Since user_businesses table doesn't exist yet, we'll skip the access check
-        // In production, you'd want to verify the user has access to this business
-        console.log('Skipping business access check - table not available')
+        const tableName = STATUS_TABLES[statusType]
 
-        // For now, just use default business category
-        const userBusiness = { business_categories: { id: 'food' } }
+        // First try to get business-specific statuses
+        const { data: businessStatuses, error: businessError } = await supabase
+            .from(tableName)
+            .select('*')
+            .eq('business_id', businessId)
+            .order('sort_order', { ascending: true })
 
-        // Try to get from database first (when table exists)
-        try {
-            const { data: dbStatuses, error: dbError } = await supabase
-                .from('status_configs')
-                .select('*')
-                .eq('business_id', businessId)
-                .eq('status_type', statusType)
-                .order('display_order')
-
-            if (!dbError && dbStatuses && dbStatuses.length > 0) {
-                return NextResponse.json({ data: dbStatuses })
-            }
-        } catch {
-            console.log('Database table not available, using defaults')
+        if (businessError) {
+            console.error('Error fetching business statuses:', businessError)
         }
 
-        // Check in-memory storage
-        const memoryKey = `${businessId}-${statusType}`
-        let statuses = memoryStorage.get(memoryKey)
-
-        if (!statuses || statuses.length === 0) {
-            // Use default statuses
-            const businessCategory = userBusiness?.business_categories?.id || 'food'
-            const defaultStatuses = getDefaultStatuses(businessCategory, statusType)
-
-            statuses = defaultStatuses.map((status, index) => ({
-                id: `default-${businessId}-${statusType}-${index}`,
-                business_id: businessId,
-                status_type: statusType,
-                status_name: status.status_name,
-                status_value: status.status_value,
-                display_order: status.display_order,
-                color_class: status.color_class,
-                icon_name: status.icon_name,
-                is_default: status.is_default || false,
-                is_final: status.is_final || false,
-                can_transition_to: [],
-                description: (status as { description?: string }).description || ''
-            }))
-
-            // Store in memory
-            memoryStorage.set(memoryKey, statuses)
+        // If business has custom statuses, use those
+        if (businessStatuses && businessStatuses.length > 0) {
+            const normalizedStatuses = (businessStatuses as DbStatus[]).map(s => mapDbToApi(s, statusType))
+            return NextResponse.json({ data: normalizedStatuses })
         }
 
-        return NextResponse.json({ data: statuses })
+        // Otherwise, fetch system defaults (where business_id is NULL)
+        const { data: defaultStatuses, error: defaultError } = await supabase
+            .from(tableName)
+            .select('*')
+            .is('business_id', null)
+            .order('sort_order', { ascending: true })
+
+        if (defaultError) {
+            console.error('Error fetching default statuses:', defaultError)
+            return NextResponse.json(
+                { error: 'Failed to fetch status configurations' },
+                { status: 500 }
+            )
+        }
+
+        const normalizedStatuses = (defaultStatuses || []).map((s: DbStatus) => mapDbToApi(s, statusType))
+        return NextResponse.json({ data: normalizedStatuses })
     } catch (error: unknown) {
-        console.error('Error fetching status configs:', error)
+        console.error('Status configs GET error:', error)
         return NextResponse.json({
             error: 'Failed to fetch status configurations',
             details: error instanceof Error ? error.message : 'Unknown error'
@@ -155,72 +140,115 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
     try {
         const supabase = await createClient()
-        const { data: { session } } = await supabase.auth.getSession()
+        const body = await request.json()
+        const { business_id, status_type, id, ...statusData } = body
 
-        if (!session) {
+        if (!business_id || !status_type) {
+            return NextResponse.json(
+                { error: 'Missing required fields: business_id and status_type' },
+                { status: 400 }
+            )
+        }
+
+        if (!STATUS_TABLES[status_type as StatusType]) {
+            return NextResponse.json(
+                { error: 'Invalid status_type. Must be: order, booking, or payment' },
+                { status: 400 }
+            )
+        }
+
+        // Get user session
+        const {
+            data: { user },
+            error: userError,
+        } = await supabase.auth.getUser()
+
+        if (userError || !user) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }
 
-        const body = await request.json()
-        const { business_id, status_type, ...statusData } = body
+        // Verify business access
+        const { data: businessUser } = await supabase
+            .from('business_users')
+            .select('id, role, is_active')
+            .eq('user_id', user.id)
+            .eq('business_id', business_id)
+            .eq('is_active', true)
+            .single()
 
-        if (!business_id || !status_type) {
-            return NextResponse.json({ error: 'Missing required parameters' }, { status: 400 })
+        if (!businessUser) {
+            return NextResponse.json(
+                { error: 'You do not have access to this business' },
+                { status: 403 }
+            )
         }
 
-        // Since user_businesses table doesn't exist yet, we'll skip the role check
-        // In production, you'd want to verify the user has admin/owner access
-        console.log('Skipping role check - table not available')
+        const tableName = STATUS_TABLES[status_type as StatusType]
 
-        // Try to save to database first (when table exists)
-        try {
-            const { data: dbStatus, error: dbError } = await supabase
-                .from('status_configs')
-                .upsert({
-                    business_id,
-                    status_type,
-                    ...statusData
+        // Map from API format to database format
+        const dbData = {
+            business_id,
+            code: statusData.status_value,
+            name: statusData.status_name,
+            description: statusData.description || null,
+            color: extractColorHex(statusData.color_class),
+            is_active: true,
+            is_default: statusData.is_default || false,
+            is_final: statusData.is_final || false,
+            sort_order: statusData.display_order || 0,
+            can_transition_to: statusData.can_transition_to || null,
+            updated_at: new Date().toISOString(),
+        }
+
+        let result
+
+        if (id) {
+            // Update existing status
+            const { data, error } = await supabase
+                .from(tableName)
+                .update(dbData)
+                .eq('id', id)
+                .eq('business_id', business_id)
+                .select()
+                .single()
+
+            if (error) {
+                console.error('Error updating status:', error)
+                return NextResponse.json(
+                    { error: 'Failed to update status configuration' },
+                    { status: 500 }
+                )
+            }
+
+            result = data as DbStatus
+        } else {
+            // Create new status
+            const { data, error } = await supabase
+                .from(tableName)
+                .insert({
+                    ...dbData,
+                    created_at: new Date().toISOString(),
                 })
                 .select()
                 .single()
 
-            if (!dbError && dbStatus) {
-                return NextResponse.json({ data: dbStatus })
+            if (error) {
+                console.error('Error creating status:', error)
+                return NextResponse.json(
+                    { error: 'Failed to create status configuration' },
+                    { status: 500 }
+                )
             }
-        } catch {
-            console.log('Database table not available, using in-memory storage')
+
+            result = data as DbStatus
         }
 
-        // Use in-memory storage
-        const memoryKey = `${business_id}-${status_type}`
-        const statuses = memoryStorage.get(memoryKey) || []
-
-        const newStatus = {
-            id: statusData.id || `custom-${Date.now()}`,
-            business_id,
-            status_type,
-            ...statusData,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-        }
-
-        // Update or add
-        const existingIndex = statuses.findIndex((s) => s.id === newStatus.id)
-        if (existingIndex >= 0) {
-            statuses[existingIndex] = { ...statuses[existingIndex], ...newStatus }
-        } else {
-            statuses.push(newStatus)
-        }
-
-        // Sort by display_order
-        statuses.sort((a, b) => a.display_order - b.display_order)
-
-        // Store back in memory
-        memoryStorage.set(memoryKey, statuses)
-
-        return NextResponse.json({ data: newStatus })
+        return NextResponse.json({
+            data: mapDbToApi(result, status_type as StatusType),
+            message: id ? 'Status updated successfully' : 'Status created successfully',
+        })
     } catch (error: unknown) {
-        console.error('Error creating/updating status config:', error)
+        console.error('Status configs POST error:', error)
         return NextResponse.json({
             error: 'Failed to save status configuration',
             details: error instanceof Error ? error.message : 'Unknown error'
@@ -231,55 +259,144 @@ export async function POST(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
     try {
         const supabase = await createClient()
-        const { data: { session } } = await supabase.auth.getSession()
+        const searchParams = request.nextUrl.searchParams
+        const id = searchParams.get('id')
+        const businessId = searchParams.get('business_id')
+        const statusType = searchParams.get('status_type') as StatusType
 
-        if (!session) {
+        if (!id || !businessId || !statusType) {
+            return NextResponse.json(
+                { error: 'Missing required parameters: id, business_id, and status_type' },
+                { status: 400 }
+            )
+        }
+
+        if (!STATUS_TABLES[statusType]) {
+            return NextResponse.json(
+                { error: 'Invalid status_type. Must be: order, booking, or payment' },
+                { status: 400 }
+            )
+        }
+
+        // Get user session
+        const {
+            data: { user },
+            error: userError,
+        } = await supabase.auth.getUser()
+
+        if (userError || !user) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }
 
-        const searchParams = request.nextUrl.searchParams
-        const statusId = searchParams.get('id')
-        const businessId = searchParams.get('business_id')
-        const statusType = searchParams.get('status_type')
+        // Verify business access
+        const { data: businessUser } = await supabase
+            .from('business_users')
+            .select('id, role, is_active')
+            .eq('user_id', user.id)
+            .eq('business_id', businessId)
+            .eq('is_active', true)
+            .single()
 
-        if (!statusId || !businessId || !statusType) {
-            return NextResponse.json({ error: 'Missing required parameters' }, { status: 400 })
+        if (!businessUser) {
+            return NextResponse.json(
+                { error: 'You do not have access to this business' },
+                { status: 403 }
+            )
         }
 
-        // Since user_businesses table doesn't exist yet, we'll skip the role check
-        // In production, you'd want to verify the user has admin/owner access
-        console.log('Skipping role check for delete - table not available')
+        const tableName = STATUS_TABLES[statusType]
 
-        // Try to delete from database first (when table exists)
-        try {
-            const { error: dbError } = await supabase
-                .from('status_configs')
-                .delete()
-                .eq('id', statusId)
-                .eq('business_id', businessId)
+        // Prevent deleting default statuses
+        const { data: status } = await supabase
+            .from(tableName)
+            .select('is_default')
+            .eq('id', id)
+            .eq('business_id', businessId)
+            .single()
 
-            if (!dbError) {
-                return NextResponse.json({ success: true })
-            }
-        } catch {
-            console.log('Database table not available, using in-memory storage')
+        if (status?.is_default) {
+            return NextResponse.json(
+                { error: 'Cannot delete default status' },
+                { status: 400 }
+            )
         }
 
-        // Delete from in-memory storage
-        const memoryKey = `${businessId}-${statusType}`
-        let statuses = memoryStorage.get(memoryKey) || []
+        // Delete the status
+        const { error: deleteError } = await supabase
+            .from(tableName)
+            .delete()
+            .eq('id', id)
+            .eq('business_id', businessId)
 
-        statuses = statuses.filter((s) => s.id !== statusId)
+        if (deleteError) {
+            console.error('Error deleting status:', deleteError)
+            return NextResponse.json(
+                { error: 'Failed to delete status configuration' },
+                { status: 500 }
+            )
+        }
 
-        // Store back in memory
-        memoryStorage.set(memoryKey, statuses)
-
-        return NextResponse.json({ success: true })
+        return NextResponse.json({
+            success: true,
+            message: 'Status deleted successfully',
+        })
     } catch (error: unknown) {
-        console.error('Error deleting status config:', error)
+        console.error('Status configs DELETE error:', error)
         return NextResponse.json({
             error: 'Failed to delete status configuration',
             details: error instanceof Error ? error.message : 'Unknown error'
         }, { status: 500 })
     }
+}
+
+// Helper function to map database format to API format
+function mapDbToApi(dbStatus: DbStatus, statusType: StatusType): StatusConfig {
+    return {
+        id: dbStatus.id,
+        business_id: dbStatus.business_id || '',
+        status_type: statusType,
+        status_name: dbStatus.name,
+        status_value: dbStatus.code,
+        display_order: dbStatus.sort_order,
+        color_class: colorToClass(dbStatus.color),
+        icon_name: 'circle', // Default icon
+        is_default: dbStatus.is_default,
+        is_final: dbStatus.is_final,
+        can_transition_to: dbStatus.can_transition_to || [],
+        description: dbStatus.description || '',
+        created_at: dbStatus.created_at,
+        updated_at: dbStatus.updated_at,
+    }
+}
+
+// Helper to convert hex color to Tailwind class
+function colorToClass(hexColor: string): string {
+    const colorMap: Record<string, string> = {
+        '#3B82F6': 'bg-blue-100 text-blue-800',
+        '#10B981': 'bg-green-100 text-green-800',
+        '#059669': 'bg-emerald-100 text-emerald-800',
+        '#F59E0B': 'bg-yellow-100 text-yellow-800',
+        '#EF4444': 'bg-red-100 text-red-800',
+        '#6B7280': 'bg-gray-100 text-gray-800',
+        '#8B5CF6': 'bg-purple-100 text-purple-800',
+        '#6366F1': 'bg-indigo-100 text-indigo-800',
+        '#F97316': 'bg-orange-100 text-orange-800',
+    }
+    return colorMap[hexColor] || 'bg-gray-100 text-gray-800'
+}
+
+// Helper to extract hex color from Tailwind class
+function extractColorHex(colorClass: string): string {
+    const classToHex: Record<string, string> = {
+        'bg-blue-100 text-blue-800': '#3B82F6',
+        'bg-green-100 text-green-800': '#10B981',
+        'bg-emerald-100 text-emerald-800': '#059669',
+        'bg-yellow-100 text-yellow-800': '#F59E0B',
+        'bg-orange-100 text-orange-800': '#F97316',
+        'bg-red-100 text-red-800': '#EF4444',
+        'bg-gray-100 text-gray-800': '#6B7280',
+        'bg-purple-100 text-purple-800': '#8B5CF6',
+        'bg-indigo-100 text-indigo-800': '#6366F1',
+    }
+    return classToHex[colorClass] || '#6B7280'
 }

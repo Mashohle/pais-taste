@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { useBusinessAdminAuth } from '@/lib/context/business-admin-context'
 
 interface FoodStats {
   newOrders: number
@@ -33,10 +34,13 @@ interface UseDashboardStatsReturn {
 // Global map to track which business IDs have been fetched (persists across remounts)
 const fetchedBusinessIds = new Map<string, boolean>()
 
-export function useDashboardStats(businessId: string | undefined): UseDashboardStatsReturn {
+export function useDashboardStats(): UseDashboardStatsReturn {
+  const { currentBusiness, loading: businessLoading } = useBusinessAdminAuth()
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+
+  const businessId = currentBusiness?.business?.id
 
   const fetchStats = useCallback(async () => {
     if (!businessId) {
@@ -76,6 +80,20 @@ export function useDashboardStats(businessId: string | undefined): UseDashboardS
   }, [businessId])
 
   useEffect(() => {
+    // Keep loading while business context is still loading
+    if (businessLoading) {
+      setLoading(true)
+      return
+    }
+
+    // If business loading is done but no business, stop loading
+    if (!businessId) {
+      setStats(null)
+      setLoading(false)
+      return
+    }
+
+    // Business is ready, fetch data
     fetchStats()
 
     // Cleanup: Clear the fetched flag when component unmounts so it can fetch again on next mount
@@ -84,7 +102,7 @@ export function useDashboardStats(businessId: string | undefined): UseDashboardS
         fetchedBusinessIds.delete(businessId)
       }
     }
-  }, [fetchStats, businessId])
+  }, [fetchStats, businessId, businessLoading])
 
   return {
     stats,
