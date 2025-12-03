@@ -5,7 +5,6 @@ import { createClient } from '@/lib/supabase/server'
 interface BusinessData {
   id: string
   name: string
-  slug: string
   description: string | null
   email: string | null
   phone: string | null
@@ -28,7 +27,7 @@ interface BusinessData {
     name: string
     icon: string | null
     color: string | null
-  }[]
+  } | null
 }
 
 /**
@@ -86,7 +85,6 @@ export async function GET() {
           businesses!inner (
             id,
             name,
-            slug,
             description,
             email,
             phone,
@@ -115,34 +113,40 @@ export async function GET() {
         .eq('user_id', user.id)
         .eq('is_active', true)
 
+      console.log('📊 API: Business query result:', {
+        error: businessError,
+        dataLength: businessUsers?.length,
+        rawData: JSON.stringify(businessUsers).substring(0, 500)
+      })
+
       if (businessError) {
         console.error('❌ API: Error fetching businesses:', businessError)
         // Don't fail the entire request - just return empty businesses
         businesses = []
       } else {
         // Transform the data to match the expected format
-        // Supabase returns businesses as an array even with !inner join
+        // Supabase returns businesses as a single object with !inner join
         businesses = (businessUsers || []).map((bu: {
           id: string
           role: string
           is_active: boolean
           permissions: Record<string, unknown> | null
-          businesses: BusinessData[]
+          businesses: BusinessData
         }) => {
-          const business = bu.businesses[0] // Take first element from array
-          const category = business?.business_categories?.[0] // Take first category from array
+          const business = bu.businesses // It's an object, not an array
+          const category = business?.business_categories // It's a single object, not an array
 
           return {
             id: bu.id,
             name: business?.name || '',
-            slug: business?.slug || '',
+            slug: business?.name?.toLowerCase().replace(/[^a-z0-9]+/g, '-') || '', // Generate slug from name
             role: bu.role,
             is_active: bu.is_active,
             permissions: bu.permissions,
             business: {
               id: business?.id || '',
               name: business?.name || '',
-              slug: business?.slug || '',
+              slug: business?.name?.toLowerCase().replace(/[^a-z0-9]+/g, '-') || '', // Generate slug from name
               description: business?.description || null,
               email: business?.email || null,
               phone: business?.phone || null,

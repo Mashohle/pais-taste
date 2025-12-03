@@ -64,6 +64,14 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
 
     // Get category-specific navigation based on current business
     const getCategoryNavigation = () => {
+        console.log('🔧 NAVIGATION: Getting category navigation', {
+            hasCurrentBusiness: !!currentBusiness,
+            hasBusiness: !!currentBusiness?.business,
+            hasCategories: !!currentBusiness?.business?.business_categories,
+            categoryId: currentBusiness?.business?.business_categories?.id,
+            fullCategory: currentBusiness?.business?.business_categories
+        })
+
         if (!currentBusiness?.business?.business_categories) return [
             {
                 href: '/admin',
