@@ -1,6 +1,14 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 
+// Type for business category from Supabase
+interface BusinessCategory {
+  id: string
+  name: string
+  icon: string | null
+  color: string | null
+}
+
 // Type for business data from Supabase
 interface BusinessData {
   id: string
@@ -22,12 +30,16 @@ interface BusinessData {
   accent_color: string | null
   is_active: boolean
   settings: Record<string, unknown> | null
-  business_categories: {
-    id: string
-    name: string
-    icon: string | null
-    color: string | null
-  } | null
+  business_categories: BusinessCategory | null
+}
+
+// Type for the business_users join result from Supabase
+interface BusinessUserWithBusiness {
+  id: string
+  role: string
+  is_active: boolean
+  permissions: Record<string, unknown> | null
+  businesses: BusinessData
 }
 
 /**
@@ -126,13 +138,8 @@ export async function GET() {
       } else {
         // Transform the data to match the expected format
         // Supabase returns businesses as a single object with !inner join
-        businesses = (businessUsers || []).map((bu: {
-          id: string
-          role: string
-          is_active: boolean
-          permissions: Record<string, unknown> | null
-          businesses: BusinessData
-        }) => {
+        // Type assertion is needed because Supabase's inferred types don't match the actual runtime behavior
+        businesses = ((businessUsers || []) as unknown as BusinessUserWithBusiness[]).map((bu) => {
           const business = bu.businesses // It's an object, not an array
           const category = business?.business_categories // It's a single object, not an array
 

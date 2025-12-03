@@ -128,20 +128,53 @@ export default function SettingsPage() {
     const handleSaveSettings = async (section: string) => {
         setSaving(true)
         try {
-            // Simulate API call
-            await new Promise(resolve => setTimeout(resolve, 1000))
-            
-            // In real implementation, save to Supabase
-            console.log(`Saving ${section} settings:`, {
-                businessSettings,
-                notificationSettings,
-                systemSettings
-            })
-            
-            alert('Settings saved successfully!')
+            if (section === 'general') {
+                // Save general business information
+                const response = await fetch('/api/admin/business', {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        businessId: currentBusiness?.business?.id,
+                        updates: {
+                            name: businessSettings.name,
+                            description: businessSettings.description,
+                            email: businessSettings.email,
+                            phone: businessSettings.phone,
+                            website: businessSettings.website,
+                            address_line1: businessSettings.address_line1,
+                            address_line2: businessSettings.address_line2,
+                            city: businessSettings.city,
+                            state: businessSettings.state,
+                            postal_code: businessSettings.postal_code,
+                            country: businessSettings.country,
+                            timezone: businessSettings.timezone,
+                            currency: businessSettings.currency,
+                        }
+                    })
+                })
+
+                if (!response.ok) {
+                    const errorData = await response.json()
+                    throw new Error(errorData.error || 'Failed to save settings')
+                }
+
+                const data = await response.json()
+                console.log('✅ Settings saved:', data)
+                alert('Settings saved successfully!')
+            } else {
+                // For other sections, use placeholder for now
+                console.log(`Saving ${section} settings:`, {
+                    businessSettings,
+                    notificationSettings,
+                    systemSettings
+                })
+                alert(`${section} settings will be implemented in the next phase`)
+            }
         } catch (error) {
             console.error('Error saving settings:', error)
-            alert('Failed to save settings. Please try again.')
+            alert(error instanceof Error ? error.message : 'Failed to save settings. Please try again.')
         } finally {
             setSaving(false)
         }
@@ -265,17 +298,87 @@ export default function SettingsPage() {
                                     />
                                 </div>
 
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="address_line1">Address Line 1</Label>
+                                        <Input
+                                            id="address_line1"
+                                            value={businessSettings.address_line1}
+                                            onChange={(e) => setBusinessSettings(prev => ({
+                                                ...prev,
+                                                address_line1: e.target.value
+                                            }))}
+                                            placeholder="Street address"
+                                            disabled={!isAdmin}
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="address_line2">Address Line 2</Label>
+                                        <Input
+                                            id="address_line2"
+                                            value={businessSettings.address_line2}
+                                            onChange={(e) => setBusinessSettings(prev => ({
+                                                ...prev,
+                                                address_line2: e.target.value
+                                            }))}
+                                            placeholder="Suite, unit, etc. (optional)"
+                                            disabled={!isAdmin}
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="city">City</Label>
+                                        <Input
+                                            id="city"
+                                            value={businessSettings.city}
+                                            onChange={(e) => setBusinessSettings(prev => ({
+                                                ...prev,
+                                                city: e.target.value
+                                            }))}
+                                            placeholder="City"
+                                            disabled={!isAdmin}
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="state">State/Province</Label>
+                                        <Input
+                                            id="state"
+                                            value={businessSettings.state}
+                                            onChange={(e) => setBusinessSettings(prev => ({
+                                                ...prev,
+                                                state: e.target.value
+                                            }))}
+                                            placeholder="State or province"
+                                            disabled={!isAdmin}
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="postal_code">Postal Code</Label>
+                                        <Input
+                                            id="postal_code"
+                                            value={businessSettings.postal_code}
+                                            onChange={(e) => setBusinessSettings(prev => ({
+                                                ...prev,
+                                                postal_code: e.target.value
+                                            }))}
+                                            placeholder="Postal code"
+                                            disabled={!isAdmin}
+                                        />
+                                    </div>
+                                </div>
+
                                 <div className="space-y-2">
-                                    <Label htmlFor="address">Address</Label>
-                                    <Textarea
-                                        id="address"
-                                        value={businessSettings.address}
+                                    <Label htmlFor="country">Country</Label>
+                                    <Input
+                                        id="country"
+                                        value={businessSettings.country}
                                         onChange={(e) => setBusinessSettings(prev => ({
                                             ...prev,
-                                            address: e.target.value
+                                            country: e.target.value
                                         }))}
-                                        placeholder="Full business address..."
-                                        rows={2}
+                                        placeholder="Country"
                                         disabled={!isAdmin}
                                     />
                                 </div>
