@@ -1,5 +1,6 @@
 import { supabase } from './supabase'
 import { CartItem } from './contexts/cart-context'
+import { getOrderUserId } from './constants/users'
 
 interface OrderData {
   customer_name: string
@@ -68,7 +69,7 @@ export async function createOrder(orderData: OrderData) {
     const { data: order, error: orderError } = await supabase
       .from('orders')
       .insert([{
-        user_id: orderData.user_id || null,
+        user_id: getOrderUserId(orderData.user_id),
         business_id: orderData.business_id,
         customer_name: orderData.customer_name,
         customer_phone: orderData.customer_phone,

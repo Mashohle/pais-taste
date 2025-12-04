@@ -16,10 +16,10 @@ export function useOrders(options?: UseOrdersOptions) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  // Conditionally call hooks based on context
-  // This is safe because options.forAdmin doesn't change during component lifecycle
-  const adminAuth = options?.forAdmin ? useBusinessAdminAuth() : { currentBusiness: undefined, loading: false }
-  const customerAuth = !options?.forAdmin ? useCustomerAuth() : { user: null }
+  // Always call hooks unconditionally (React rules requirement)
+  // Then select which context to use based on options.forAdmin
+  const adminAuth = useBusinessAdminAuth()
+  const customerAuth = useCustomerAuth()
 
   // Get businessId from context for admin view, or use provided userId for customer view
   const businessId = options?.forAdmin ? adminAuth.currentBusiness?.business?.id : undefined

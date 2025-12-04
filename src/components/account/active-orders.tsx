@@ -1,16 +1,14 @@
 "use client"
 
-import { useState, useMemo } from 'react'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
 import { ShoppingBag, Loader2, Search, Filter, Package, AlertCircle } from "lucide-react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
 import { DynamicIcon } from '@/lib/utils/icon-mapper'
 import UniversalOrderCard from './universal-order-card'
-import { useActiveOrders } from '@/lib/hooks'
+import { ActiveOrderItem, ActiveOrderStats } from '@/lib/hooks/use-active-orders'
 
 const businessTypes = [
   { id: 'all', name: 'All Types', icon: 'grid-3x3', color: 'bg-gray-100 text-gray-700' },
@@ -30,91 +28,51 @@ const statusOptions = [
   { value: 'collected', label: 'Collected' }
 ]
 
-export default function ActiveOrdersTab() {
-  const router = useRouter()
-  const [searchTerm, setSearchTerm] = useState('')
-  const [selectedBusinessType, setSelectedBusinessType] = useState('all')
-  const [selectedStatus, setSelectedStatus] = useState('all')
-  const [selectedBusiness, setSelectedBusiness] = useState('all')
+interface ActiveOrdersTabProps {
+  orders: ActiveOrderItem[]
+  ordersByType: Record<string, ActiveOrderItem[]>
+  stats: ActiveOrderStats | null
+  loading: boolean
+  error: string | null
+  hasMore: boolean
+  searchTerm: string
+  selectedBusinessType: string
+  selectedStatus: string
+  selectedBusiness: string
+  uniqueBusinesses: Array<{ id: string; name: string }>
+  activeFilterCount: number
+  onSearchChange: (value: string) => void
+  onBusinessTypeChange: (value: string) => void
+  onStatusChange: (value: string) => void
+  onBusinessChange: (value: string) => void
+  onClearFilters: () => void
+  onTrackOrder: (orderId: string, businessCategory: string) => void
+  onContactBusiness: (phone: string) => void
+  onFetchMore: () => Promise<void>
+}
 
-  // Memoize filters to prevent infinite loop
-  const filters = useMemo(() => ({
-    status: selectedStatus !== 'all' ? selectedStatus : undefined,
-    businessId: selectedBusiness !== 'all' ? selectedBusiness : undefined,
-    categoryId: selectedBusinessType !== 'all' ? selectedBusinessType : undefined
-  }), [selectedStatus, selectedBusiness, selectedBusinessType])
-
-  // Fetch real active orders from API (automatically refetches when filters change)
-  const { orders: apiOrders, stats, loading, error, hasMore, fetchMore } = useActiveOrders(filters)
-
-  // Filter orders based on search term (client-side)
-  const filteredOrders = useMemo(() => {
-    if (!searchTerm) return apiOrders
-
-    return apiOrders.filter(order => {
-      // Filter by search term
-      const matchesSearch =
-        order.business_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        order.order_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        order.reference?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        order.items.some(item =>
-          item.name.toLowerCase().includes(searchTerm.toLowerCase())
-        )
-
-      return matchesSearch
-    })
-  }, [apiOrders, searchTerm])
-
-  // Get unique businesses for filter dropdown from API data
-  const uniqueBusinesses = useMemo(() => {
-    const businesses = Array.from(new Set(apiOrders.map(order =>
-      JSON.stringify({ id: order.business_id, name: order.business_name })
-    ))).map(str => JSON.parse(str))
-    return businesses
-  }, [apiOrders])
-
-  // Group orders by business type for display
-  const ordersByType = useMemo(() => {
-    const grouped = filteredOrders.reduce((acc, order) => {
-      const type = order.business_category
-      if (!acc[type]) {
-        acc[type] = []
-      }
-      acc[type].push(order)
-      return acc
-    }, {} as Record<string, typeof filteredOrders>)
-    return grouped
-  }, [filteredOrders])
-
-  const handleTrackOrder = (orderId: string, businessCategory: string) => {
-    // Different tracking routes based on business type
-    if (businessCategory === 'food') {
-      router.push(`/order/${orderId}/track`)
-    } else if (['car_wash', 'salon', 'service'].includes(businessCategory)) {
-      router.push(`/booking/${orderId}/track`)
-    } else {
-      router.push(`/order/${orderId}/track`)
-    }
-  }
-
-  const handleContactBusiness = (phone: string) => {
-    window.open(`tel:${phone}`)
-  }
-
-  const clearFilters = () => {
-    setSearchTerm('')
-    setSelectedBusinessType('all')
-    setSelectedStatus('all')
-    setSelectedBusiness('all')
-  }
-
-  const activeFilterCount = [
-    searchTerm !== '',
-    selectedBusinessType !== 'all',
-    selectedStatus !== 'all', 
-    selectedBusiness !== 'all'
-  ].filter(Boolean).length
-
+export default function ActiveOrdersTab({
+  orders,
+  ordersByType,
+  stats,
+  loading,
+  error,
+  hasMore,
+  searchTerm,
+  selectedBusinessType,
+  selectedStatus,
+  selectedBusiness,
+  uniqueBusinesses,
+  activeFilterCount,
+  onSearchChange,
+  onBusinessTypeChange,
+  onStatusChange,
+  onBusinessChange,
+  onClearFilters,
+  onTrackOrder,
+  onContactBusiness,
+  onFetchMore
+}: ActiveOrdersTabProps) {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -160,84 +118,87 @@ export default function ActiveOrdersTab() {
       <div className="space-y-6">
           {/* Filters */}
           <Card className="p-4">
-            <div className="flex flex-col lg:flex-row gap-4">
-              {/* Search */}
-              <div className="flex-1">
+            <div className="flex flex-col gap-4">
+              {/* Row 1: Search Bar */}
+              <div className="w-full">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                   <Input
                     placeholder="Search orders, businesses, items..."
                     value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
+                    onChange={(e) => onSearchChange(e.target.value)}
                     className="pl-10"
                   />
                 </div>
               </div>
 
-              {/* Business Type Filter */}
-              <Select value={selectedBusinessType} onValueChange={setSelectedBusinessType}>
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="All Types" />
-                </SelectTrigger>
-                <SelectContent>
-                  {businessTypes.map(type => (
-                    <SelectItem key={type.id} value={type.id}>
-                      <div className="flex items-center gap-2">
-                        <DynamicIcon name={type.icon} className="w-4 h-4" />
-                        {type.name}
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              {/* Row 2: Filter Dropdowns */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* Business Type Filter */}
+                <Select value={selectedBusinessType} onValueChange={onBusinessTypeChange}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="All Types" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {businessTypes.map(type => (
+                      <SelectItem key={type.id} value={type.id}>
+                        <div className="flex items-center gap-2">
+                          <DynamicIcon name={type.icon} className="w-4 h-4" />
+                          {type.name}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
 
-              {/* Business Filter */}
-              <Select value={selectedBusiness} onValueChange={setSelectedBusiness}>
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="All Businesses" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Businesses</SelectItem>
-                  {uniqueBusinesses.map(business => (
-                    <SelectItem key={business.id} value={business.id}>
-                      {business.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                {/* Business Filter */}
+                <Select value={selectedBusiness} onValueChange={onBusinessChange}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="All Businesses" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Businesses</SelectItem>
+                    {uniqueBusinesses.map(business => (
+                      <SelectItem key={business.id} value={business.id}>
+                        {business.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
 
-              {/* Status Filter */}
-              <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-                <SelectTrigger className="w-[140px]">
-                  <SelectValue placeholder="All Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  {statusOptions.map(status => (
-                    <SelectItem key={status.value} value={status.value}>
-                      {status.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                {/* Status Filter */}
+                <Select value={selectedStatus} onValueChange={onStatusChange}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="All Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {statusOptions.map(status => (
+                      <SelectItem key={status.value} value={status.value}>
+                        {status.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-              {/* Clear Filters */}
+              {/* Clear Filters Button */}
               {activeFilterCount > 0 && (
-                <Button variant="outline" onClick={clearFilters} className="flex items-center gap-2">
+                <Button variant="outline" onClick={onClearFilters} className="flex items-center gap-2 w-full md:w-auto">
                   <Filter className="w-4 h-4" />
-                  Clear ({activeFilterCount})
+                  Clear Filters ({activeFilterCount})
                 </Button>
               )}
             </div>
           </Card>
 
           {/* Results */}
-          {filteredOrders.length > 0 ? (
+          {orders.length > 0 ? (
             <div className="space-y-6">
               {/* Group by business type if no specific type is selected */}
               {selectedBusinessType === 'all' ? (
-                Object.entries(ordersByType).map(([type, orders]) => {
+                Object.entries(ordersByType).map(([type, typeOrders]) => {
                   const businessType = businessTypes.find(bt => bt.id === type)
-                  if (!businessType || orders.length === 0) return null
+                  if (!businessType || typeOrders.length === 0) return null
 
                   return (
                     <div key={type}>
@@ -246,16 +207,16 @@ export default function ActiveOrdersTab() {
                           <DynamicIcon name={businessType.icon} className="w-4 h-4" />
                         </div>
                         <h3 className="text-lg font-semibold text-stone-800">
-                          {businessType.name} ({orders.length})
+                          {businessType.name} ({typeOrders.length})
                         </h3>
                       </div>
                       <div className="space-y-4 ml-10">
-                        {orders.map((order) => (
+                        {typeOrders.map((order) => (
                           <UniversalOrderCard
                             key={order.id}
                             order={order}
-                            onTrack={handleTrackOrder}
-                            onContact={handleContactBusiness}
+                            onTrack={onTrackOrder}
+                            onContact={onContactBusiness}
                           />
                         ))}
                       </div>
@@ -265,12 +226,12 @@ export default function ActiveOrdersTab() {
               ) : (
                 /* Show all orders in selected type */
                 <div className="space-y-4">
-                  {filteredOrders.map((order) => (
+                  {orders.map((order) => (
                     <UniversalOrderCard
                       key={order.id}
                       order={order}
-                      onTrack={handleTrackOrder}
-                      onContact={handleContactBusiness}
+                      onTrack={onTrackOrder}
+                      onContact={onContactBusiness}
                     />
                   ))}
                 </div>
@@ -291,7 +252,7 @@ export default function ActiveOrdersTab() {
                   }
                 </p>
                 {activeFilterCount > 0 ? (
-                  <Button variant="outline" onClick={clearFilters}>
+                  <Button variant="outline" onClick={onClearFilters}>
                     Clear Filters
                   </Button>
                 ) : (
@@ -309,7 +270,7 @@ export default function ActiveOrdersTab() {
           {hasMore && !loading && (
             <div className="flex justify-center mt-6">
               <Button
-                onClick={fetchMore}
+                onClick={onFetchMore}
                 variant="outline"
                 className="flex items-center gap-2"
               >

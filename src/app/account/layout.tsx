@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { useCustomerAuth } from '@/lib/context/customer-auth-context'
 import { useRouter, usePathname } from 'next/navigation'
-import { LogOut, User, Package, History, Settings, AlertCircle, UtensilsCrossed, MessageSquare, Menu, X } from 'lucide-react'
+import { LogOut, User, Package, History, AlertCircle, UtensilsCrossed, MessageSquare, Menu, X } from 'lucide-react'
 import Link from 'next/link'
 import { useState } from 'react'
 
