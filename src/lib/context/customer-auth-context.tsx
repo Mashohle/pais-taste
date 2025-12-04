@@ -9,7 +9,7 @@ export interface UserProfile {
   email: string
   full_name: string | null
   phone: string | null
-  role_id: string
+  role: string
   preferred_pickup_location: string | null
   avatar_url: string | null
   date_of_birth: string | null
@@ -155,8 +155,8 @@ export function CustomerAuthProvider({ children }: CustomerAuthProviderProps) {
 
   // Computed values
   const isAuthenticated = !!data?.user && !!data?.session
-  const isSuperAdmin = data?.profile?.role_id === 'super-admin'
-  const isBusinessUser = data?.profile?.role_id === 'business-owner' || data?.profile?.role_id === 'business-admin'
+  const isSuperAdmin = data?.profile?.role === 'super_admin'
+  const isBusinessUser = data?.profile?.role === 'business_owner' || data?.profile?.role === 'business_admin'
 
   const value: CustomerAuthContextType = {
     // State

@@ -39,13 +39,12 @@ interface SettingsTabProps {
   isSigningOut: boolean
 }
 
-export default function SettingsTab({ 
-  profile, 
-  activeOrders, 
-  orderHistory, 
-  onSignOut, 
+export default function SettingsTab({
+  profile,
+  activeOrders,
+  onSignOut,
   onEditProfile,
-  isSigningOut 
+  isSigningOut
 }: SettingsTabProps) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
@@ -212,38 +211,6 @@ export default function SettingsTab({
                 </p>
               </div>
               <PushNotifications />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Account Statistics */}
-      <Card className="bg-gradient-to-r from-stone-100/95 via-stone-50/60 to-stone-25/20 backdrop-blur-md border-stone-200/50 shadow-lg">
-        <CardHeader>
-          <CardTitle className="text-stone-800">Account Statistics</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="text-center p-4 bg-white/60 rounded-lg">
-              <p className="text-2xl font-bold text-stone-800">
-                {(activeOrders?.length || 0) + (orderHistory?.length || 0)}
-              </p>
-              <p className="text-sm text-stone-600">Total Orders</p>
-            </div>
-            <div className="text-center p-4 bg-white/60 rounded-lg">
-              <p className="text-2xl font-bold text-stone-800">{activeOrders?.length || 0}</p>
-              <p className="text-sm text-stone-600">Active Orders</p>
-            </div>
-            <div className="text-center p-4 bg-white/60 rounded-lg">
-              <p className="text-2xl font-bold text-stone-800">
-                {new Intl.NumberFormat('en-ZA', {
-                  style: 'currency',
-                  currency: 'ZAR'
-                }).format(
-                  orderHistory?.reduce((sum: number, order: Order) => sum + order.total_amount, 0) || 0
-                )}
-              </p>
-              <p className="text-sm text-stone-600">Total Spent</p>
             </div>
           </div>
         </CardContent>

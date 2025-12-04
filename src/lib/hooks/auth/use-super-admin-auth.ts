@@ -41,11 +41,11 @@ export function useSuperAdminAuth() {
       }
 
       // Check if user has super admin role
-      const isSuperAdmin = profile.role_id === 'super-admin'
+      const isSuperAdmin = profile.role === 'super-admin'
 
       console.log('🔍 Super Admin: Role check:', {
         email: user.email,
-        role_id: profile.role_id,
+        role: profile.role,
         isSuperAdmin
       })
 

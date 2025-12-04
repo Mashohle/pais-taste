@@ -40,11 +40,9 @@ function AccountLayoutContent({ children }: { children: React.ReactNode }) {
 
     const navItems = [
         { href: '/', label: 'Discover', icon: UtensilsCrossed },
-        { href: '/account', label: 'Profile', icon: User },
         { href: '/account/orders', label: 'Orders & Bookings', icon: Package },
         { href: '/account/history', label: 'History', icon: History },
         { href: '/account/reviews', label: 'Reviews', icon: MessageSquare },
-        { href: '/account/settings', label: 'Settings', icon: Settings },
     ]
 
     const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -107,42 +105,62 @@ function AccountLayoutContent({ children }: { children: React.ReactNode }) {
                     ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
                 `}>
                     <div className="p-6">
-                        {/* User Info */}
-                        <div className="mb-6 p-4 bg-gradient-to-br from-stone-100 to-stone-200 rounded-xl">
-                            <div className="flex items-center space-x-3">
-                                <div className="p-3 rounded-xl bg-stone-700">
-                                    <User className="h-6 w-6 text-white" />
-                                </div>
-                                <div>
-                                    <h3 className="font-semibold text-stone-800">{getDisplayName()}</h3>
-                                    <p className="text-xs text-stone-600">{user?.email}</p>
+                        {/* User Info - Clickable Profile Link */}
+                        <Link href="/account">
+                            <div className={`
+                                mb-6 p-4 rounded-xl cursor-pointer transition-all duration-200
+                                ${pathname === '/account'
+                                    ? 'bg-stone-50 border-l-4 border-stone-500'
+                                    : 'bg-gradient-to-br from-stone-100 to-stone-200 hover:from-stone-150 hover:to-stone-250'
+                                }
+                            `}>
+                                <div className="flex items-center space-x-3">
+                                    <div className={`
+                                        p-3 rounded-xl transition-colors
+                                        ${pathname === '/account' ? 'bg-stone-600' : 'bg-stone-700'}
+                                    `}>
+                                        <User className="h-6 w-6 text-white" />
+                                    </div>
+                                    <div>
+                                        <h3 className={`
+                                            font-semibold transition-colors
+                                            ${pathname === '/account' ? 'text-stone-900' : 'text-stone-800'}
+                                        `}>
+                                            {getDisplayName()}
+                                        </h3>
+                                        <p className="text-xs text-stone-600">{user?.email}</p>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
+                        </Link>
 
                         {/* Navigation */}
                         <nav className="space-y-2">
-                            {navItems.map(({ href, label, icon: Icon }) => (
-                                <Link key={href} href={href}>
-                                    <div className={`
-                                        group flex items-start space-x-3 p-4 rounded-xl transition-all duration-200 hover:bg-stone-100 cursor-pointer
-                                        ${pathname === href ? 'bg-stone-50 border-l-4 border-stone-500' : ''}
-                                    `}>
-                                        <Icon className={`
-                                            w-5 h-5 mt-0.5 transition-colors
-                                            ${pathname === href ? 'text-stone-600' : 'text-stone-500 group-hover:text-stone-700'}
-                                        `} />
-                                        <div className="flex-1 min-w-0">
-                                            <p className={`
-                                                text-sm font-medium transition-colors
-                                                ${pathname === href ? 'text-stone-700' : 'text-stone-700 group-hover:text-stone-900'}
-                                            `}>
-                                                {label}
-                                            </p>
+                            {navItems.map(({ href, label, icon: Icon }) => {
+                                const isActive = pathname === href
+
+                                return (
+                                    <Link key={href} href={href}>
+                                        <div className={`
+                                            group flex items-start space-x-3 p-4 rounded-xl transition-all duration-200 hover:bg-stone-100 cursor-pointer
+                                            ${isActive ? 'bg-stone-50 border-l-4 border-stone-500' : ''}
+                                        `}>
+                                            <Icon className={`
+                                                w-5 h-5 mt-0.5 transition-colors
+                                                ${isActive ? 'text-stone-600' : 'text-stone-500 group-hover:text-stone-700'}
+                                            `} />
+                                            <div className="flex-1 min-w-0">
+                                                <p className={`
+                                                    text-sm font-medium transition-colors
+                                                    ${isActive ? 'text-stone-700' : 'text-stone-700 group-hover:text-stone-900'}
+                                                `}>
+                                                    {label}
+                                                </p>
+                                            </div>
                                         </div>
-                                    </div>
-                                </Link>
-                            ))}
+                                    </Link>
+                                )
+                            })}
                         </nav>
 
                         {/* Profile Status */}

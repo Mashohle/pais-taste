@@ -1,11 +1,36 @@
 "use client"
 
+import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { Loader2 } from "lucide-react"
 import { useCustomerAuth } from '@/lib/context/customer-auth-context'
+import { useOrders } from '@/lib/hooks'
 import ProfileTab from '@/components/account/profile'
+import SettingsTab from '@/components/account/settings'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 export default function AccountPage() {
-  const { profile, loading, user } = useCustomerAuth()
+  const [isLoading, setIsLoading] = useState(false)
+  const router = useRouter()
+  const { profile, loading, user, signOut } = useCustomerAuth()
+  const { activeOrders, orderHistory } = useOrders()
+
+  const handleSignOut = async () => {
+    setIsLoading(true)
+    try {
+      await signOut()
+      router.push('/login')
+    } catch (error) {
+      console.error('Error signing out:', error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleEditProfile = () => {
+    // Scroll to top or trigger edit mode
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
 
   if (loading) {
     return (
@@ -22,11 +47,33 @@ export default function AccountPage() {
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <ProfileTab
-        profile={profile}
-        user={user}
-        profileLoading={loading}
-      />
+      <Tabs defaultValue="profile" className="w-full">
+        <TabsList className="grid w-full grid-cols-2 mb-8">
+          <TabsTrigger value="profile">Profile</TabsTrigger>
+          <TabsTrigger value="settings">Settings</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="profile">
+          <ProfileTab
+            profile={profile}
+            user={user}
+            profileLoading={loading}
+            activeOrders={activeOrders || []}
+            orderHistory={orderHistory || []}
+          />
+        </TabsContent>
+
+        <TabsContent value="settings">
+          <SettingsTab
+            profile={profile}
+            activeOrders={activeOrders || []}
+            orderHistory={orderHistory || []}
+            onSignOut={handleSignOut}
+            onEditProfile={handleEditProfile}
+            isSigningOut={isLoading}
+          />
+        </TabsContent>
+      </Tabs>
     </div>
   )
 }

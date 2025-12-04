@@ -33,7 +33,7 @@ export function useSuperAdminLogin() {
 
   // Redirect if already logged in as super admin
   useEffect(() => {
-    if (user && profile && profile.role_id === 'super-admin') {
+    if (user && profile && profile.role === 'super_admin') {
       console.log('🚀 Super Admin Login: User already super admin, redirecting')
       router.push('/super-admin')
     }
@@ -104,7 +104,7 @@ export function useSuperAdminLogin() {
       console.log('✅ Super Admin Login: Sign in successful')
 
       // Check if user has super admin role and redirect with proper auth sync
-      if (data.profile?.role_id === 'super-admin') {
+      if (data.profile?.role === 'super_admin') {
         console.log('🔀 Super Admin Login: Redirecting to dashboard with auth sync')
 
         // Refresh profile to ensure auth context is in sync
