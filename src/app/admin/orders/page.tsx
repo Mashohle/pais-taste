@@ -31,7 +31,7 @@ export default function OrdersPage() {
     const router = useRouter()
     const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
     const [isModalOpen, setIsModalOpen] = useState(false)
-    const [currentPage, setCurrentPage] = useState<1 | 2>(1) // Pagination: 1 or 2
+    const [currentPage, setCurrentPage] = useState<1 | 2 | 3>(1) // Pagination: 1, 2, or 3
 
     // Only show this page for food businesses, redirect others
     useEffect(() => {
@@ -206,8 +206,12 @@ export default function OrdersPage() {
     }
 
     // Calculate stats from transformed orders
+    const activeOrdersCount = transformedOrders.filter((o) =>
+        !['completed', 'cancelled'].includes(o.status)
+    ).length
+
     const stats = {
-        total: transformedOrders.length,
+        active: activeOrdersCount,
         received: transformedOrders.filter((o) => o.status === "received").length,
         preparing: transformedOrders.filter((o) => o.status === "preparing").length,
         ready: transformedOrders.filter((o) => o.status === "ready").length,
@@ -311,10 +315,10 @@ export default function OrdersPage() {
 
                 {/* Statistics Cards */}
                 <div className="grid grid-cols-2 lg:grid-cols-7 gap-4 mb-6">
-                    <div className="bg-white rounded-lg p-4 shadow-sm border border-stone-200">
+                    <div className="bg-white rounded-lg p-4 shadow-sm border border-indigo-200">
                         <div className="text-center">
-                            <div className="text-2xl font-bold text-stone-800">{stats.total}</div>
-                            <div className="text-stone-600 text-sm">Total</div>
+                            <div className="text-2xl font-bold text-indigo-700">{stats.active}</div>
+                            <div className="text-indigo-600 text-sm">Active</div>
                         </div>
                     </div>
 
@@ -373,12 +377,19 @@ export default function OrdersPage() {
                                 size="sm"
                                 onClick={() => setCurrentPage(1)}
                             >
-                                Active Orders
+                                Kitchen
                             </Button>
                             <Button
                                 variant={currentPage === 2 ? "default" : "outline"}
                                 size="sm"
                                 onClick={() => setCurrentPage(2)}
+                            >
+                                Counter
+                            </Button>
+                            <Button
+                                variant={currentPage === 3 ? "default" : "outline"}
+                                size="sm"
+                                onClick={() => setCurrentPage(3)}
                             >
                                 History
                             </Button>
@@ -525,7 +536,7 @@ export default function OrdersPage() {
                         </div>
                     )}
 
-                    {/* Page 2: Collected, Completed, Unpaid */}
+                    {/* Page 2: Counter - Collected, Unpaid, Delivered */}
                     {currentPage === 2 && (
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         {/* Collected Orders Column */}
@@ -571,46 +582,20 @@ export default function OrdersPage() {
                             </div>
                         </div>
 
-                        {/* Completed Orders Column */}
-                        <div className="bg-white rounded-xl p-4 shadow-sm border border-stone-200">
+                        {/* Delivered Orders Column (Placeholder for future delivery feature) */}
+                        <div className="bg-white rounded-xl p-4 shadow-sm border border-teal-200">
                             <div className="flex items-center justify-between mb-4">
-                                <h3 className="font-bold text-stone-800 flex items-center">
+                                <h3 className="font-bold text-teal-800 flex items-center">
                                     <CheckCircle className="w-5 h-5 mr-2" />
-                                    Completed
+                                    Delivered
                                 </h3>
-                                <Badge className="bg-stone-200 text-stone-800">{getOrdersByStatus("completed").length}</Badge>
+                                <Badge className="bg-teal-200 text-teal-800">0</Badge>
                             </div>
                             <div className="space-y-3 h-[calc(100vh-300px)] overflow-y-auto">
-                                {getOrdersByStatus("completed").map((order) => (
-                                    <div
-                                        key={order.id}
-                                        onClick={() => openOrderDetails(order)}
-                                        className="bg-white/90 backdrop-blur-sm rounded-xl p-4 shadow-md border border-stone-200/50 cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-[1.02]"
-                                    >
-                                        <div className="flex justify-between items-start mb-2">
-                                            <span className="font-semibold text-stone-800">{order.id}</span>
-                                            <span className="text-xs text-stone-600">{order.timestamp}</span>
-                                        </div>
-                                        <p className="text-sm text-stone-700 mb-1">{order.customerName}</p>
-                                        <p className="text-xs text-stone-600 mb-2 flex items-center">
-                                            <MapPin className="w-3 h-3 mr-1" />
-                                            {order.location}
-                                        </p>
-                                        <div className="text-xs text-stone-600 mb-2">
-                                            {order.items.length} item{order.items.length > 1 ? "s" : ""}
-                                        </div>
-                                        <div className="flex justify-between items-center">
-                                            <span className="font-bold text-stone-800">R{order.total}</span>
-                                            <ChevronRight className="w-4 h-4 text-stone-400" />
-                                        </div>
-                                    </div>
-                                ))}
-                                {getOrdersByStatus("completed").length === 0 && (
-                                    <div className="col-span-full text-center py-8 text-stone-600">
-                                        <CheckCircle className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                                        <p className="text-sm">No completed orders</p>
-                                    </div>
-                                )}
+                                <div className="col-span-full text-center py-8 text-teal-600">
+                                    <CheckCircle className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                                    <p className="text-sm">Delivery feature coming soon</p>
+                                </div>
                             </div>
                         </div>
 
@@ -659,6 +644,71 @@ export default function OrdersPage() {
                                         <p className="text-sm">No unpaid orders</p>
                                     </div>
                                 )}
+                            </div>
+                        </div>
+                        </div>
+                    )}
+
+                    {/* Page 3: History - Completed, Cancelled */}
+                    {currentPage === 3 && (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {/* Completed Orders Column */}
+                        <div className="bg-white rounded-xl p-4 shadow-sm border border-stone-200">
+                            <div className="flex items-center justify-between mb-4">
+                                <h3 className="font-bold text-stone-800 flex items-center">
+                                    <CheckCircle className="w-5 h-5 mr-2" />
+                                    Completed
+                                </h3>
+                                <Badge className="bg-stone-200 text-stone-800">{getOrdersByStatus("completed").length}</Badge>
+                            </div>
+                            <div className="space-y-3 h-[calc(100vh-300px)] overflow-y-auto">
+                                {getOrdersByStatus("completed").map((order) => (
+                                    <div
+                                        key={order.id}
+                                        onClick={() => openOrderDetails(order)}
+                                        className="bg-white/90 backdrop-blur-sm rounded-xl p-4 shadow-md border border-stone-200/50 cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-[1.02]"
+                                    >
+                                        <div className="flex justify-between items-start mb-2">
+                                            <span className="font-semibold text-stone-800">{order.id}</span>
+                                            <span className="text-xs text-stone-600">{order.timestamp}</span>
+                                        </div>
+                                        <p className="text-sm text-stone-700 mb-1">{order.customerName}</p>
+                                        <p className="text-xs text-stone-600 mb-2 flex items-center">
+                                            <MapPin className="w-3 h-3 mr-1" />
+                                            {order.location}
+                                        </p>
+                                        <div className="text-xs text-stone-600 mb-2">
+                                            {order.items.length} item{order.items.length > 1 ? "s" : ""}
+                                        </div>
+                                        <div className="flex justify-between items-center">
+                                            <span className="font-bold text-stone-800">R{order.total}</span>
+                                            <ChevronRight className="w-4 h-4 text-stone-400" />
+                                        </div>
+                                    </div>
+                                ))}
+                                {getOrdersByStatus("completed").length === 0 && (
+                                    <div className="col-span-full text-center py-8 text-stone-600">
+                                        <CheckCircle className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                                        <p className="text-sm">No completed orders</p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Cancelled Orders Column (Placeholder for future cancellation feature) */}
+                        <div className="bg-white rounded-xl p-4 shadow-sm border border-stone-300">
+                            <div className="flex items-center justify-between mb-4">
+                                <h3 className="font-bold text-stone-700 flex items-center">
+                                    <X className="w-5 h-5 mr-2" />
+                                    Cancelled
+                                </h3>
+                                <Badge className="bg-stone-200 text-stone-700">0</Badge>
+                            </div>
+                            <div className="space-y-3 h-[calc(100vh-300px)] overflow-y-auto">
+                                <div className="col-span-full text-center py-8 text-stone-600">
+                                    <X className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                                    <p className="text-sm">No cancelled orders</p>
+                                </div>
                             </div>
                         </div>
                         </div>
