@@ -20,7 +20,7 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 import { supabase } from "@/lib/supabase"
-import { useAuth } from "@/lib/contexts/auth-context"
+import { useCustomerAuth } from "@/lib/context/customer-auth-context"
 import { useCart } from "@/lib/contexts/cart-context"
 
 interface OrderDetails {
@@ -93,7 +93,7 @@ const formatCurrency = (amount: number) => {
 
 export default function OrderDetailsPage() {
   const params = useParams()
-  const { user } = useAuth()
+  const { user } = useCustomerAuth()
   const { addItems } = useCart()
   
   const [order, setOrder] = useState<OrderDetails | null>(null)

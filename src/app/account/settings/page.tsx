@@ -2,14 +2,14 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { useAuth } from '@/lib/contexts/auth-context'
+import { useCustomerAuth } from '@/lib/context/customer-auth-context'
 import { useOrders } from '@/lib/hooks'
 import SettingsTab from '@/components/account/settings'
 
 export default function SettingsPage() {
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
-  const { profile, signOut } = useAuth()
+  const { profile, signOut } = useCustomerAuth()
   const { activeOrders, orderHistory } = useOrders()
 
   const handleSignOut = async () => {

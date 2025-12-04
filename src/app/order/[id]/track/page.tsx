@@ -9,7 +9,7 @@ import { CheckCircle, Clock, ChefHat, Package, MapPin, Phone, MessageCircle, Arr
 import { useState, useEffect, use, useCallback } from "react"
 import Link from "next/link"
 import { supabase } from "@/lib/supabase"
-import { useAuth } from "@/lib/contexts/auth-context"
+import { useCustomerAuth } from "@/lib/context/customer-auth-context"
 import { Order } from "@/types/order"
 
 const getOrderStages = (businessType: string = 'food') => {
@@ -93,7 +93,7 @@ interface BusinessData {
 }
 
 export default function OrderTrackingPage({ params }: OrderTrackingPageProps) {
-  const { user } = useAuth()
+  const { user } = useCustomerAuth()
   const resolvedParams = use(params)
   const [order, setOrder] = useState<Order | null>(null)
   const [loading, setLoading] = useState(true)

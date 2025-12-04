@@ -213,10 +213,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
   )
 }
 
-export function useAuth() {
+export function useCustomerAuth() {
   const context = useContext(AuthContext)
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider')
+    throw new Error('useCustomerAuth must be used within an AuthProvider')
   }
   return context
 }

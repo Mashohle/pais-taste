@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 import { Order, ReorderItem } from '@/types/order'
 import { useBusinessAdminAuth } from '@/lib/context/business-admin-context'
+import { useCustomerAuth } from '@/lib/context/customer-auth-context'
 
 interface UseOrdersOptions {
   userId?: string // For customer view - filter by user
@@ -9,16 +10,21 @@ interface UseOrdersOptions {
 }
 
 export function useOrders(options?: UseOrdersOptions) {
-  const { currentBusiness, loading: businessLoading } = useBusinessAdminAuth()
   const [orders, setOrders] = useState<Order[]>([])
   const [activeOrders, setActiveOrders] = useState<Order[]>([])
   const [orderHistory, setOrderHistory] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
+  // Conditionally call hooks based on context
+  // This is safe because options.forAdmin doesn't change during component lifecycle
+  const adminAuth = options?.forAdmin ? useBusinessAdminAuth() : { currentBusiness: undefined, loading: false }
+  const customerAuth = !options?.forAdmin ? useCustomerAuth() : { user: null }
+
   // Get businessId from context for admin view, or use provided userId for customer view
-  const businessId = options?.forAdmin ? currentBusiness?.business?.id : undefined
-  const userId = options?.userId
+  const businessId = options?.forAdmin ? adminAuth.currentBusiness?.business?.id : undefined
+  const businessLoading = options?.forAdmin ? adminAuth.loading : false
+  const userId = options?.userId || (!options?.forAdmin ? customerAuth.user?.id : undefined)
 
   const fetchOrders = useCallback(async () => {
     if (!businessId && !userId) return

@@ -1,13 +1,13 @@
 "use client"
 
 import { Loader2 } from "lucide-react"
-import { useAuth } from '@/lib/contexts/auth-context'
+import { useCustomerAuth } from '@/lib/context/customer-auth-context'
 import ProfileTab from '@/components/account/profile'
 
 export default function AccountPage() {
-  const { profile, profileLoading, user } = useAuth()
+  const { profile, loading, user } = useCustomerAuth()
 
-  if (profileLoading) {
+  if (loading) {
     return (
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex items-center justify-center py-12">
@@ -22,10 +22,10 @@ export default function AccountPage() {
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <ProfileTab 
+      <ProfileTab
         profile={profile}
         user={user}
-        profileLoading={profileLoading}
+        profileLoading={loading}
       />
     </div>
   )

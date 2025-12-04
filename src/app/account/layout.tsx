@@ -3,7 +3,7 @@
 import { ProtectedRoute } from '@/components/auth/protected-route'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { useAuth } from '@/lib/contexts/auth-context'
+import { useCustomerAuth } from '@/lib/context/customer-auth-context'
 import { useRouter, usePathname } from 'next/navigation'
 import { LogOut, User, Package, History, Settings, AlertCircle, UtensilsCrossed, MessageSquare, Menu, X } from 'lucide-react'
 import Link from 'next/link'
@@ -29,7 +29,7 @@ export default function AccountLayout({
 }
 
 function AccountLayoutContent({ children }: { children: React.ReactNode }) {
-    const { signOut, user, getDisplayName, isProfileComplete } = useAuth()
+    const { signOut, user, getDisplayName, isProfileComplete } = useCustomerAuth()
     const router = useRouter()
     const pathname = usePathname()
 

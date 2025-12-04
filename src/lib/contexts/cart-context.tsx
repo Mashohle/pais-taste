@@ -1,7 +1,7 @@
 'use client'
 
 import { createContext, useContext, useReducer, useEffect, ReactNode, useCallback, useRef } from 'react'
-import { useAuth } from './auth-context'
+import { useCustomerAuth } from '@/lib/context/customer-auth-context'
 import { cartSyncService, CartItem, CartBusiness, CartState } from '@/lib/services/cart-sync'
 
 // Action types
@@ -154,7 +154,7 @@ const CartContext = createContext<CartContextType | null>(null)
 
 // Provider
 export function CartProvider({ children }: { children: ReactNode }) {
-  const { user } = useAuth()
+  const { user } = useCustomerAuth()
   const [state, dispatch] = useReducer(cartReducer, {
     items: [],
     business: null,

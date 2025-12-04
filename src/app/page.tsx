@@ -10,14 +10,14 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Search, MapPin, Clock, Star, ChevronRight, ShoppingBag, Filter, Menu, User, Heart, Phone, Package } from "lucide-react"
 import Link from 'next/link'
 import { DynamicIcon } from '@/lib/utils/icon-mapper'
-import { useAuth } from '@/lib/contexts/auth-context'
+import { useCustomerAuth } from '@/lib/context/customer-auth-context'
 import { useCustomerPortal } from '@/lib/hooks'
 
 export default function CustomerPortalHome() {
   const router = useRouter()
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCategory] = useState<string | null>(null)
-  const { user } = useAuth()
+  const { user } = useCustomerAuth()
 
   // Use customer portal hook for real data
   const {

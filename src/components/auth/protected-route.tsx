@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { useAuth } from '@/lib/contexts/auth-context'
+import { useCustomerAuth } from '@/lib/context/customer-auth-context'
 
 interface ProtectedRouteProps {
   children: React.ReactNode
@@ -15,7 +15,7 @@ export function ProtectedRoute({
   fallback,
   redirectTo = '/admin/login' // Default to admin login for backward compatibility
 }: ProtectedRouteProps) {
-  const { user, loading } = useAuth()
+  const { user, loading } = useCustomerAuth()
   const router = useRouter()
 
   useEffect(() => {

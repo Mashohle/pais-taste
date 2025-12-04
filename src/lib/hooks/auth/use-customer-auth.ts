@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { useAuth } from '@/lib/contexts/auth-context'
+import { useCustomerAuth } from '@/lib/context/customer-auth-context'
 
 interface CustomerAuthFormData {
   name: string
@@ -21,9 +21,9 @@ interface CustomerAuthState {
   success: string
 }
 
-export function useCustomerAuth() {
+export function useCustomerAuthForm() {
   const router = useRouter()
-  const { user } = useAuth()
+  const { user } = useCustomerAuth()
 
   const [state, setState] = useState<CustomerAuthState>({
     formData: {

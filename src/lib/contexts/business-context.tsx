@@ -3,7 +3,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import { useAuth } from '@/lib/contexts/auth-context'
+import { useCustomerAuth } from '@/lib/context/customer-auth-context'
 
 export interface Business {
   id: string
@@ -93,7 +93,7 @@ export function BusinessProvider({ children, initialBusinessSlug }: BusinessProv
   const [loading, setLoading] = useState(true)
   const [businessesLoading, setBusinessesLoading] = useState(true)
   
-  const { user } = useAuth()
+  const { user } = useCustomerAuth()
   const router = useRouter()
   const pathname = usePathname()
 

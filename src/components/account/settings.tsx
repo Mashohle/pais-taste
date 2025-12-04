@@ -18,7 +18,7 @@ import {
   Loader2,
   AlertTriangle,
 } from "lucide-react"
-import { useAuth } from '@/lib/contexts/auth-context'
+import { useCustomerAuth } from '@/lib/context/customer-auth-context'
 import { PushNotifications } from '@/components/notifications/push-notifications'
 
 interface UserProfile {
@@ -58,7 +58,7 @@ export default function SettingsTab({
   const [updating, setUpdating] = useState(false)
 
   // @ts-expect-error - AuthContextType missing updateProfile method
-  const { updateProfile } = useAuth()
+  const { updateProfile } = useCustomerAuth()
   const router = useRouter()
 
   const handleNotificationUpdate = async (setting: string, value: boolean) => {

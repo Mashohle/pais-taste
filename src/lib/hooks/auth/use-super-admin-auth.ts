@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from 'react'
-import { useAuth } from '@/lib/contexts/auth-context'
+import { useCustomerAuth } from '@/lib/context/customer-auth-context'
 
 interface SuperAdminAuthState {
   loading: boolean
@@ -10,7 +10,7 @@ interface SuperAdminAuthState {
 }
 
 export function useSuperAdminAuth() {
-  const { user, profile, session, loading: authLoading, profileLoading, signOut } = useAuth()
+  const { user, profile, session, loading: authLoading, signOut } = useCustomerAuth()
 
   const [state, setState] = useState<SuperAdminAuthState>({
     loading: true,
@@ -74,7 +74,7 @@ export function useSuperAdminAuth() {
     ...state,
 
     // Combined loading state
-    loading: authLoading || profileLoading || state.loading,
+    loading: authLoading || state.loading,
 
     // Actions
     signOut

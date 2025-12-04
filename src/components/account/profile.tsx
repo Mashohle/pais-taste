@@ -13,7 +13,7 @@ import {
   Edit3,
 } from "lucide-react"
 import { User } from '@supabase/supabase-js'
-import { useAuth, UserProfile } from '@/lib/contexts/auth-context'
+import { useCustomerAuth, UserProfile } from '@/lib/context/customer-auth-context'
 import ProfileEditForm from './profile-edit-form'
 
 interface ProfileTabProps {
@@ -25,7 +25,7 @@ interface ProfileTabProps {
 export default function Profile({ profile, user, profileLoading }: ProfileTabProps) {
   const [editingProfile, setEditingProfile] = useState(false)
   // @ts-expect-error - AuthContextType missing updateProfile method
-  const { updateProfile } = useAuth()
+  const { updateProfile } = useCustomerAuth()
 
   const handleSaveProfile = async (data: Partial<UserProfile>) => {
     try {

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from 'react'
-import { useAuth } from '@/lib/contexts/auth-context'
+import { useCustomerAuth } from '@/lib/context/customer-auth-context'
 
 export interface UserProfile {
   id: string
@@ -41,7 +41,7 @@ export interface ProfileUpdateData {
 export function useProfile() {
   const [error, setError] = useState<string | null>(null)
   const [updating, setUpdating] = useState(false)
-  const { user, profile, refreshProfile } = useAuth()
+  const { user, profile, refetch } = useCustomerAuth()
 
   const updateProfile = async (updates: ProfileUpdateData) => {
     if (!user) throw new Error('No user found')
@@ -67,7 +67,7 @@ export function useProfile() {
       console.log('✅ Profile Hook: Profile updated successfully')
 
       // Refresh the profile in auth context
-      await refreshProfile()
+      await refetch()
 
       return data.profile
     } catch (err) {
@@ -106,7 +106,7 @@ export function useProfile() {
       console.log('✅ Profile Hook: Avatar uploaded successfully')
 
       // Refresh the profile in auth context
-      await refreshProfile()
+      await refetch()
 
       return data.avatar_url
     } catch (err) {
@@ -141,7 +141,7 @@ export function useProfile() {
       console.log('✅ Profile Hook: Avatar deleted successfully')
 
       // Refresh the profile in auth context
-      await refreshProfile()
+      await refetch()
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to delete avatar'
       console.error('💥 Profile Hook: Avatar delete error:', errorMessage)
@@ -199,7 +199,7 @@ export function useProfile() {
     updateProfile,
     uploadAvatar,
     deleteAvatar,
-    refetch: refreshProfile,
+    refetch,
     getDisplayName,
     getContactInfo,
     isProfileComplete,

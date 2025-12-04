@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from 'react'
-import { useAuth } from '@/lib/contexts/auth-context'
+import { useCustomerAuth } from '@/lib/context/customer-auth-context'
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
 import { Bell, BellOff } from 'lucide-react'
@@ -9,7 +9,7 @@ import { Bell, BellOff } from 'lucide-react'
 type NotificationPermission = 'default' | 'granted' | 'denied'
 
 export function PushNotifications() {
-  const { user } = useAuth()
+  const { user } = useCustomerAuth()
   const [isSupported, setIsSupported] = useState(false)
   const [permission, setPermission] = useState<NotificationPermission>('default')
 

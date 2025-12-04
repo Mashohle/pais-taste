@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useAuth } from '@/lib/contexts/auth-context'
+import { useCustomerAuth } from '@/lib/context/customer-auth-context'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 
@@ -21,7 +21,7 @@ import Image from 'next/image'
 
 export default function CheckoutPage() {
     const router = useRouter()
-    const { user, profile } = useAuth()
+    const { user, profile } = useCustomerAuth()
     
     // Use checkout hook for all business and cart data
     const {

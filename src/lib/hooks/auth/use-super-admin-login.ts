@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useAuth } from '@/lib/contexts/auth-context'
+import { useCustomerAuth } from '@/lib/context/customer-auth-context'
 
 interface SuperAdminLoginFormData {
   email: string
@@ -19,7 +19,7 @@ interface SuperAdminLoginState {
 export function useSuperAdminLogin() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const { user, profile, refreshProfile } = useAuth()
+  const { user, profile, refetch } = useCustomerAuth()
 
   const [state, setState] = useState<SuperAdminLoginState>({
     formData: {
@@ -108,7 +108,7 @@ export function useSuperAdminLogin() {
         console.log('🔀 Super Admin Login: Redirecting to dashboard with auth sync')
 
         // Refresh profile to ensure auth context is in sync
-        await refreshProfile()
+        await refetch()
 
         // Small delay to ensure auth context has updated
         setTimeout(() => {

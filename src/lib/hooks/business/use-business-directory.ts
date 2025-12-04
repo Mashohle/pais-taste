@@ -258,7 +258,7 @@ export function useBusinessDirectory() {
         // Search filter
         if (filters.searchTerm) {
           const searchLower = filters.searchTerm.toLowerCase()
-          const matchesSearch = 
+          const matchesSearch =
             business.name.toLowerCase().includes(searchLower) ||
             business.description.toLowerCase().includes(searchLower) ||
             business.category?.name.toLowerCase().includes(searchLower)
