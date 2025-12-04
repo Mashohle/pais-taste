@@ -199,7 +199,7 @@ export default function LocationsManagement() {
                       {location.name}
                       {location.is_primary && (
                         <Badge className="bg-amber-100 text-amber-800 text-xs">
-                          Primary
+                          Headquarters
                         </Badge>
                       )}
                     </CardTitle>
@@ -258,7 +258,9 @@ export default function LocationsManagement() {
                     <Clock className="w-4 h-4 text-stone-500 mt-0.5 flex-shrink-0" />
                     <div className="text-sm text-stone-600">
                       {location.operating_hours?.monday ? (
-                        <div>Mon-Fri: {location.operating_hours.monday}</div>
+                        <div>
+                          Mon-Fri: {location.operating_hours.monday.closed ? 'Closed' : `${location.operating_hours.monday.open} - ${location.operating_hours.monday.close}`}
+                        </div>
                       ) : (
                         <div>Hours not set</div>
                       )}

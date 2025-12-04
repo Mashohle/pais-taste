@@ -12,13 +12,13 @@ export interface Location {
   phone?: string
   description?: string
   operating_hours: {
-    monday?: string
-    tuesday?: string
-    wednesday?: string
-    thursday?: string
-    friday?: string
-    saturday?: string
-    sunday?: string
+    monday?: { open: string; close: string; closed: boolean }
+    tuesday?: { open: string; close: string; closed: boolean }
+    wednesday?: { open: string; close: string; closed: boolean }
+    thursday?: { open: string; close: string; closed: boolean }
+    friday?: { open: string; close: string; closed: boolean }
+    saturday?: { open: string; close: string; closed: boolean }
+    sunday?: { open: string; close: string; closed: boolean }
   }
   is_active: boolean
   is_primary: boolean

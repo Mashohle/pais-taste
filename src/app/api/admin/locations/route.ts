@@ -56,7 +56,40 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    return NextResponse.json({ data: locations || [] })
+    // Transform database format to match frontend interface
+    const transformedLocations = (locations || []).map((loc: Record<string, unknown>) => {
+      // Combine address lines
+      const addressParts = [loc.address_line1, loc.address_line2].filter(Boolean)
+      const combinedAddress = addressParts.join(', ')
+
+      // Extract settings
+      const settings = (loc.settings as Record<string, unknown>) || {}
+      const description = settings.description || null
+      const operating_hours = settings.opening_hours || {}
+      const capacity = settings.capacity || null
+      const amenities = settings.amenities || []
+
+      return {
+        id: loc.id,
+        business_id: loc.business_id,
+        name: loc.name,
+        address: combinedAddress,
+        city: loc.city || '',
+        province: loc.state || '', // Map state to province for frontend
+        postal_code: loc.postal_code || '',
+        phone: loc.phone || null,
+        description,
+        operating_hours,
+        is_active: loc.is_active,
+        is_primary: loc.is_primary,
+        capacity,
+        amenities,
+        created_at: loc.created_at,
+        updated_at: loc.updated_at
+      }
+    })
+
+    return NextResponse.json({ data: transformedLocations })
   } catch (error: unknown) {
     console.error('Locations GET error:', error)
     return NextResponse.json(
