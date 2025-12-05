@@ -1,8 +1,7 @@
 "use client"
 
 import { useState } from 'react'
-import { useApplicationSubmission } from '@/lib/hooks'
-import { useBusinessApplicationForm } from '@/lib/hooks'
+import { useBusinessApplication, BusinessApplicationProvider } from '@/lib/context/business-application-context'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -15,22 +14,46 @@ import {
   User,
   MapPin,
   FileText,
-  Upload,
   CheckCircle,
   Clock,
   AlertCircle,
-  DollarSign,
   Utensils,
   ShoppingBag,
-  Wrench,
-  Crown
+  Wrench
 } from "lucide-react"
 import Link from "next/link"
 
-export default function BusinessApplication() {
-  const [currentStep, setCurrentStep] = useState(1)
-  const { isSubmitting, submitSuccess, submitError, submitApplication } = useApplicationSubmission()
-  const { formData, updateFormData, getApplicationData } = useBusinessApplicationForm()
+function BusinessApplicationForm() {
+  const {
+    formData,
+    currentStep,
+    isSubmitting,
+    submitSuccess,
+    submitError,
+    validationErrors,
+    updateFormData,
+    nextStep,
+    prevStep,
+    submitApplication,
+    addLocation,
+    updateLocation,
+    removeLocation
+  } = useBusinessApplication()
+
+  // State for Step 5 (Locations)
+  const [showLocationForm, setShowLocationForm] = useState(false)
+  const [editingLocation, setEditingLocation] = useState<string | null>(null)
+  const [locationForm, setLocationForm] = useState({
+    name: '',
+    addressLine1: '',
+    addressLine2: '',
+    city: '',
+    province: '',
+    postalCode: '',
+    phone: '',
+    email: '',
+    isPrimary: false
+  })
 
   const businessCategories = [
     { 
@@ -70,27 +93,11 @@ export default function BusinessApplication() {
     { id: 2, title: 'Owner Details', description: 'Your personal information' },
     { id: 3, title: 'Location & Address', description: 'Business address and location' },
     { id: 4, title: 'Business Registration', description: 'Legal and financial details' },
-    { id: 5, title: 'Operations', description: 'Operating hours and services' },
-    { id: 6, title: 'Documents', description: 'Upload required documents' },
-    { id: 7, title: 'Review & Submit', description: 'Final review and submission' }
+    { id: 5, title: 'Business Locations', description: 'Add your business locations' },
+    { id: 6, title: 'Operations', description: 'Operating hours and services' },
+    { id: 7, title: 'Documents', description: 'Upload required documents' },
+    { id: 8, title: 'Review & Submit', description: 'Final review and submission' }
   ]
-
-
-  const nextStep = () => {
-    if (currentStep < steps.length) {
-      setCurrentStep(prev => prev + 1)
-    }
-  }
-
-  const prevStep = () => {
-    if (currentStep > 1) {
-      setCurrentStep(prev => prev - 1)
-    }
-  }
-
-  const handleSubmit = async () => {
-    await submitApplication(getApplicationData())
-  }
 
   const renderStepIndicator = () => (
     <div className="flex items-center justify-between mb-8">
@@ -133,6 +140,9 @@ export default function BusinessApplication() {
             placeholder="Enter your business name"
             className="w-full"
           />
+          {validationErrors.businessName && (
+            <p className="text-xs text-red-600 mt-1">{validationErrors.businessName}</p>
+          )}
         </div>
 
         <div>
@@ -152,6 +162,9 @@ export default function BusinessApplication() {
               ))}
             </SelectContent>
           </Select>
+          {validationErrors.businessCategory && (
+            <p className="text-xs text-red-600 mt-1">{validationErrors.businessCategory}</p>
+          )}
         </div>
 
         {formData.businessCategory && (
@@ -201,6 +214,9 @@ export default function BusinessApplication() {
               onChange={(e) => updateFormData('ownerFirstName', e.target.value)}
               placeholder="Your first name"
             />
+            {validationErrors.ownerFirstName && (
+              <p className="text-xs text-red-600 mt-1">{validationErrors.ownerFirstName}</p>
+            )}
           </div>
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-2">Last Name</label>
@@ -209,6 +225,9 @@ export default function BusinessApplication() {
               onChange={(e) => updateFormData('ownerLastName', e.target.value)}
               placeholder="Your last name"
             />
+            {validationErrors.ownerLastName && (
+              <p className="text-xs text-red-600 mt-1">{validationErrors.ownerLastName}</p>
+            )}
           </div>
         </div>
 
@@ -220,7 +239,11 @@ export default function BusinessApplication() {
             onChange={(e) => updateFormData('ownerEmail', e.target.value)}
             placeholder="your.email@example.com"
           />
-          <p className="text-xs text-slate-500 mt-1">This will be your account login email</p>
+          {validationErrors.ownerEmail ? (
+            <p className="text-xs text-red-600 mt-1">{validationErrors.ownerEmail}</p>
+          ) : (
+            <p className="text-xs text-slate-500 mt-1">This will be your account login email</p>
+          )}
         </div>
 
         <div>
@@ -253,7 +276,11 @@ export default function BusinessApplication() {
                 onChange={(e) => updateFormData('ownerPassword', e.target.value)}
                 placeholder="Choose a secure password"
               />
-              <p className="text-xs text-slate-500 mt-1">Minimum 6 characters</p>
+              {validationErrors.ownerPassword ? (
+                <p className="text-xs text-red-600 mt-1">{validationErrors.ownerPassword}</p>
+              ) : (
+                <p className="text-xs text-slate-500 mt-1">Minimum 6 characters</p>
+              )}
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">Confirm Password</label>
@@ -263,7 +290,11 @@ export default function BusinessApplication() {
                 onChange={(e) => updateFormData('ownerPasswordConfirm', e.target.value)}
                 placeholder="Confirm your password"
               />
-              <p className="text-xs text-slate-500 mt-1">Must match the password above</p>
+              {validationErrors.ownerPasswordConfirm ? (
+                <p className="text-xs text-red-600 mt-1">{validationErrors.ownerPasswordConfirm}</p>
+              ) : (
+                <p className="text-xs text-slate-500 mt-1">Must match the password above</p>
+              )}
             </div>
           </div>
         </div>
@@ -408,8 +439,309 @@ export default function BusinessApplication() {
       </CardContent>
     </Card>
   )
-  
-  const renderStep5 = () => (
+
+  const renderStep5 = () => {
+    const resetLocationForm = () => {
+      setLocationForm({
+        name: '',
+        addressLine1: '',
+        addressLine2: '',
+        city: '',
+        province: '',
+        postalCode: '',
+        phone: '',
+        email: '',
+        isPrimary: false
+      })
+      setEditingLocation(null)
+      setShowLocationForm(false)
+    }
+
+    const handleAddLocation = () => {
+      if (locationForm.name && locationForm.addressLine1 && locationForm.city) {
+        addLocation(locationForm)
+        resetLocationForm()
+      }
+    }
+
+    const handleEditLocation = (id: string) => {
+      const location = formData.locations.find(loc => loc.id === id)
+      if (location) {
+        setLocationForm({
+          name: location.name,
+          addressLine1: location.addressLine1,
+          addressLine2: location.addressLine2 || '',
+          city: location.city,
+          province: location.province,
+          postalCode: location.postalCode,
+          phone: location.phone || '',
+          email: location.email || '',
+          isPrimary: location.isPrimary
+        })
+        setEditingLocation(id)
+        setShowLocationForm(true)
+      }
+    }
+
+    const handleUpdateLocation = () => {
+      if (editingLocation) {
+        updateLocation(editingLocation, locationForm)
+        resetLocationForm()
+      }
+    }
+
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2">
+            <MapPin className="w-5 h-5" />
+            <span>Business Locations</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* Location Type Selection */}
+          <div className="space-y-4">
+            <label className="flex items-center space-x-3 p-4 border-2 rounded-lg cursor-pointer transition-colors hover:border-stone-400"
+              style={{ borderColor: formData.locationType === 'single' ? '#57534e' : '#d6d3d1' }}>
+              <input
+                type="radio"
+                name="locationType"
+                value="single"
+                checked={formData.locationType === 'single'}
+                onChange={(e) => updateFormData('locationType', e.target.value as 'single' | 'multiple')}
+                className="w-4 h-4 text-stone-600"
+              />
+              <div className="flex-1">
+                <p className="font-medium text-stone-900">Single Location (Headquarters Only)</p>
+                <p className="text-sm text-stone-600 mt-1">Use the headquarters address from Step 3. You can add more locations later from your dashboard.</p>
+              </div>
+            </label>
+
+            <label className="flex items-center space-x-3 p-4 border-2 rounded-lg cursor-pointer transition-colors hover:border-stone-400"
+              style={{ borderColor: formData.locationType === 'multiple' ? '#57534e' : '#d6d3d1' }}>
+              <input
+                type="radio"
+                name="locationType"
+                value="multiple"
+                checked={formData.locationType === 'multiple'}
+                onChange={(e) => updateFormData('locationType', e.target.value as 'single' | 'multiple')}
+                className="w-4 h-4 text-stone-600"
+              />
+              <div className="flex-1">
+                <p className="font-medium text-stone-900">Multiple Locations</p>
+                <p className="text-sm text-stone-600 mt-1">Add all your business locations now (including headquarters).</p>
+              </div>
+            </label>
+          </div>
+
+          {/* Multiple Locations Section */}
+          {formData.locationType === 'multiple' && (
+            <div className="space-y-4 pt-4 border-t">
+              {/* List of Added Locations */}
+              {formData.locations.length > 0 && (
+                <div className="space-y-3">
+                  <h4 className="font-medium text-stone-900">Added Locations ({formData.locations.length})</h4>
+                  {formData.locations.map((location) => (
+                    <div key={location.id} className="p-4 border rounded-lg bg-stone-50">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-2">
+                            <p className="font-medium text-stone-900">{location.name}</p>
+                            {location.isPrimary && (
+                              <Badge className="text-xs bg-indigo-600">Headquarters</Badge>
+                            )}
+                          </div>
+                          <p className="text-sm text-stone-600 mt-1">
+                            {location.addressLine1}{location.addressLine2 && `, ${location.addressLine2}`}
+                          </p>
+                          <p className="text-sm text-stone-600">
+                            {location.city}, {location.province} {location.postalCode}
+                          </p>
+                          {location.phone && (
+                            <p className="text-sm text-stone-600 mt-1">📞 {location.phone}</p>
+                          )}
+                        </div>
+                        <div className="flex space-x-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleEditLocation(location.id)}
+                          >
+                            Edit
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => removeLocation(location.id)}
+                          >
+                            Remove
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Add Location Button or Form */}
+              {!showLocationForm && (
+                <Button
+                  onClick={() => setShowLocationForm(true)}
+                  className="w-full"
+                  variant="outline"
+                >
+                  <MapPin className="w-4 h-4 mr-2" />
+                  Add Location
+                </Button>
+              )}
+
+              {/* Location Form */}
+              {showLocationForm && (
+                <div className="p-4 border-2 border-stone-300 rounded-lg space-y-4 bg-white">
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-medium text-stone-900">
+                      {editingLocation ? 'Edit Location' : 'Add New Location'}
+                    </h4>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={resetLocationForm}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">Location Name *</label>
+                    <Input
+                      value={locationForm.name}
+                      onChange={(e) => setLocationForm({ ...locationForm, name: e.target.value })}
+                      placeholder="e.g., Main Branch, Downtown Office"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">Street Address *</label>
+                    <Input
+                      value={locationForm.addressLine1}
+                      onChange={(e) => setLocationForm({ ...locationForm, addressLine1: e.target.value })}
+                      placeholder="Street address"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">Address Line 2 (Optional)</label>
+                    <Input
+                      value={locationForm.addressLine2}
+                      onChange={(e) => setLocationForm({ ...locationForm, addressLine2: e.target.value })}
+                      placeholder="Suite, unit, building, floor, etc."
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">City *</label>
+                      <Input
+                        value={locationForm.city}
+                        onChange={(e) => setLocationForm({ ...locationForm, city: e.target.value })}
+                        placeholder="City"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">Province *</label>
+                      <Select
+                        value={locationForm.province}
+                        onValueChange={(value) => setLocationForm({ ...locationForm, province: value })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select province" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {southAfricanProvinces.map((province) => (
+                            <SelectItem key={province} value={province}>{province}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">Postal Code *</label>
+                      <Input
+                        value={locationForm.postalCode}
+                        onChange={(e) => setLocationForm({ ...locationForm, postalCode: e.target.value })}
+                        placeholder="0000"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">Phone (Optional)</label>
+                      <Input
+                        value={locationForm.phone}
+                        onChange={(e) => setLocationForm({ ...locationForm, phone: e.target.value })}
+                        placeholder="+27 XX XXX XXXX"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">Email (Optional)</label>
+                      <Input
+                        type="email"
+                        value={locationForm.email}
+                        onChange={(e) => setLocationForm({ ...locationForm, email: e.target.value })}
+                        placeholder="location@example.com"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="isPrimary"
+                      checked={locationForm.isPrimary}
+                      onCheckedChange={(checked) => setLocationForm({ ...locationForm, isPrimary: checked as boolean })}
+                    />
+                    <label htmlFor="isPrimary" className="text-sm text-slate-700">
+                      Mark as Headquarters (Primary Location)
+                    </label>
+                  </div>
+
+                  <Button
+                    onClick={editingLocation ? handleUpdateLocation : handleAddLocation}
+                    disabled={!locationForm.name || !locationForm.addressLine1 || !locationForm.city}
+                    className="w-full"
+                  >
+                    {editingLocation ? 'Update Location' : 'Add Location'}
+                  </Button>
+                </div>
+              )}
+
+              {formData.locations.length === 0 && !showLocationForm && (
+                <div className="text-center py-8 text-stone-500">
+                  <MapPin className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                  <p>No locations added yet. Click &ldquo;Add Location&rdquo; to get started.</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Info Message */}
+          <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+            <div className="flex items-start space-x-2">
+              <AlertCircle className="w-5 h-5 text-blue-600 mt-0.5" />
+              <div className="text-sm text-blue-900">
+                {formData.locationType === 'single' ? (
+                  <p>Your headquarters address from Step 3 will be automatically added as your primary location. You can add more locations anytime from your business dashboard after approval.</p>
+                ) : (
+                  <p>Add all your current business locations. Make sure to mark one as your headquarters (primary location). You can always add, edit, or remove locations later from your dashboard.</p>
+                )}
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  const renderStep6 = () => (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center space-x-2">
@@ -429,10 +761,10 @@ export default function BusinessApplication() {
                 <Checkbox
                   id={`${day}-closed`}
                   checked={hours.closed}
-                  onCheckedChange={(checked) => 
+                  onCheckedChange={(checked) =>
                     updateFormData('operatingHours', {
                       ...formData.operatingHours,
-                      [day]: { ...hours, closed: checked }
+                      [day]: { ...hours, closed: checked === true }
                     })
                   }
                 />
@@ -485,61 +817,147 @@ export default function BusinessApplication() {
     </Card>
   )
   
-  const renderStep6 = () => (
+  const renderStep7 = () => {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2">
+            <FileText className="w-5 h-5" />
+            <span>Documents</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="bg-blue-50 p-6 rounded-lg border border-blue-200">
+            <div className="flex items-start space-x-3">
+              <AlertCircle className="w-6 h-6 text-blue-600 mt-0.5 flex-shrink-0" />
+              <div>
+                <p className="text-sm font-medium text-blue-900 mb-2">Document Upload Coming Soon</p>
+                <p className="text-sm text-blue-700">
+                  Document uploads will be available after your initial application is submitted.
+                  Once your application is approved, you&apos;ll be able to upload required documents
+                  directly from your business dashboard.
+                </p>
+                <div className="mt-4 space-y-2">
+                  <p className="text-sm text-blue-700 font-medium">Documents you&apos;ll need:</p>
+                  <ul className="text-sm text-blue-700 space-y-1 ml-4">
+                    <li>• South African ID Document (owner)</li>
+                    <li>• Business Registration Certificate (if registered)</li>
+                    <li>• Recent 3-month Bank Statement</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
+            <p className="text-sm text-slate-600">
+              <strong>Note:</strong> You can proceed with your application now. Our team will contact you
+              via email regarding document submission once your application has been reviewed.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  const renderStep8 = () => (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center space-x-2">
-          <Upload className="w-5 h-5" />
-          <span>Required Documents</span>
+          <CheckCircle className="w-5 h-5" />
+          <span>Review & Submit</span>
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
-        <div className="bg-yellow-50 p-4 rounded-lg">
-          <div className="flex items-start space-x-2">
-            <AlertCircle className="w-5 h-5 text-yellow-600 mt-0.5" />
-            <div>
-              <p className="text-sm font-medium text-yellow-900">Document Requirements</p>
-              <p className="text-sm text-yellow-700 mt-1">
-                Please prepare the following documents. You can upload them now or submit them later during the review process.
-              </p>
-            </div>
+        <div className="bg-slate-50 p-6 rounded-lg">
+          <h3 className="font-semibold text-slate-900 mb-4">Application Summary</h3>
+          <div className="space-y-2 text-sm">
+            <p><strong>Business:</strong> {formData.businessName || 'Not provided'}</p>
+            <p><strong>Category:</strong> {formData.businessCategory || 'Not selected'}</p>
+            <p><strong>Type:</strong> {formData.businessType || 'Not selected'}</p>
+            <p><strong>Owner:</strong> {formData.ownerFirstName} {formData.ownerLastName}</p>
+            <p><strong>Email:</strong> {formData.ownerEmail || 'Not provided'}</p>
           </div>
         </div>
-        
+
         <div className="space-y-4">
-          <div className="border-2 border-dashed border-slate-300 rounded-lg p-6 text-center">
-            <Upload className="w-12 h-12 text-slate-400 mx-auto mb-3" />
-            <h4 className="font-medium text-slate-900 mb-2">South African ID Document</h4>
-            <p className="text-sm text-slate-600 mb-4">Clear copy of owner&apos;s South African ID</p>
-            <Button variant="outline" size="sm">
-              Choose File
-            </Button>
+          <div className="flex items-start space-x-3">
+            <Checkbox
+              id="terms"
+              checked={formData.agreeToTerms}
+              onCheckedChange={(checked) => updateFormData('agreeToTerms', checked === true)}
+            />
+            <label htmlFor="terms" className="text-sm text-slate-700">
+              I agree to the <Link href="/terms" className="text-indigo-600 hover:underline">Terms of Service</Link> and <Link href="/privacy" className="text-indigo-600 hover:underline">Privacy Policy</Link>
+            </label>
           </div>
-          
-          <div className="border-2 border-dashed border-slate-300 rounded-lg p-6 text-center">
-            <FileText className="w-12 h-12 text-slate-400 mx-auto mb-3" />
-            <h4 className="font-medium text-slate-900 mb-2">Business Registration Certificate</h4>
-            <p className="text-sm text-slate-600 mb-4">Optional - if your business is formally registered</p>
-            <Button variant="outline" size="sm">
-              Choose File
-            </Button>
+
+          <div className="flex items-start space-x-3">
+            <Checkbox
+              id="commission"
+              checked={formData.agreeToCommission}
+              onCheckedChange={(checked) => updateFormData('agreeToCommission', checked === true)}
+            />
+            <label htmlFor="commission" className="text-sm text-slate-700">
+              I understand and agree to the 5.5% platform commission on all orders
+            </label>
           </div>
-          
-          <div className="border-2 border-dashed border-slate-300 rounded-lg p-6 text-center">
-            <DollarSign className="w-12 h-12 text-slate-400 mx-auto mb-3" />
-            <h4 className="font-medium text-slate-900 mb-2">Bank Statement</h4>
-            <p className="text-sm text-slate-600 mb-4">Recent 3-month bank statement for verification</p>
-            <Button variant="outline" size="sm">
-              Choose File
-            </Button>
-          </div>
-        </div>
-        
-        <div className="bg-slate-50 p-4 rounded-lg">
-          <p className="text-sm text-slate-600">
-            <strong>Note:</strong> All documents will be reviewed by our team. 
-            We take privacy seriously and your documents are stored securely and only used for verification purposes.
-          </p>
+
+          {/* Submit Error */}
+          {submitError && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+              <div className="flex items-start space-x-2">
+                <AlertCircle className="w-5 h-5 text-red-600 mt-0.5" />
+                <div>
+                  <p className="font-medium text-red-800">Submission Failed</p>
+                  <p className="text-sm text-red-700 mt-1">{submitError}</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Success State */}
+          {submitSuccess && (
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+              <div className="flex items-start space-x-2">
+                <CheckCircle className="w-5 h-5 text-green-600 mt-0.5" />
+                <div>
+                  <p className="font-medium text-green-800">Application Submitted Successfully!</p>
+                  <p className="text-sm text-green-700 mt-1">
+                    Your application has been submitted for review. We&apos;ll send you an email confirmation shortly and notify you when our team reviews your application.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Submit Button */}
+          <Button
+            onClick={submitApplication}
+            disabled={!formData.agreeToTerms || !formData.agreeToCommission || isSubmitting || submitSuccess}
+            className={`w-full py-3 text-lg transition-all duration-200 ${
+              submitSuccess
+                ? 'bg-green-600 hover:bg-green-700'
+                : 'bg-stone-600 hover:bg-stone-700'
+            }`}
+          >
+            {isSubmitting ? (
+              <>
+                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                Submitting Application...
+              </>
+            ) : submitSuccess ? (
+              <>
+                <CheckCircle className="w-5 h-5 mr-2" />
+                Application Submitted
+              </>
+            ) : (
+              <>
+                <CheckCircle className="w-5 h-5 mr-2" />
+                Submit Application
+              </>
+            )}
+          </Button>
         </div>
       </CardContent>
     </Card>
@@ -553,133 +971,32 @@ export default function BusinessApplication() {
       case 4: return renderStep4()
       case 5: return renderStep5()
       case 6: return renderStep6()
-      case 7: return (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <CheckCircle className="w-5 h-5" />
-              <span>Review & Submit</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="bg-slate-50 p-6 rounded-lg">
-              <h3 className="font-semibold text-slate-900 mb-4">Application Summary</h3>
-              <div className="space-y-2 text-sm">
-                <p><strong>Business:</strong> {formData.businessName || 'Not provided'}</p>
-                <p><strong>Category:</strong> {formData.businessCategory || 'Not selected'}</p>
-                <p><strong>Type:</strong> {formData.businessType || 'Not selected'}</p>
-                <p><strong>Owner:</strong> {formData.ownerFirstName} {formData.ownerLastName}</p>
-                <p><strong>Email:</strong> {formData.ownerEmail || 'Not provided'}</p>
-              </div>
-            </div>
-            
-            <div className="space-y-4">
-              <div className="flex items-start space-x-3">
-                <Checkbox 
-                  id="terms" 
-                  checked={formData.agreeToTerms}
-                  onCheckedChange={(checked) => updateFormData('agreeToTerms', checked)}
-                />
-                <label htmlFor="terms" className="text-sm text-slate-700">
-                  I agree to the <Link href="/terms" className="text-indigo-600 hover:underline">Terms of Service</Link> and <Link href="/privacy" className="text-indigo-600 hover:underline">Privacy Policy</Link>
-                </label>
-              </div>
-              
-              <div className="flex items-start space-x-3">
-                <Checkbox 
-                  id="commission" 
-                  checked={formData.agreeToCommission}
-                  onCheckedChange={(checked) => updateFormData('agreeToCommission', checked)}
-                />
-                <label htmlFor="commission" className="text-sm text-slate-700">
-                  I understand and agree to the 5.5% platform commission on all orders
-                </label>
-              </div>
-              
-              {/* Submit Error */}
-              {submitError && (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                  <div className="flex items-start space-x-2">
-                    <AlertCircle className="w-5 h-5 text-red-600 mt-0.5" />
-                    <div>
-                      <p className="font-medium text-red-800">Submission Failed</p>
-                      <p className="text-sm text-red-700 mt-1">{submitError}</p>
-                    </div>
-                  </div>
-                </div>
-              )}
-              
-              {/* Success State */}
-              {submitSuccess && (
-                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                  <div className="flex items-start space-x-2">
-                    <CheckCircle className="w-5 h-5 text-green-600 mt-0.5" />
-                    <div>
-                      <p className="font-medium text-green-800">Application Submitted Successfully!</p>
-                      <p className="text-sm text-green-700 mt-1">
-                        Your application has been submitted for review. We&apos;ll send you an email confirmation shortly and notify you when our team reviews your application.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
-              
-              {/* Submit Button */}
-              <Button
-                onClick={handleSubmit}
-                disabled={!formData.agreeToTerms || !formData.agreeToCommission || isSubmitting || submitSuccess}
-                className={`w-full py-3 text-lg transition-all duration-200 ${
-                  submitSuccess 
-                    ? 'bg-green-600 hover:bg-green-700' 
-                    : 'bg-stone-600 hover:bg-stone-700'
-                }`}
-              >
-                {isSubmitting ? (
-                  <>
-                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                    Submitting Application...
-                  </>
-                ) : submitSuccess ? (
-                  <>
-                    <CheckCircle className="w-5 h-5 mr-2" />
-                    Application Submitted
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle className="w-5 h-5 mr-2" />
-                    Submit Application
-                  </>
-                )}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )
+      case 7: return renderStep7()
+      case 8: return renderStep8()
       default: return null
     }
   }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-stone-50 to-stone-100">
-      {/* Header */}
-      <header className="bg-white/90 backdrop-blur-md border-b border-stone-200">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex items-center justify-between">
-            <Link href="/" className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-stone-600 to-stone-800 rounded-xl flex items-center justify-center shadow-lg">
-                <Crown className="w-5 h-5 text-white" />
+      {/* Navigation Header */}
+      <nav className="bg-white/90 backdrop-blur-md border-b border-stone-200 sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <Link href="/" className="flex items-center space-x-4">
+              <div className="text-2xl font-bold bg-gradient-to-r from-stone-600 to-stone-800 bg-clip-text text-transparent">
+                SideHusl
               </div>
-              <div>
-                <h1 className="text-xl font-bold bg-gradient-to-r from-stone-600 to-stone-800 bg-clip-text text-transparent">sideHusl</h1>
-                <p className="text-xs text-stone-600">Business Application</p>
-              </div>
+              <Badge variant="secondary" className="text-xs">
+                Business Application
+              </Badge>
             </Link>
             <Badge variant="outline" className="text-stone-600 border-stone-300">
               Step {currentStep} of {steps.length}
             </Badge>
           </div>
         </div>
-      </header>
+      </nav>
 
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Progress Steps */}
@@ -730,5 +1047,14 @@ export default function BusinessApplication() {
         )}
       </main>
     </div>
+  )
+}
+
+// Main component wrapped with provider
+export default function BusinessApplication() {
+  return (
+    <BusinessApplicationProvider>
+      <BusinessApplicationForm />
+    </BusinessApplicationProvider>
   )
 }

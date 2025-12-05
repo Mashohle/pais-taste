@@ -21,16 +21,16 @@ export function PushNotifications() {
 
   useEffect(() => {
     // Firebase messaging disabled
-    console.log('Firebase messaging is disabled - not requesting token')
+    // console.log('Firebase messaging is disabled - not requesting token')
   }, [permission, user])
 
   useEffect(() => {
     // Firebase messaging disabled
-    console.log('Firebase messaging is disabled - not listening for messages')
+    // console.log('Firebase messaging is disabled - not listening for messages')
   }, [permission])
 
   const requestPermission = async () => {
-    console.log('Firebase messaging is disabled - notification requests disabled')
+    // console.log('Firebase messaging is disabled - notification requests disabled')
     alert('Push notifications are temporarily disabled.')
   }
 

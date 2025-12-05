@@ -87,16 +87,18 @@ export default function CustomerPortalHome() {
                     Directory
                   </Button>
                 </Link>
-                <Button variant="ghost" size="sm">
-                  <Heart className="w-4 h-4 mr-2" />
-                  Favorites
-                </Button>
                 <Link href="/track-order">
                   <Button variant="ghost" size="sm">
                     <Package className="w-4 h-4 mr-2" />
                     Track Order
                   </Button>
                 </Link>
+                {user && (
+                  <Button variant="ghost" size="sm">
+                    <Heart className="w-4 h-4 mr-2" />
+                    Favorites
+                  </Button>
+                )}
                 <Link href={user ? "/account" : "/login"}>
                   <Button variant="outline" size="sm">
                     <User className="w-4 h-4 mr-2" />
@@ -200,16 +202,18 @@ export default function CustomerPortalHome() {
                   Directory
                 </Button>
               </Link>
-              <Button variant="ghost" size="sm">
-                <Heart className="w-4 h-4 mr-2" />
-                Favorites
-              </Button>
               <Link href="/track-order">
                 <Button variant="ghost" size="sm">
                   <Package className="w-4 h-4 mr-2" />
                   Track Order
                 </Button>
               </Link>
+              {user && (
+                <Button variant="ghost" size="sm">
+                  <Heart className="w-4 h-4 mr-2" />
+                  Favorites
+                </Button>
+              )}
               <Link href={user ? "/account" : "/login"}>
                 <Button variant="outline" size="sm">
                   <User className="w-4 h-4 mr-2" />
@@ -434,7 +438,7 @@ export default function CustomerPortalHome() {
               Get access to new customers, manage orders efficiently, and boost your revenue.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Link href="/apply">
+              <Link href="/business/apply">
                 <Button size="lg" className="bg-indigo-600 hover:bg-indigo-700">
                   Apply as a Business
                   <ChevronRight className="w-4 h-4 ml-2" />
