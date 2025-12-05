@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
-import { ShoppingBag, Loader2, Search, Filter, Package, AlertCircle } from "lucide-react"
+import { Skeleton } from "@/components/ui/skeleton"
+import { ShoppingBag, Search, Filter, Package, AlertCircle } from "lucide-react"
 import Link from "next/link"
 import { DynamicIcon } from '@/lib/utils/icon-mapper'
 import UniversalOrderCard from './universal-order-card'
@@ -75,11 +76,25 @@ export default function ActiveOrdersTab({
 }: ActiveOrdersTabProps) {
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <div className="text-center">
-          <Loader2 className="w-8 h-8 animate-spin text-stone-600 mx-auto mb-4" />
-          <p className="text-stone-600">Loading your orders...</p>
-        </div>
+      <div className="space-y-4">
+        {[...Array(3)].map((_, i) => (
+          <Card key={i}>
+            <CardContent className="p-6">
+              <div className="flex justify-between items-start mb-4">
+                <div className="space-y-2">
+                  <Skeleton className="h-6 w-48" />
+                  <Skeleton className="h-4 w-32" />
+                </div>
+                <Skeleton className="h-6 w-20" />
+              </div>
+              <Skeleton className="h-20 w-full mb-4" />
+              <div className="flex justify-between">
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-10 w-32" />
+              </div>
+            </CardContent>
+          </Card>
+        ))}
       </div>
     )
   }

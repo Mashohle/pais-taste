@@ -3,14 +3,16 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { useCustomerAuth } from '@/lib/context/customer-auth-context'
-import { useOrders } from '@/lib/hooks'
 import SettingsTab from '@/components/account/settings'
 
 export default function SettingsPage() {
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
   const { profile, signOut } = useCustomerAuth()
-  const { activeOrders, orderHistory } = useOrders()
+
+  // Note: We don't use useOrders() here because it has a design issue with conditional hooks
+  const activeOrders: never[] = []
+  const orderHistory: never[] = []
 
   const handleSignOut = async () => {
     setIsLoading(true)

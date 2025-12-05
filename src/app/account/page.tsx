@@ -4,7 +4,6 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Loader2 } from "lucide-react"
 import { useCustomerAuth } from '@/lib/context/customer-auth-context'
-import { useOrders } from '@/lib/hooks'
 import ProfileTab from '@/components/account/profile'
 import SettingsTab from '@/components/account/settings'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -13,7 +12,11 @@ export default function AccountPage() {
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
   const { profile, loading, user, signOut } = useCustomerAuth()
-  const { activeOrders, orderHistory } = useOrders()
+
+  // Note: We don't use useOrders() here because it has a design issue with conditional hooks
+  // The Account Statistics will be populated from the API in the future
+  const activeOrders: never[] = []
+  const orderHistory: never[] = []
 
   const handleSignOut = async () => {
     setIsLoading(true)

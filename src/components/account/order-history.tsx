@@ -1,194 +1,87 @@
 "use client"
 
-import { useState, useMemo } from 'react'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
-import { History, Filter, Search, Calendar, MapPin, Star, Loader2 } from "lucide-react"
+import { History, Filter, Search, Calendar, MapPin, Star } from "lucide-react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
 import UniversalOrderCard from './universal-order-card'
-import { useOrderHistory } from '@/lib/hooks/use-order-history'
+import { OrderHistoryItem, OrderHistoryStats } from '@/lib/hooks/use-order-history'
 
-// Mock data for demo purposes was removed as it's no longer used
-/* eslint-disable @typescript-eslint/no-unused-vars */
-const _mockHistoricalOrdersOld = [
-  // Food orders (completed)
-  {
-    id: "order_1",
-    business_id: "bus_1",
-    business_name: "Mama Africa Kitchen",
-    business_category: "food",
-    business_phone: "+27 21 123 4567",
-    type: "order" as const,
-    status: "completed",
-    created_at: "2024-08-15T18:30:00Z",
-    estimated_time: "45 minutes",
-    total: 245.50,
-    items: [
-      { name: "Bobotie with Yellow Rice", price: 120.00, quantity: 1 },
-      { name: "Boerewors Roll", price: 85.00, quantity: 1 },
-      { name: "Malva Pudding", price: 40.50, quantity: 1 }
-    ],
-    delivery_address: "123 Main Street, Cape Town",
-    order_number: "MA001",
-    tracking_number: "TRK001"
-  },
-  // Service booking (completed)
-  {
-    id: "booking_1",
-    business_id: "bus_5", 
-    business_name: "Shine & Wash Car Care",
-    business_category: "services",
-    business_phone: "+27 11 456 7890",
-    type: "booking" as const,
-    status: "completed",
-    created_at: "2024-08-10T09:00:00Z",
-    estimated_time: "2 hours",
-    total: 180.00,
-    service_name: "Full Detail Wash",
-    appointment_date: "2024-08-10",
-    appointment_time: "09:00",
-    vehicle_details: "2019 Toyota Corolla - CA 123 GP",
-    staff_name: "Mike Johnson",
-    booking_number: "SW001"
-  },
-  // Retail order (completed)
-  {
-    id: "order_2",
-    business_id: "bus_6",
-    business_name: "African Craft Co",
-    business_category: "retail",
-    business_phone: "+27 12 789 0123",
-    type: "order" as const,
-    status: "completed",
-    created_at: "2024-08-05T14:20:00Z",
-    estimated_time: "3-5 days shipping",
-    total: 450.00,
-    items: [
-      { name: "Handwoven Ndebele Basket", price: 280.00, quantity: 1 },
-      { name: "Carved Wooden Giraffe", price: 120.00, quantity: 1 },
-      { name: "Traditional Beadwork Necklace", price: 50.00, quantity: 1 }
-    ],
-    delivery_address: "789 Heritage Lane, Pretoria",
-    order_number: "AC001",
-    tracking_number: "TRK002"
-  },
-  // More historical orders...
-  {
-    id: "booking_2",
-    business_id: "bus_7",
-    business_name: "Serenity Spa & Wellness", 
-    business_category: "services",
-    business_phone: "+27 11 234 5678",
-    type: "booking" as const,
-    status: "completed",
-    created_at: "2024-07-25T15:30:00Z",
-    estimated_time: "90 minutes",
-    total: 320.00,
-    service_name: "Traditional African Hot Stone Massage",
-    appointment_date: "2024-07-25",
-    appointment_time: "15:30",
-    staff_name: "Sarah Ndlovu",
-    booking_number: "SS001"
-  },
-  {
-    id: "order_3",
-    business_id: "bus_1",
-    business_name: "Mama Africa Kitchen",
-    business_category: "food",
-    business_phone: "+27 21 123 4567",
-    type: "order" as const,
-    status: "completed",
-    created_at: "2024-07-20T19:45:00Z",
-    estimated_time: "35 minutes",
-    total: 195.00,
-    items: [
-      { name: "Potjiekos (Traditional Stew)", price: 140.00, quantity: 1 },
-      { name: "Mealie Bread", price: 30.00, quantity: 2 },
-      { name: "Rooibos Tea", price: 25.00, quantity: 1 }
-    ],
-    delivery_address: "123 Main Street, Cape Town",
-    order_number: "MA002",
-    tracking_number: "TRK003"
-  }
+// Status options - Only final/ended statuses for history
+const statusOptions = [
+  { value: 'all', label: 'All Statuses' },
+  { value: 'completed', label: 'Completed' },
+  { value: 'cancelled', label: 'Cancelled' }
 ]
 
-export default function OrderHistoryTab() {
-  const router = useRouter()
-  const [searchTerm, setSearchTerm] = useState("")
-  const [selectedBusinessType, setSelectedBusinessType] = useState<string>("all")
-  const [selectedBusiness, setSelectedBusiness] = useState<string>("all")
-  const [selectedStatus, setSelectedStatus] = useState<string>("all")
-  const [selectedTimeRange, setSelectedTimeRange] = useState<string>("all")
+// Time range options
+const timeRangeOptions = [
+  { value: 'all', label: 'All Time' },
+  { value: 'week', label: 'Last Week' },
+  { value: 'month', label: 'Last Month' },
+  { value: '3months', label: 'Last 3 Months' },
+  { value: 'year', label: 'Last Year' }
+]
 
-  // Memoize filters to prevent infinite loop
-  const filters = useMemo(() => ({
-    status: selectedStatus !== 'all' ? selectedStatus : undefined,
-    businessId: selectedBusiness !== 'all' ? selectedBusiness : undefined,
-    timeRange: selectedTimeRange !== 'all' ? selectedTimeRange : undefined
-  }), [selectedStatus, selectedBusiness, selectedTimeRange])
+interface OrderHistoryTabProps {
+  orders: OrderHistoryItem[]
+  ordersByType: Record<string, OrderHistoryItem[]>
+  stats: OrderHistoryStats | null
+  loading: boolean
+  error: string | null
+  hasMore: boolean
+  searchTerm: string
+  selectedBusinessType: string
+  selectedStatus: string
+  selectedBusiness: string
+  selectedTimeRange: string
+  uniqueBusinesses: Array<{ id: string; name: string; category: string }>
+  activeFilterCount: number
+  onSearchChange: (value: string) => void
+  onBusinessTypeChange: (value: string) => void
+  onStatusChange: (value: string) => void
+  onBusinessChange: (value: string) => void
+  onTimeRangeChange: (value: string) => void
+  onClearFilters: () => void
+  onViewDetails: (orderId: string, orderType: string) => void
+  onReorder: (orderId: string, businessId: string) => void
+  onRebook: (bookingId: string, businessId: string) => void
+  onWriteReview: (orderId: string, businessId: string, businessName: string) => void
+  onFetchMore: () => Promise<void>
+  onRefetch: () => void
+}
 
-  // Fetch real order history from API (automatically refetches when filters change)
-  const { orders: apiOrders, stats, loading, error, hasMore, fetchMore, refetch } = useOrderHistory(filters)
-
-  // Get unique businesses for filter dropdown
-  const uniqueBusinesses = useMemo(() => {
-    const businesses = apiOrders.map(order => ({
-      id: order.business_id,
-      name: order.business_name,
-      category: order.business_category
-    }))
-    return Array.from(new Map(businesses.map(b => [b.id, b])).values())
-  }, [apiOrders])
-
-  // Filter orders locally by search term and business type
-  const filteredOrders = useMemo(() => {
-    return apiOrders.filter(order => {
-      // Search filter
-      if (searchTerm && !order.business_name.toLowerCase().includes(searchTerm.toLowerCase()) &&
-          !(order.type === 'order' && order.items?.some(item =>
-            item.name.toLowerCase().includes(searchTerm.toLowerCase())
-          ))) {
-        // TODO: Add booking search when booking type is implemented
-        // && !(order.type === 'booking' && order.service_name?.toLowerCase().includes(searchTerm.toLowerCase()))
-        return false
-      }
-
-      // Business type filter (only applies locally, API filters by status/business/time)
-      if (selectedBusinessType !== "all" && order.business_category !== selectedBusinessType) {
-        return false
-      }
-
-      return true
-    })
-  }, [apiOrders, searchTerm, selectedBusinessType])
-
-  const handleViewDetails = (orderId: string, orderType: string) => {
-    if (orderType === 'booking') {
-      router.push(`/account/bookings/${orderId}`)
-    } else {
-      router.push(`/account/orders/${orderId}`)
-    }
-  }
-
-  const handleReorder = (orderId: string, businessId: string) => {
-    // Navigate to business page for reordering
-    router.push(`/business/${businessId}?reorder=${orderId}`)
-  }
-
-  const handleRebook = (bookingId: string, businessId: string) => {
-    // Navigate to business page for rebooking
-    router.push(`/business/${businessId}?rebook=${bookingId}`)
-  }
-
-  const handleWriteReview = (orderId: string, businessId: string, businessName: string) => {
-    // Navigate to a write review dialog or page
-    router.push(`/account/reviews/write?order=${orderId}&business=${businessId}&name=${encodeURIComponent(businessName)}`)
-  }
+export default function OrderHistoryTab({
+  orders,
+  ordersByType,
+  stats,
+  loading,
+  error,
+  hasMore,
+  searchTerm,
+  selectedBusinessType,
+  selectedStatus,
+  selectedBusiness,
+  selectedTimeRange,
+  uniqueBusinesses,
+  activeFilterCount,
+  onSearchChange,
+  onBusinessTypeChange,
+  onStatusChange,
+  onBusinessChange,
+  onTimeRangeChange,
+  onClearFilters,
+  onViewDetails,
+  onReorder,
+  onRebook,
+  onWriteReview,
+  onFetchMore,
+  onRefetch
+}: OrderHistoryTabProps) {
 
   // Show error state
   if (error) {
@@ -202,13 +95,39 @@ export default function OrderHistoryTab() {
           <p className="text-red-600 mb-4">{error}</p>
           <Button
             variant="outline"
-            onClick={() => refetch()}
+            onClick={onRefetch}
             className="border-red-300 text-red-700 hover:bg-red-100"
           >
             Try Again
           </Button>
         </CardContent>
       </Card>
+    )
+  }
+
+  // Show loading state
+  if (loading && orders.length === 0) {
+    return (
+      <div className="space-y-4">
+        {[...Array(3)].map((_, i) => (
+          <Card key={i}>
+            <CardContent className="p-6">
+              <div className="flex justify-between items-start mb-4">
+                <div className="space-y-2">
+                  <Skeleton className="h-6 w-48" />
+                  <Skeleton className="h-4 w-32" />
+                </div>
+                <Skeleton className="h-6 w-20" />
+              </div>
+              <Skeleton className="h-20 w-full mb-4" />
+              <div className="flex justify-between">
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-10 w-32" />
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
     )
   }
 
@@ -219,7 +138,7 @@ export default function OrderHistoryTab() {
         <div className="flex items-center gap-3">
           <History className="w-6 h-6 text-stone-600" />
           <h2 className="text-xl font-semibold text-stone-800">
-            Order & Booking History ({filteredOrders.length})
+            Order & Booking History ({orders.length})
           </h2>
         </div>
         <Badge variant="outline" className="text-stone-700 border-stone-300">
@@ -227,283 +146,225 @@ export default function OrderHistoryTab() {
         </Badge>
       </div>
 
-      {loading && apiOrders.length === 0 ? (
-        /* Loading State */
-        <div className="space-y-4">
-          {[...Array(3)].map((_, i) => (
-            <Card key={i}>
-              <CardContent className="p-6">
-                <div className="flex justify-between items-start mb-4">
-                  <div className="space-y-2">
-                    <Skeleton className="h-6 w-48" />
-                    <Skeleton className="h-4 w-32" />
-                  </div>
-                  <Skeleton className="h-6 w-20" />
-                </div>
-                <Skeleton className="h-20 w-full mb-4" />
-                <div className="flex justify-between">
-                  <Skeleton className="h-4 w-24" />
-                  <Skeleton className="h-10 w-32" />
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      ) : apiOrders.length > 0 ? (
-        <>
-          {/* Filters */}
-          <Card className="p-6 bg-white/50 backdrop-blur-sm border-stone-200">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
-              {/* Search */}
-              <div className="relative">
-                <Search className="w-4 h-4 absolute left-3 top-3.5 text-stone-400" />
-                <Input
-                  placeholder="Search businesses, items..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 border-stone-300 focus:border-stone-500"
-                />
-              </div>
-
-              {/* Business Type */}
-              <Select value={selectedBusinessType} onValueChange={setSelectedBusinessType}>
-                <SelectTrigger className="border-stone-300">
-                  <Filter className="w-4 h-4 mr-2 text-stone-400" />
-                  <SelectValue placeholder="Business Type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Types</SelectItem>
-                  <SelectItem value="food">Restaurants</SelectItem>
-                  <SelectItem value="retail">Retail</SelectItem>
-                  <SelectItem value="services">Services</SelectItem>
-                </SelectContent>
-              </Select>
-
-              {/* Specific Business */}
-              <Select value={selectedBusiness} onValueChange={setSelectedBusiness}>
-                <SelectTrigger className="border-stone-300">
-                  <MapPin className="w-4 h-4 mr-2 text-stone-400" />
-                  <SelectValue placeholder="Business" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Businesses</SelectItem>
-                  {uniqueBusinesses.map((business) => (
-                    <SelectItem key={business.id} value={business.id}>
-                      {business.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              {/* Status - Only final/ended statuses */}
-              <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-                <SelectTrigger className="border-stone-300">
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Statuses</SelectItem>
-                  <SelectItem value="completed">Completed</SelectItem>
-                  <SelectItem value="cancelled">Cancelled</SelectItem>
-                </SelectContent>
-              </Select>
-
-              {/* Time Range */}
-              <Select value={selectedTimeRange} onValueChange={setSelectedTimeRange}>
-                <SelectTrigger className="border-stone-300">
-                  <Calendar className="w-4 h-4 mr-2 text-stone-400" />
-                  <SelectValue placeholder="Time Range" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Time</SelectItem>
-                  <SelectItem value="week">Last Week</SelectItem>
-                  <SelectItem value="month">Last Month</SelectItem>
-                  <SelectItem value="3months">Last 3 Months</SelectItem>
-                  <SelectItem value="year">Last Year</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Active Filters Summary */}
-            {(searchTerm || selectedBusinessType !== "all" || selectedBusiness !== "all" || 
-              selectedStatus !== "all" || selectedTimeRange !== "all") && (
-              <div className="mt-4 pt-4 border-t border-stone-200">
-                <div className="flex flex-wrap gap-2">
-                  {searchTerm && (
-                    <Badge variant="secondary" className="text-xs">
-                      Search: &quot;{searchTerm}&quot;
-                    </Badge>
-                  )}
-                  {selectedBusinessType !== "all" && (
-                    <Badge variant="secondary" className="text-xs capitalize">
-                      Type: {selectedBusinessType}
-                    </Badge>
-                  )}
-                  {selectedBusiness !== "all" && (
-                    <Badge variant="secondary" className="text-xs">
-                      Business: {uniqueBusinesses.find(b => b.id === selectedBusiness)?.name}
-                    </Badge>
-                  )}
-                  {selectedStatus !== "all" && (
-                    <Badge variant="secondary" className="text-xs capitalize">
-                      Status: {selectedStatus}
-                    </Badge>
-                  )}
-                  {selectedTimeRange !== "all" && (
-                    <Badge variant="secondary" className="text-xs">
-                      Time: {selectedTimeRange === "week" ? "Last Week" : 
-                             selectedTimeRange === "month" ? "Last Month" :
-                             selectedTimeRange === "3months" ? "Last 3 Months" : 
-                             "Last Year"}
-                    </Badge>
-                  )}
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      setSearchTerm("")
-                      setSelectedBusinessType("all")
-                      setSelectedBusiness("all")
-                      setSelectedStatus("all")
-                      setSelectedTimeRange("all")
-                    }}
-                    className="h-6 px-2 text-xs text-stone-600 hover:text-stone-800"
-                  >
-                    Clear All
-                  </Button>
-                </div>
-              </div>
-            )}
-          </Card>
-
-          {filteredOrders.length > 0 ? (
-            <>
-              {/* Orders & Bookings List */}
-              <div className="space-y-4">
-                {filteredOrders.map((order) => (
-                  <UniversalOrderCard
-                    key={order.id}
-                    // @ts-expect-error - OrderHistoryItem type missing estimated_time property
-                    order={order}
-                    showReorder={true}
-                    onReorder={() => handleReorder(order.id, order.business_id)}
-                    onRebook={() => handleRebook(order.id, order.business_id)}
-                    onTrack={() => handleViewDetails(order.id, order.type)}
-                    onWriteReview={() => handleWriteReview(order.id, order.business_id, order.business_name)}
+      {/* Filters - 2 rows layout matching active-orders */}
+      <Card className="p-4 bg-white/50 backdrop-blur-sm border-stone-200">
+            <div className="flex flex-col gap-4">
+              {/* Row 1: Search Bar */}
+              <div className="w-full">
+                <div className="relative">
+                  <Search className="w-4 h-4 absolute left-3 top-3.5 text-stone-400" />
+                  <Input
+                    placeholder="Search businesses, items..."
+                    value={searchTerm}
+                    onChange={(e) => onSearchChange(e.target.value)}
+                    className="pl-10 border-stone-300 focus:border-stone-500"
                   />
-                ))}
-              </div>
-
-              {/* Historical Summary Stats */}
-              {stats && (
-                <Card className="bg-gradient-to-r from-stone-100/95 via-stone-50/60 to-stone-25/20 backdrop-blur-md border-stone-200/50 shadow-lg">
-                  <CardContent className="py-6">
-                    <h3 className="text-lg font-semibold text-stone-800 mb-4 flex items-center gap-2">
-                      <Star className="w-5 h-5" />
-                      Your History Summary
-                    </h3>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
-                      <div>
-                        <p className="text-2xl font-bold text-stone-800">{stats.totalOrders}</p>
-                        <p className="text-sm text-stone-600">Total Orders & Bookings</p>
-                      </div>
-                      <div>
-                        <p className="text-2xl font-bold text-stone-800">
-                          {new Intl.NumberFormat('en-ZA', {
-                            style: 'currency',
-                            currency: 'ZAR'
-                          }).format(stats.totalSpent)}
-                        </p>
-                        <p className="text-sm text-stone-600">Total Spent</p>
-                      </div>
-                      <div>
-                        <p className="text-2xl font-bold text-stone-800">
-                          {stats.completedOrders}
-                        </p>
-                        <p className="text-sm text-stone-600">Completed</p>
-                      </div>
-                      <div>
-                        <p className="text-2xl font-bold text-stone-800">
-                          {stats.uniqueBusinesses}
-                        </p>
-                        <p className="text-sm text-stone-600">Businesses Used</p>
-                      </div>
-                    </div>
-
-                    {/* Business Type Breakdown */}
-                    {stats.ordersByCategory && Object.keys(stats.ordersByCategory).length > 0 && (
-                      <div className="mt-6 pt-6 border-t border-stone-300/50">
-                        <p className="text-sm font-medium text-stone-700 mb-3">Your Activity by Type:</p>
-                        <div className="flex flex-wrap gap-3">
-                          {Object.entries(stats.ordersByCategory).map(([categoryId, count]) => (
-                            <div key={categoryId} className="flex items-center gap-2 text-sm">
-                              <Badge variant="outline" className="capitalize">
-                                {categoryId}: {count}
-                              </Badge>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Load More Button */}
-              {hasMore && (
-                <div className="text-center">
-                  <Button
-                    onClick={fetchMore}
-                    disabled={loading}
-                    variant="outline"
-                    className="border-stone-300 text-stone-700 hover:bg-stone-100"
-                  >
-                    {loading ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Loading...
-                      </>
-                    ) : (
-                      'Load More Orders'
-                    )}
-                  </Button>
                 </div>
-              )}
-
-              {/* Help Text */}
-              <div className="text-center text-sm text-stone-500">
-                <p>
-                  Looking to repeat a great experience? Use &quot;Reorder&quot; for food orders or &quot;Book Again&quot; for services.
-                </p>
               </div>
-            </>
-          ) : (
-            /* No Results */
-            <Card className="bg-stone-50/50 backdrop-blur-sm border-stone-200">
-              <CardContent className="text-center py-12">
-                <Filter className="w-12 h-12 text-stone-400 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-stone-800 mb-2">
-                  No History Found
-                </h3>
-                <p className="text-stone-600 mb-4">
-                  No orders or bookings match your current filters.
-                </p>
+
+              {/* Row 2: Filter Dropdowns - Business Type, Business, Status, Time Range */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                {/* Business Type */}
+                <Select value={selectedBusinessType} onValueChange={onBusinessTypeChange}>
+                  <SelectTrigger className="border-stone-300">
+                    <Filter className="w-4 h-4 mr-2 text-stone-400" />
+                    <SelectValue placeholder="Business Type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Types</SelectItem>
+                    <SelectItem value="food">Restaurants</SelectItem>
+                    <SelectItem value="retail">Retail</SelectItem>
+                    <SelectItem value="services">Services</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                {/* Specific Business */}
+                <Select value={selectedBusiness} onValueChange={onBusinessChange}>
+                  <SelectTrigger className="border-stone-300">
+                    <MapPin className="w-4 h-4 mr-2 text-stone-400" />
+                    <SelectValue placeholder="Business" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Businesses</SelectItem>
+                    {uniqueBusinesses.map((business) => (
+                      <SelectItem key={business.id} value={business.id}>
+                        {business.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                {/* Status */}
+                <Select value={selectedStatus} onValueChange={onStatusChange}>
+                  <SelectTrigger className="border-stone-300">
+                    <SelectValue placeholder="Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {statusOptions.map(status => (
+                      <SelectItem key={status.value} value={status.value}>
+                        {status.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                {/* Time Range */}
+                <Select value={selectedTimeRange} onValueChange={onTimeRangeChange}>
+                  <SelectTrigger className="border-stone-300">
+                    <Calendar className="w-4 h-4 mr-2 text-stone-400" />
+                    <SelectValue placeholder="Time Range" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {timeRangeOptions.map(option => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Clear Filters Button */}
+              {activeFilterCount > 0 && (
                 <Button
                   variant="outline"
-                  onClick={() => {
-                    setSearchTerm("")
-                    setSelectedBusinessType("all")
-                    setSelectedBusiness("all")
-                    setSelectedStatus("all")
-                    setSelectedTimeRange("all")
-                  }}
-                  className="border-stone-300 text-stone-700 hover:bg-stone-100"
+                  onClick={onClearFilters}
+                  className="flex items-center gap-2 w-full md:w-auto border-stone-300 text-stone-700 hover:bg-stone-100"
                 >
-                  Clear Filters
+                  <Filter className="w-4 h-4" />
+                  Clear Filters ({activeFilterCount})
                 </Button>
+              )}
+            </div>
+          </Card>
+
+      {/* Results or Empty State */}
+      {orders.length > 0 ? (
+        <div className="space-y-6">
+          {/* Orders & Bookings List - with grouped display option */}
+          {selectedBusinessType === 'all' && Object.keys(ordersByType).length > 0 ? (
+            /* Group by business type when "all" is selected */
+            Object.entries(ordersByType).map(([type, typeOrders]) => {
+              if (typeOrders.length === 0) return null
+
+              return (
+                <div key={type}>
+                  <div className="flex items-center gap-2 mb-4">
+                    <h3 className="text-lg font-semibold text-stone-800 capitalize">
+                      {type === 'food' ? 'Restaurants' : type === 'retail' ? 'Retail' : 'Services'} ({typeOrders.length})
+                    </h3>
+                  </div>
+                  <div className="space-y-4">
+                    {typeOrders.map((order) => (
+                      <UniversalOrderCard
+                        key={order.id}
+                        // @ts-expect-error - OrderHistoryItem type missing estimated_time property
+                        order={order}
+                        showReorder={true}
+                        onReorder={() => onReorder(order.id, order.business_id)}
+                        onRebook={() => onRebook(order.id, order.business_id)}
+                        onTrack={() => onViewDetails(order.id, order.type)}
+                        onWriteReview={() => onWriteReview(order.id, order.business_id, order.business_name)}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )
+            })
+          ) : (
+            /* Show all orders in selected type */
+            <div className="space-y-4">
+              {orders.map((order) => (
+                <UniversalOrderCard
+                  key={order.id}
+                  // @ts-expect-error - OrderHistoryItem type missing estimated_time property
+                  order={order}
+                  showReorder={true}
+                  onReorder={() => onReorder(order.id, order.business_id)}
+                  onRebook={() => onRebook(order.id, order.business_id)}
+                  onTrack={() => onViewDetails(order.id, order.type)}
+                  onWriteReview={() => onWriteReview(order.id, order.business_id, order.business_name)}
+                />
+              ))}
+            </div>
+          )}
+
+          {/* Historical Summary Stats */}
+          {stats && (
+            <Card className="bg-gradient-to-r from-stone-100/95 via-stone-50/60 to-stone-25/20 backdrop-blur-md border-stone-200/50 shadow-lg">
+              <CardContent className="py-6">
+                <h3 className="text-lg font-semibold text-stone-800 mb-4 flex items-center gap-2">
+                  <Star className="w-5 h-5" />
+                  Your History Summary
+                </h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+                  <div>
+                    <p className="text-2xl font-bold text-stone-800">{stats.totalOrders}</p>
+                    <p className="text-sm text-stone-600">Total Orders & Bookings</p>
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold text-stone-800">
+                      {new Intl.NumberFormat('en-ZA', {
+                        style: 'currency',
+                        currency: 'ZAR'
+                      }).format(stats.totalSpent)}
+                    </p>
+                    <p className="text-sm text-stone-600">Total Spent</p>
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold text-stone-800">
+                      {stats.completedOrders}
+                    </p>
+                    <p className="text-sm text-stone-600">Completed</p>
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold text-stone-800">
+                      {stats.uniqueBusinesses}
+                    </p>
+                    <p className="text-sm text-stone-600">Businesses Used</p>
+                  </div>
+                </div>
+
+                {/* Business Type Breakdown */}
+                {stats.ordersByCategory && Object.keys(stats.ordersByCategory).length > 0 && (
+                  <div className="mt-6 pt-6 border-t border-stone-300/50">
+                    <p className="text-sm font-medium text-stone-700 mb-3">Your Activity by Type:</p>
+                    <div className="flex flex-wrap gap-3">
+                      {Object.entries(stats.ordersByCategory).map(([categoryId, count]) => (
+                        <div key={categoryId} className="flex items-center gap-2 text-sm">
+                          <Badge variant="outline" className="capitalize">
+                            {categoryId}: {count}
+                          </Badge>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
           )}
-        </>
+
+          {/* Load More Button */}
+          {hasMore && !loading && (
+            <div className="flex justify-center mt-6">
+              <Button
+                onClick={onFetchMore}
+                variant="outline"
+                className="flex items-center gap-2 border-stone-300 text-stone-700 hover:bg-stone-100"
+              >
+                <History className="w-4 h-4" />
+                Load More Orders
+              </Button>
+            </div>
+          )}
+
+          {/* Help Text */}
+          <div className="text-center text-sm text-stone-500">
+            <p>
+              Looking to repeat a great experience? Use &quot;Reorder&quot; for food orders or &quot;Book Again&quot; for services.
+            </p>
+          </div>
+        </div>
       ) : (
         /* Empty State */
         <Card className="bg-gradient-to-r from-stone-100/95 via-stone-50/60 to-stone-25/20 backdrop-blur-md border-stone-200/50 shadow-2xl">
