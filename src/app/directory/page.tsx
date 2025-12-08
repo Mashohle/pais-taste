@@ -13,10 +13,14 @@ import { Switch } from "@/components/ui/switch"
 import { Separator } from "@/components/ui/separator"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Search, MapPin, Clock, Star, ChevronRight, Filter, Map, List, SlidersHorizontal, Heart, Phone } from "lucide-react"
-import Link from 'next/link'
 import { DynamicIcon } from '@/lib/utils/icon-mapper'
 import { useBusinessSwitching } from '@/lib/hooks'
 import { useBusinessDirectory } from '@/lib/hooks'
+import { CustomerLayout } from '@/components/layout/customer-layout'
+import { MobileDirectoryHeader } from '@/components/directory/mobile-directory-header'
+import { MobileDirectoryContent } from '@/components/directory/mobile-directory-content'
+import { MobileFilterSheet } from '@/components/directory/mobile-filter-sheet'
+import { MobileDirectorySkeleton } from '@/components/directory/mobile-directory-skeleton'
 
 // Business interface is now defined in the hook
 
@@ -120,32 +124,54 @@ export default function BusinessDirectory() {
   // Cities are now provided by the hook
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-stone-50 to-stone-100">
-      {/* Navigation Header */}
-      <nav className="bg-white/90 backdrop-blur-md border-b border-stone-200 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-4">
-              <Link href="/" className="text-2xl font-bold bg-gradient-to-r from-stone-600 to-stone-800 bg-clip-text text-transparent">
-                SideHusl
-              </Link>
-              <Badge variant="secondary" className="text-xs">
-                Business Directory
-              </Badge>
-            </div>
-            
-            <div className="flex items-center space-x-4">
-              <Link href="/">
-                <Button variant="ghost" size="sm">
-                  Back to Home
-                </Button>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </nav>
+    <CustomerLayout>
+      {/* Mobile View */}
+      <div className="md:hidden min-h-screen bg-stone-50">
+        <MobileDirectoryHeader
+          searchTerm={searchTerm}
+          onSearchChange={setSearchTerm}
+        />
+        {isLoading ? (
+          <MobileDirectorySkeleton />
+        ) : (
+          <>
+            <MobileDirectoryContent
+              businesses={sortedBusinesses}
+              onFilterClick={() => setShowFilters(true)}
+              activeFilterCount={activeFilterCount}
+              onClearFilters={clearFilters}
+            />
+            <MobileFilterSheet
+              isOpen={showFilters}
+              onClose={() => setShowFilters(false)}
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              categories={categories as any}
+              selectedCategory={selectedCategory}
+              onCategoryChange={setSelectedCategory}
+              selectedProvince={selectedProvince}
+              onProvinceChange={setSelectedProvince}
+              minRating={minRating}
+              onMinRatingChange={setMinRating}
+              maxDistance={maxDistance}
+              onMaxDistanceChange={setMaxDistance}
+              openNow={openNow}
+              onOpenNowChange={setOpenNow}
+              featuredOnly={featuredOnly}
+              onFeaturedOnlyChange={setFeaturedOnly}
+              verifiedOnly={verifiedOnly}
+              onVerifiedOnlyChange={setVerifiedOnly}
+              sortBy={sortBy}
+              onSortByChange={setSortBy}
+              onClearFilters={clearFilters}
+              activeFilterCount={activeFilterCount}
+            />
+          </>
+        )}
+      </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {/* Desktop View */}
+      <div className="hidden md:block min-h-screen bg-gradient-to-br from-stone-50 to-stone-100">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header & Search */}
         <div className="mb-8">
           <div className="flex flex-col md:flex-row md:items-center justify-between mb-6">
@@ -575,7 +601,8 @@ export default function BusinessDirectory() {
             )}
           </div>
         </div>
+        </div>
       </div>
-    </div>
+    </CustomerLayout>
   )
 }

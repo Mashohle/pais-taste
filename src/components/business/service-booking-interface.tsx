@@ -11,7 +11,8 @@ import { Textarea } from "@/components/ui/textarea"
 import { Calendar } from "@/components/ui/calendar"
 import { Separator } from "@/components/ui/separator"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Clock, Car, Scissors, Wrench, CheckCircle } from "lucide-react"
+import { Clock, Car, Scissors, Wrench, CheckCircle, Search } from "lucide-react"
+import { MobileMenuSearch } from './mobile-menu-search'
 
 // Mock services data
 const mockServices = {
@@ -165,6 +166,8 @@ export default function ServiceBookingInterface({ business }: ServiceBookingProp
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined)
   const [selectedTime, setSelectedTime] = useState('')
   const [selectedStaff, setSelectedStaff] = useState('')
+  const [searchTerm, setSearchTerm] = useState('')
+  const [selectedCategory, setSelectedCategory] = useState('All')
   const [customerInfo, setCustomerInfo] = useState({
     name: '',
     phone: '',
@@ -178,7 +181,26 @@ export default function ServiceBookingInterface({ business }: ServiceBookingProp
   const [showBookingForm, setShowBookingForm] = useState(false)
   const [showConfirmation, setShowConfirmation] = useState(false)
 
-  const services = mockServices[business.category as keyof typeof mockServices] || []
+  // Wrap services in useMemo to prevent it from changing on every render
+  const services = useMemo(() => {
+    return mockServices[business.category as keyof typeof mockServices] || []
+  }, [business.category])
+
+  // Get unique categories from services
+  const categories = useMemo(() => {
+    const uniqueCategories = new Set(services.map(service => service.category))
+    return ['All', ...Array.from(uniqueCategories).sort()]
+  }, [services])
+
+  // Filter services based on search and category
+  const filteredServices = useMemo(() => {
+    return services.filter(service => {
+      const matchesCategory = selectedCategory === 'All' || service.category === selectedCategory
+      const matchesSearch = service.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          service.description.toLowerCase().includes(searchTerm.toLowerCase())
+      return matchesCategory && matchesSearch
+    })
+  }, [services, selectedCategory, searchTerm])
 
   // Get available time slots for selected date
   const availableTimeSlots = useMemo(() => {
@@ -252,47 +274,89 @@ export default function ServiceBookingInterface({ business }: ServiceBookingProp
   const ServiceIcon = getServiceIcon()
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
+      {/* Mobile Search & Filters */}
+      <div className="md:hidden">
+        <MobileMenuSearch
+          searchTerm={searchTerm}
+          onSearchChange={setSearchTerm}
+          selectedCategory={selectedCategory}
+          onCategoryChange={setSelectedCategory}
+          categories={categories}
+          resultsCount={filteredServices.length}
+        />
+      </div>
+
+      {/* Desktop Search & Filters */}
+      <div className="hidden md:block bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+        <div className="flex gap-4">
+          <div className="flex-1">
+            <div className="relative">
+              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+              <Input
+                placeholder="Search services..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-12 h-12 text-lg border-gray-200 focus:border-stone-500"
+              />
+            </div>
+          </div>
+          <select
+            value={selectedCategory}
+            onChange={(e) => setSelectedCategory(e.target.value)}
+            className="w-[200px] h-12 text-lg border border-gray-200 rounded-md px-3 bg-white focus:border-stone-500 focus:outline-none"
+          >
+            {categories.map(category => (
+              <option key={category} value={category}>
+                {category}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
       {/* Services List */}
       <div>
-        <h3 className="text-xl font-semibold text-stone-800 mb-4">
+        <h3 className="hidden md:block text-xl font-semibold text-stone-800 mb-4">
           Available Services
         </h3>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {services.map(service => (
-            <Card key={service.id} className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => handleServiceSelect(service)}>
-              <CardContent className="p-6">
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
+          {filteredServices.map(service => (
+            <Card key={service.id} className="hover:shadow-md transition-shadow cursor-pointer bg-white border-stone-200" onClick={() => handleServiceSelect(service)}>
+              <CardContent className="p-4 md:p-6">
                 <div className="flex items-start justify-between mb-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 bg-gradient-to-r from-blue-100 to-blue-200 rounded-lg flex items-center justify-center">
-                      <ServiceIcon className="w-6 h-6 text-blue-600" />
+                  <div className="flex items-center gap-2 md:gap-3 flex-1">
+                    <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-r from-blue-100 to-blue-200 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <ServiceIcon className="w-5 h-5 md:w-6 md:h-6 text-blue-600" />
                     </div>
-                    <div>
-                      <h4 className="font-semibold text-stone-800 flex items-center gap-2">
-                        {service.name}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <h4 className="font-semibold text-stone-800 text-sm md:text-base line-clamp-1">
+                          {service.name}
+                        </h4>
                         {service.popular && (
-                          <Badge className="text-xs bg-blue-500 text-white">Popular</Badge>
+                          <Badge className="text-[10px] md:text-xs bg-blue-500 text-white flex-shrink-0 px-1.5 py-0.5">Popular</Badge>
                         )}
-                      </h4>
-                      <Badge variant="outline" className="text-xs">{service.category}</Badge>
+                      </div>
+                      <Badge variant="outline" className="text-[10px] md:text-xs">{service.category}</Badge>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <div className="text-lg font-semibold text-stone-800">
+                  <div className="text-right flex-shrink-0 ml-2">
+                    <div className="text-base md:text-lg font-semibold text-stone-800">
                       R{service.price.toFixed(2)}
                     </div>
                   </div>
                 </div>
-                
-                <p className="text-sm text-stone-600 mb-3">{service.description}</p>
-                
+
+                <p className="text-xs md:text-sm text-stone-600 mb-3 line-clamp-2">{service.description}</p>
+
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1 text-xs text-stone-500">
                     <Clock className="w-3 h-3" />
-                    {service.duration} minutes
+                    {service.duration} min
                   </div>
-                  <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white">
+                  <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white h-8 md:h-9 text-xs md:text-sm">
                     Book Now
                   </Button>
                 </div>
@@ -301,11 +365,15 @@ export default function ServiceBookingInterface({ business }: ServiceBookingProp
           ))}
         </div>
 
-        {services.length === 0 && (
+        {filteredServices.length === 0 && (
           <Card className="p-8 text-center">
             <ServiceIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-800 mb-2">No services available</h3>
-            <p className="text-gray-600">Services for this business are being updated.</p>
+            <h3 className="text-lg font-semibold text-gray-800 mb-2">No services found</h3>
+            <p className="text-gray-600 text-sm">
+              {searchTerm || selectedCategory !== 'All'
+                ? 'Try adjusting your search or category filter.'
+                : 'Services for this business are being updated.'}
+            </p>
           </Card>
         )}
       </div>

@@ -9,6 +9,7 @@ import { Separator } from "@/components/ui/separator"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Plus, Minus, Search, ShoppingCart, MapPin, Clock, Utensils, Phone } from "lucide-react"
 import { useCart } from '@/lib/contexts/cart-context'
+import { MobileMenuSearch } from './mobile-menu-search'
 
 // Mock menu data for the food business
 const mockMenu = [
@@ -241,9 +242,21 @@ export default function FoodOrderingInterface({ business }: FoodOrderingProps) {
   }
 
   return (
-    <div className="space-y-8">
-      {/* Search & Filters */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+    <div className="space-y-6 md:space-y-8">
+      {/* Mobile Search & Filters */}
+      <div className="md:hidden">
+        <MobileMenuSearch
+          searchTerm={searchTerm}
+          onSearchChange={setSearchTerm}
+          selectedCategory={selectedCategory}
+          onCategoryChange={setSelectedCategory}
+          categories={categories.filter((c): c is string => c !== undefined)}
+          resultsCount={filteredMenu.length}
+        />
+      </div>
+
+      {/* Desktop Search & Filters */}
+      <div className="hidden md:block bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
         <div className="flex flex-col md:flex-row gap-4">
           <div className="flex-1">
             <div className="relative">
@@ -271,12 +284,12 @@ export default function FoodOrderingInterface({ business }: FoodOrderingProps) {
       </div>
 
       {/* 2-Column Layout matching skeleton */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
         {/* Main Content - Menu Items */}
         <div className="lg:col-span-2">
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between mb-6">
+          <Card className="border-0 md:border shadow-none md:shadow-sm">
+            <CardContent className="p-0 md:p-6">
+              <div className="hidden md:flex items-center justify-between mb-6">
                 <h3 className="text-xl font-bold text-gray-900">
                   {selectedCategory === 'All' ? 'Our Menu' : selectedCategory}
                 </h3>
@@ -286,11 +299,11 @@ export default function FoodOrderingInterface({ business }: FoodOrderingProps) {
               </div>
 
           {/* List Layout for Menu Items */}
-          <div className="space-y-4">
+          <div className="space-y-3 md:space-y-4">
             {filteredMenu.map(item => (
-              <div key={item.id} className="flex items-center space-x-4 p-4 border rounded-lg hover:shadow-md transition-shadow">
+              <div key={item.id} className="flex items-center gap-3 md:gap-4 p-3 md:p-4 bg-white border border-stone-200 rounded-xl md:rounded-lg hover:shadow-md transition-shadow">
                 {/* Item Image */}
-                <div className="w-16 h-16 rounded-lg bg-gradient-to-br from-orange-100 to-orange-200 flex items-center justify-center flex-shrink-0 relative overflow-hidden">
+                <div className="w-14 h-14 md:w-16 md:h-16 rounded-lg bg-gradient-to-br from-orange-100 to-orange-200 flex items-center justify-center flex-shrink-0 relative overflow-hidden">
                   {item.image_url ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
@@ -299,63 +312,65 @@ export default function FoodOrderingInterface({ business }: FoodOrderingProps) {
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <Utensils className="w-8 h-8 text-orange-400" />
+                    <Utensils className="w-7 h-7 md:w-8 md:h-8 text-orange-400" />
                   )}
                 </div>
 
                 {/* Item Details */}
                 <div className="flex-1 min-w-0">
-                  <h4 className="font-semibold text-gray-900 mb-1">{item.name}</h4>
-                  <p className="text-sm text-gray-600 line-clamp-1 mb-2">{item.description}</p>
+                  <div className="flex items-start justify-between gap-2 mb-1">
+                    <h4 className="font-semibold text-stone-900 text-sm md:text-base line-clamp-1">{item.name}</h4>
+                    {item.popular && (
+                      <Badge className="bg-red-500 text-white text-[10px] md:text-xs px-1.5 md:px-2 py-0.5 flex-shrink-0">
+                        Popular
+                      </Badge>
+                    )}
+                  </div>
+                  <p className="text-xs md:text-sm text-stone-600 line-clamp-1 mb-2">{item.description}</p>
 
                   {/* Price and Add Button Row */}
-                  <div className="flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-3">
-                      <div className="font-bold text-gray-900 text-lg">R{item.price.toFixed(2)}</div>
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 md:gap-3">
+                      <div className="font-bold text-stone-900 text-base md:text-lg">R{item.price.toFixed(2)}</div>
                       {item.prep_time && (
-                        <span className="flex items-center gap-1 text-xs text-gray-500">
+                        <span className="hidden md:flex items-center gap-1 text-xs text-stone-500">
                           <Clock className="w-3 h-3" />
                           {item.prep_time}
                         </span>
                       )}
-                      {item.popular && (
-                        <Badge className="bg-red-500 text-white text-xs px-2 py-0.5">
-                          Popular
-                        </Badge>
-                      )}
                     </div>
 
                     {/* Add to Cart Controls */}
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5 md:gap-2">
                       {getCartItemQuantity(item.id) === 0 ? (
                         <Button
                           size="sm"
                           onClick={() => handleAddToCart(item)}
-                          className="bg-stone-700 hover:bg-stone-800 text-white"
+                          className="bg-stone-700 hover:bg-stone-800 text-white h-8 md:h-9 px-3 md:px-4 text-xs md:text-sm"
                         >
-                          <Plus className="w-4 h-4 mr-1" />
-                          Add
+                          <Plus className="w-3 h-3 md:w-4 md:h-4 md:mr-1" />
+                          <span className="hidden md:inline">Add</span>
                         </Button>
                       ) : (
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1.5 md:gap-2">
                           <Button
                             size="sm"
                             variant="outline"
                             onClick={() => handleUpdateQuantity(item.id, getCartItemQuantity(item.id) - 1)}
-                            className="h-8 w-8 p-0"
+                            className="h-7 w-7 md:h-8 md:w-8 p-0"
                           >
-                            <Minus className="w-4 h-4" />
+                            <Minus className="w-3 h-3 md:w-4 md:h-4" />
                           </Button>
-                          <span className="font-medium min-w-[2rem] text-center">
+                          <span className="font-medium min-w-[1.5rem] md:min-w-[2rem] text-center text-sm md:text-base">
                             {getCartItemQuantity(item.id)}
                           </span>
                           <Button
                             size="sm"
                             variant="outline"
                             onClick={() => handleAddToCart(item)}
-                            className="h-8 w-8 p-0"
+                            className="h-7 w-7 md:h-8 md:w-8 p-0"
                           >
-                            <Plus className="w-4 h-4" />
+                            <Plus className="w-3 h-3 md:w-4 md:h-4" />
                           </Button>
                         </div>
                       )}

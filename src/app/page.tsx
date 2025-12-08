@@ -1,49 +1,43 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Card, CardContent } from "@/components/ui/card"
 import { BusinessCard, BusinessCardContent } from "@/components/ui/business-card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Search, MapPin, Clock, Star, ChevronRight, ShoppingBag, Filter, Menu, User, Heart, Phone, Package } from "lucide-react"
+import { Search, MapPin, Clock, Star, ChevronRight, ShoppingBag, Filter, Menu, Heart, Phone } from "lucide-react"
 import Link from 'next/link'
 import { DynamicIcon } from '@/lib/utils/icon-mapper'
-import { useCustomerAuth } from '@/lib/context/customer-auth-context'
-import { useCustomerPortal } from '@/lib/hooks'
+import { useBusinessData } from '@/lib/context/business-data-context'
+import { CustomerLayout } from '@/components/layout/customer-layout'
+import { MobileHomeHeader } from '@/components/home/mobile-home-header'
+import { MobileBusinessGrid } from '@/components/home/mobile-business-grid'
+import { MobileHomeSkeleton } from '@/components/home/mobile-home-skeleton'
 
 export default function CustomerPortalHome() {
   const router = useRouter()
   const [searchTerm, setSearchTerm] = useState('')
-  const [selectedCategory] = useState<string | null>(null)
-  const { user } = useCustomerAuth()
 
-  // Use customer portal hook for real data
+  // Use shared business data context
   const {
     businesses,
     categories,
     loading,
     categoriesLoading,
     error,
-    searchBusinesses,
-    filterByCategory
-  } = useCustomerPortal()
+  } = useBusinessData()
 
-  // Debounce search to avoid excessive API calls and reloading
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      if (searchTerm.trim()) {
-        searchBusinesses(searchTerm)
-      } else if (!selectedCategory) {
-        filterByCategory(null)
-      }
-    }, 300) // 300ms debounce delay
+  // Filter businesses based on search (client-side)
+  const filteredBusinesses = searchTerm.trim()
+    ? businesses.filter(business =>
+        business.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        business.description.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    : businesses
 
-    return () => clearTimeout(timeoutId)
-  }, [searchTerm, searchBusinesses, filterByCategory, selectedCategory])
-
-  // Handle search input change (just update state, debounce effect handles API call)
+  // Handle search input change
   const handleSearchChange = (term: string) => {
     setSearchTerm(term)
   }
@@ -51,65 +45,32 @@ export default function CustomerPortalHome() {
   // Show error state
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-stone-50 to-stone-100 flex items-center justify-center">
-        <div className="text-center max-w-md mx-auto px-4">
-          <div className="text-red-600 mb-4">❌ Error loading businesses</div>
-          <p className="text-stone-700 mb-4">{error}</p>
-          <Button onClick={() => window.location.reload()}>
-            Try Again
-          </Button>
+      <CustomerLayout>
+        <div className="min-h-screen bg-gradient-to-br from-stone-50 to-stone-100 flex items-center justify-center">
+          <div className="text-center max-w-md mx-auto px-4">
+            <div className="text-red-600 mb-4">❌ Error loading businesses</div>
+            <p className="text-stone-700 mb-4">{error}</p>
+            <Button onClick={() => window.location.reload()}>
+              Try Again
+            </Button>
+          </div>
         </div>
-      </div>
+      </CustomerLayout>
     )
   }
 
   // Show loading state
   if (loading || categoriesLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-stone-50 to-stone-100">
-        {/* Navigation Header */}
-        <nav className="bg-white/90 backdrop-blur-md border-b border-stone-200 sticky top-0 z-50">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center h-16">
-              <div className="flex items-center space-x-4">
-                <div className="text-2xl font-bold bg-gradient-to-r from-stone-600 to-stone-800 bg-clip-text text-transparent">
-                  SideHusl
-                </div>
-                <Badge variant="secondary" className="text-xs">
-                  Customer Portal
-                </Badge>
-              </div>
+      <CustomerLayout>
+        {/* Mobile Loading */}
+        <div className="md:hidden min-h-screen bg-stone-50">
+          <MobileHomeHeader searchTerm={searchTerm} onSearchChange={handleSearchChange} />
+          <MobileHomeSkeleton />
+        </div>
 
-              <div className="flex items-center space-x-4">
-                <Link href="/directory">
-                  <Button variant="ghost" size="sm">
-                    <Search className="w-4 h-4 mr-2" />
-                    Directory
-                  </Button>
-                </Link>
-                <Link href="/track-order">
-                  <Button variant="ghost" size="sm">
-                    <Package className="w-4 h-4 mr-2" />
-                    Track Order
-                  </Button>
-                </Link>
-                {user && (
-                  <Button variant="ghost" size="sm">
-                    <Heart className="w-4 h-4 mr-2" />
-                    Favorites
-                  </Button>
-                )}
-                <Link href={user ? "/account" : "/login"}>
-                  <Button variant="outline" size="sm">
-                    <User className="w-4 h-4 mr-2" />
-                    {user ? "Account" : "Sign In"}
-                  </Button>
-                </Link>
-              </div>
-            </div>
-          </div>
-        </nav>
-
+        {/* Desktop Loading */}
+        <div className="hidden md:block min-h-screen bg-gradient-to-br from-stone-50 to-stone-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Hero Section */}
           <div className="text-center mb-12">
@@ -175,57 +136,26 @@ export default function CustomerPortalHome() {
             </div>
           </div>
         </div>
-      </div>
+        </div>
+      </CustomerLayout>
     )
   }
 
   // Default static layout
   return (
-    <div className="min-h-screen bg-gradient-to-br from-stone-50 to-stone-100">
-      {/* Navigation Header */}
-      <nav className="bg-white/90 backdrop-blur-md border-b border-stone-200 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-4">
-              <div className="text-2xl font-bold bg-gradient-to-r from-stone-600 to-stone-800 bg-clip-text text-transparent">
-                SideHusl
-              </div>
-              <Badge variant="secondary" className="text-xs">
-                Customer Portal
-              </Badge>
-            </div>
-            
-            <div className="flex items-center space-x-4">
-              <Link href="/directory">
-                <Button variant="ghost" size="sm">
-                  <Search className="w-4 h-4 mr-2" />
-                  Directory
-                </Button>
-              </Link>
-              <Link href="/track-order">
-                <Button variant="ghost" size="sm">
-                  <Package className="w-4 h-4 mr-2" />
-                  Track Order
-                </Button>
-              </Link>
-              {user && (
-                <Button variant="ghost" size="sm">
-                  <Heart className="w-4 h-4 mr-2" />
-                  Favorites
-                </Button>
-              )}
-              <Link href={user ? "/account" : "/login"}>
-                <Button variant="outline" size="sm">
-                  <User className="w-4 h-4 mr-2" />
-                  {user ? "Account" : "Sign In"}
-                </Button>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </nav>
+    <CustomerLayout>
+      {/* Mobile View - Two Section Layout */}
+      <div className="md:hidden min-h-screen bg-stone-50">
+        <MobileHomeHeader
+          searchTerm={searchTerm}
+          onSearchChange={handleSearchChange}
+        />
+        <MobileBusinessGrid businesses={filteredBusinesses} categories={categories} />
+      </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {/* Desktop View - Original Layout */}
+      <div className="hidden md:block min-h-screen bg-gradient-to-br from-stone-50 to-stone-100">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Hero Section */}
         <div className="text-center mb-12">
           <h1 className="text-4xl sm:text-5xl font-bold text-stone-800 mb-4">
@@ -417,8 +347,8 @@ export default function CustomerPortalHome() {
               </div>
               <h3 className="text-lg font-medium text-stone-800 mb-2">No businesses found</h3>
               <p className="text-stone-600">
-                {searchTerm || selectedCategory
-                  ? 'Try adjusting your search or category filter.'
+                {searchTerm
+                  ? 'Try adjusting your search.'
                   : 'Check back later for new businesses in your area.'
                 }
               </p>
@@ -483,7 +413,8 @@ export default function CustomerPortalHome() {
             </Badge>
           </CardContent>
         </Card>
+        </div>
       </div>
-    </div>
+    </CustomerLayout>
   )
 }

@@ -1,0 +1,109 @@
+
+> sidehusl@0.1.0 build
+> next build
+
+   ▲ Next.js 15.4.6
+   - Environments: .env.local
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully in 6.0s
+   Linting and checking validity of types ...
+   Collecting page data ...
+   Generating static pages (0/59) ...
+   Generating static pages (14/59) 
+📄 LAYOUT: AdminLayout called
+📄 LAYOUT: AdminLayout called
+📄 LAYOUT: AdminLayout called
+   Generating static pages (29/59) 
+   Generating static pages (44/59) 
+📄 LAYOUT: AdminLayout called
+📄 LAYOUT: AdminLayout called
+🔧 LAYOUT CONTENT: AdminLayoutContent called
+🔧 LAYOUT CONTENT: Login page detected, returning children without auth
+🔑 LOGIN PAGE: AdminLogin component rendering
+📄 LAYOUT: AdminLayout called
+📄 LAYOUT: AdminLayout called
+📄 LAYOUT: AdminLayout called
+📄 LAYOUT: AdminLayout called
+📄 LAYOUT: AdminLayout called
+📄 LAYOUT: AdminLayout called
+ ✓ Generating static pages (59/59)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                                  Size  First Load JS
+┌ ○ /                                     7.79 kB         179 kB
+├ ○ /_not-found                             999 B         101 kB
+├ ○ /account                              9.34 kB         185 kB
+├ ○ /account/history                         4 kB         150 kB
+├ ○ /account/orders                        2.7 kB         208 kB
+├ ƒ /account/orders/[id]                  5.84 kB         164 kB
+├ ○ /account/reviews                       7.6 kB         143 kB
+├ ○ /account/settings                      5.1 kB         176 kB
+├ ○ /admin                                4.26 kB         175 kB
+├ ○ /admin/bookings                       8.33 kB         190 kB
+├ ○ /admin/inventory                      12.7 kB         197 kB
+├ ○ /admin/locations                      5.35 kB         173 kB
+├ ○ /admin/login                          4.71 kB         181 kB
+├ ○ /admin/menu                           5.71 kB         173 kB
+├ ○ /admin/menu/add                       6.91 kB         202 kB
+├ ƒ /admin/menu/edit/[id]                 7.58 kB         202 kB
+├ ○ /admin/orders                         6.46 kB         174 kB
+├ ○ /admin/products                       8.17 kB         190 kB
+├ ○ /admin/settings                       17.2 kB         224 kB
+├ ○ /admin/staff                          10.4 kB         195 kB
+├ ƒ /api/admin/applications/[id]/approve    205 B         100 kB
+├ ƒ /api/admin/applications/[id]/reject     205 B         100 kB
+├ ƒ /api/admin/business                     205 B         100 kB
+├ ƒ /api/admin/dashboard/stats              205 B         100 kB
+├ ƒ /api/admin/locations                    205 B         100 kB
+├ ƒ /api/admin/menu-items                   205 B         100 kB
+├ ƒ /api/admin/menu-items/[id]              205 B         100 kB
+├ ƒ /api/admin/menu-items/upload            205 B         100 kB
+├ ƒ /api/admin/status-configs               205 B         100 kB
+├ ƒ /api/admin/team                         205 B         100 kB
+├ ƒ /api/applications                       205 B         100 kB
+├ ƒ /api/auth/business-profile              205 B         100 kB
+├ ƒ /api/auth/businesses                    205 B         100 kB
+├ ƒ /api/auth/oauth                         205 B         100 kB
+├ ƒ /api/auth/profile                       205 B         100 kB
+├ ƒ /api/auth/profile/avatar                205 B         100 kB
+├ ƒ /api/auth/reset-password                205 B         100 kB
+├ ƒ /api/auth/sign-in                       205 B         100 kB
+├ ƒ /api/auth/sign-up                       205 B         100 kB
+├ ƒ /api/businesses                         205 B         100 kB
+├ ƒ /api/customer/business/[id]             205 B         100 kB
+├ ƒ /api/customer/businesses                205 B         100 kB
+├ ƒ /api/customer/categories                205 B         100 kB
+├ ƒ /api/customer/orders                    205 B         100 kB
+├ ƒ /api/customer/orders/active             205 B         100 kB
+├ ƒ /api/customer/orders/history            205 B         100 kB
+├ ƒ /api/notifications/send                 205 B         100 kB
+├ ƒ /api/user/notification-token            205 B         100 kB
+├ ƒ /api/users                              205 B         100 kB
+├ ƒ /business/[id]                        21.5 kB         223 kB
+├ ○ /business/apply                       10.3 kB         209 kB
+├ ○ /business/setup                       6.56 kB         119 kB
+├ ○ /checkout                             11.1 kB         215 kB
+├ ○ /directory                            12.8 kB         211 kB
+├ ○ /login                                5.94 kB         183 kB
+├ ƒ /order/[id]/confirmation              6.97 kB         162 kB
+├ ƒ /order/[id]/track                     9.23 kB         164 kB
+├ ○ /super-admin                          5.58 kB         114 kB
+├ ○ /super-admin/analytics                5.64 kB         141 kB
+├ ○ /super-admin/applications             6.58 kB         145 kB
+├ ○ /super-admin/businesses               6.15 kB         204 kB
+├ ○ /super-admin/login                     4.2 kB         175 kB
+├ ○ /super-admin/moderation               3.67 kB         112 kB
+├ ○ /super-admin/settings                 8.08 kB         117 kB
+├ ○ /super-admin/users                    6.54 kB         204 kB
+└ ○ /track-order                          5.14 kB         160 kB
++ First Load JS shared by all              100 kB
+  ├ chunks/4bd1b696-cc729d47eba2cee4.js   54.1 kB
+  ├ chunks/5964-6d6a41800488ba64.js       43.9 kB
+  └ other shared chunks (total)           1.99 kB
+
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+

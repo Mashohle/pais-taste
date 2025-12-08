@@ -10,19 +10,22 @@ import {
   Star,
   Heart,
   Share2,
-  ArrowLeft,
   Info,
   ShoppingCart,
   Calendar
 } from "lucide-react"
 import Link from 'next/link'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams } from 'next/navigation'
 import { DynamicIcon } from '@/lib/utils/icon-mapper'
 import FoodOrderingInterface from '@/components/business/food-ordering-interface'
 import ServiceBookingInterface from '@/components/business/service-booking-interface'
 import RetailOrderingInterface from '@/components/business/retail-ordering-interface'
 import { ShoppingCart as ShoppingCartComponent } from '@/components/cart'
 import { useBusiness } from '@/lib/hooks'
+import { CustomerLayout } from '@/components/layout/customer-layout'
+import { MobileBusinessHeader } from '@/components/business/mobile-business-header'
+import { MobileBusinessContent } from '@/components/business/mobile-business-content'
+import { MobileBusinessSkeleton } from '@/components/business/mobile-business-skeleton'
 
 const categories = {
   food: { icon: 'utensils', color: 'bg-orange-100 text-orange-700' },
@@ -34,10 +37,9 @@ const categories = {
 
 export default function BusinessDetailPage() {
   const params = useParams()
-  const router = useRouter()
   const businessSlug = params.id as string
   const [isFavorited, setIsFavorited] = useState(false)
-  
+
   // Use the custom hook for business data
   const {
     business,
@@ -45,26 +47,6 @@ export default function BusinessDetailPage() {
     error,
     refetch
   } = useBusiness(businessSlug)
-
-  const handleShare = async () => {
-    if (navigator.share && business) {
-      try {
-        await navigator.share({
-          title: business.name,
-          text: business.description,
-          url: window.location.href
-        })
-      } catch {
-        // Fallback to copying to clipboard
-        navigator.clipboard.writeText(window.location.href)
-        alert('Link copied to clipboard!')
-      }
-    } else {
-      // Fallback for browsers without Web Share API
-      navigator.clipboard.writeText(window.location.href)
-      alert('Link copied to clipboard!')
-    }
-  }
 
   // Status comes from API now
   const getStatusFromBusiness = () => {
@@ -116,143 +98,136 @@ export default function BusinessDetailPage() {
   // Handle loading state
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-stone-50 to-stone-100">
-        {/* Header Skeleton */}
-        <nav className="bg-white/90 backdrop-blur-md border-b border-stone-200 sticky top-0 z-50">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center h-16">
-              <div className="flex items-center space-x-4">
-                <Skeleton className="h-8 w-24" />
-                <Skeleton className="h-6 w-32" />
-              </div>
-              <div className="flex items-center space-x-4">
-                <Skeleton className="h-8 w-8 rounded-full" />
-                <Skeleton className="h-8 w-8 rounded-full" />
-              </div>
-            </div>
-          </div>
-        </nav>
+      <CustomerLayout>
+        {/* Mobile Loading */}
+        <div className="md:hidden">
+          <MobileBusinessSkeleton />
+        </div>
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {/* Business Header Skeleton */}
-          <div className="mb-8">
-            <div className="flex flex-col lg:flex-row gap-8">
-              {/* Business Image Skeleton */}
-              <div className="lg:w-1/3">
-                <Skeleton className="h-64 lg:h-80 rounded-2xl" />
-              </div>
-
-              {/* Business Info Skeleton */}
-              <div className="lg:w-2/3">
-                <div className="flex items-center gap-2 mb-2">
-                  <Skeleton className="w-8 h-8 rounded-lg" />
-                  <Skeleton className="h-6 w-20" />
-                  <Skeleton className="h-6 w-16" />
+        {/* Desktop Loading */}
+        <div className="hidden md:block min-h-screen bg-gradient-to-br from-stone-50 to-stone-100">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            {/* Business Header Skeleton */}
+            <div className="mb-8">
+              <div className="flex flex-col lg:flex-row gap-8">
+                {/* Business Image Skeleton */}
+                <div className="lg:w-1/3">
+                  <Skeleton className="h-64 lg:h-80 rounded-2xl" />
                 </div>
 
-                <Skeleton className="h-8 w-64 mb-4" />
-                <Skeleton className="h-4 w-full mb-2" />
-                <Skeleton className="h-4 w-3/4 mb-6" />
-
-                <div className="flex items-center space-x-6 mb-6">
-                  <div className="flex items-center space-x-1">
-                    <Skeleton className="w-5 h-5" />
-                    <Skeleton className="h-4 w-12" />
+                {/* Business Info Skeleton */}
+                <div className="lg:w-2/3">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Skeleton className="w-8 h-8 rounded-lg" />
+                    <Skeleton className="h-6 w-20" />
+                    <Skeleton className="h-6 w-16" />
                   </div>
-                  <div className="flex items-center space-x-1">
-                    <Skeleton className="w-4 h-4" />
-                    <Skeleton className="h-4 w-32" />
-                  </div>
-                </div>
 
-                <div className="flex items-center space-x-4">
-                  <Skeleton className="h-10 w-24" />
-                  <Skeleton className="h-10 w-24" />
-                  <Skeleton className="h-10 w-10 rounded-full" />
-                  <Skeleton className="h-10 w-10 rounded-full" />
-                </div>
-              </div>
-            </div>
-          </div>
+                  <Skeleton className="h-8 w-64 mb-4" />
+                  <Skeleton className="h-4 w-full mb-2" />
+                  <Skeleton className="h-4 w-3/4 mb-6" />
 
-          {/* Tabs Skeleton */}
-          <div className="mb-6">
-            <div className="flex space-x-1 bg-stone-100 p-1 rounded-lg mb-6 w-fit">
-              <Skeleton className="h-10 w-20" />
-              <Skeleton className="h-10 w-20" />
-              <Skeleton className="h-10 w-20" />
-            </div>
-          </div>
-
-          {/* Content Area Skeleton */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Main Content */}
-            <div className="lg:col-span-2">
-              <Card>
-                <CardContent className="p-6">
-                  <Skeleton className="h-6 w-32 mb-4" />
-                  <div className="space-y-4">
-                    {[...Array(4)].map((_, i) => (
-                      <div key={i} className="flex items-center space-x-4 p-4 border rounded-lg">
-                        <Skeleton className="w-16 h-16 rounded-lg" />
-                        <div className="flex-1">
-                          <Skeleton className="h-5 w-40 mb-2" />
-                          <Skeleton className="h-4 w-full mb-1" />
-                          <Skeleton className="h-4 w-24" />
-                        </div>
-                        <Skeleton className="h-8 w-20" />
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Sidebar */}
-            <div className="space-y-6">
-              <Card>
-                <CardContent className="p-6">
-                  <Skeleton className="h-6 w-24 mb-4" />
-                  <div className="space-y-3">
-                    <div className="flex items-center space-x-2">
+                  <div className="flex items-center space-x-6 mb-6">
+                    <div className="flex items-center space-x-1">
+                      <Skeleton className="w-5 h-5" />
+                      <Skeleton className="h-4 w-12" />
+                    </div>
+                    <div className="flex items-center space-x-1">
                       <Skeleton className="w-4 h-4" />
                       <Skeleton className="h-4 w-32" />
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <Skeleton className="w-4 h-4" />
-                      <Skeleton className="h-4 w-28" />
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Skeleton className="w-4 h-4" />
-                      <Skeleton className="h-4 w-36" />
-                    </div>
                   </div>
-                </CardContent>
-              </Card>
 
-              <Card>
-                <CardContent className="p-6">
-                  <Skeleton className="h-6 w-28 mb-4" />
-                  <div className="space-y-3">
-                    {[...Array(7)].map((_, i) => (
-                      <div key={i} className="flex justify-between">
-                        <Skeleton className="h-4 w-16" />
-                        <Skeleton className="h-4 w-20" />
-                      </div>
-                    ))}
+                  <div className="flex items-center space-x-4">
+                    <Skeleton className="h-10 w-24" />
+                    <Skeleton className="h-10 w-24" />
+                    <Skeleton className="h-10 w-10 rounded-full" />
+                    <Skeleton className="h-10 w-10 rounded-full" />
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
+            </div>
+
+            {/* Tabs Skeleton */}
+            <div className="mb-6">
+              <div className="flex space-x-1 bg-stone-100 p-1 rounded-lg mb-6 w-fit">
+                <Skeleton className="h-10 w-20" />
+                <Skeleton className="h-10 w-20" />
+                <Skeleton className="h-10 w-20" />
+              </div>
+            </div>
+
+            {/* Content Area Skeleton */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              {/* Main Content */}
+              <div className="lg:col-span-2">
+                <Card>
+                  <CardContent className="p-6">
+                    <Skeleton className="h-6 w-32 mb-4" />
+                    <div className="space-y-4">
+                      {[...Array(4)].map((_, i) => (
+                        <div key={i} className="flex items-center space-x-4 p-4 border rounded-lg">
+                          <Skeleton className="w-16 h-16 rounded-lg" />
+                          <div className="flex-1">
+                            <Skeleton className="h-5 w-40 mb-2" />
+                            <Skeleton className="h-4 w-full mb-1" />
+                            <Skeleton className="h-4 w-24" />
+                          </div>
+                          <Skeleton className="h-8 w-20" />
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Sidebar */}
+              <div className="space-y-6">
+                <Card>
+                  <CardContent className="p-6">
+                    <Skeleton className="h-6 w-24 mb-4" />
+                    <div className="space-y-3">
+                      <div className="flex items-center space-x-2">
+                        <Skeleton className="w-4 h-4" />
+                        <Skeleton className="h-4 w-32" />
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Skeleton className="w-4 h-4" />
+                        <Skeleton className="h-4 w-28" />
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Skeleton className="w-4 h-4" />
+                        <Skeleton className="h-4 w-36" />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardContent className="p-6">
+                    <Skeleton className="h-6 w-28 mb-4" />
+                    <div className="space-y-3">
+                      {[...Array(7)].map((_, i) => (
+                        <div key={i} className="flex justify-between">
+                          <Skeleton className="h-4 w-16" />
+                          <Skeleton className="h-4 w-20" />
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      </CustomerLayout>
     )
   }
 
   // Handle error state
   if (error) {
     return (
+      <CustomerLayout>
       <div className="min-h-screen bg-gradient-to-br from-stone-50 to-stone-100 flex items-center justify-center">
         <div className="text-center max-w-md mx-auto px-4">
           <div className="text-red-600 mb-4">❌ Error loading business</div>
@@ -262,12 +237,14 @@ export default function BusinessDetailPage() {
           </Button>
         </div>
       </div>
+      </CustomerLayout>
     )
   }
 
   // Handle missing business (shouldn't happen with proper error handling, but keep as fallback)
   if (!business) {
     return (
+      <CustomerLayout>
       <div className="min-h-screen bg-gradient-to-br from-stone-50 to-stone-100 flex items-center justify-center">
         <div className="text-center">
           <div className="text-6xl mb-4">🏪</div>
@@ -278,6 +255,7 @@ export default function BusinessDetailPage() {
           </Link>
         </div>
       </div>
+      </CustomerLayout>
     )
   }
 
@@ -288,44 +266,26 @@ export default function BusinessDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-stone-50 to-stone-100">
-      {/* Navigation Header - Like Home Page */}
-      <nav className="bg-white/90 backdrop-blur-md border-b border-stone-200 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-4">
-              <Link href="/">
-                <div className="text-2xl font-bold bg-gradient-to-r from-stone-600 to-stone-800 bg-clip-text text-transparent">
-                  SideHusl
-                </div>
-              </Link>
-              <Badge variant="secondary" className="text-xs">
-                Customer Portal
-              </Badge>
-            </div>
+    <CustomerLayout>
+      {/* Mobile View */}
+      <div className="md:hidden min-h-screen bg-stone-50">
+        <MobileBusinessHeader
+          businessName={business.name}
+          logoUrl={business.logo_url}
+          categoryIcon={categoryInfo.icon}
+        />
+        <MobileBusinessContent
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          business={business as any}
+          categoryColor={categoryInfo.color}
+          isFavorited={isFavorited}
+          onToggleFavorite={() => setIsFavorited(!isFavorited)}
+        />
+      </div>
 
-            <div className="flex items-center space-x-4">
-              <Button variant="ghost" size="sm" onClick={() => router.back()}>
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Back
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setIsFavorited(!isFavorited)}
-                className={isFavorited ? 'text-red-600' : ''}
-              >
-                <Heart className={`w-4 h-4 ${isFavorited ? 'fill-current' : ''}`} />
-              </Button>
-              <Button variant="ghost" size="sm" onClick={handleShare}>
-                <Share2 className="w-4 h-4" />
-              </Button>
-            </div>
-          </div>
-        </div>
-      </nav>
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {/* Desktop View */}
+      <div className="hidden md:block min-h-screen bg-gradient-to-br from-stone-50 to-stone-100">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Business Header - Matching Skeleton Layout */}
         {business && (
           <div className="mb-8">
@@ -408,45 +368,46 @@ export default function BusinessDetailPage() {
         )}
 
         {/* Tabs */}
-        {business && (
-          <Tabs defaultValue="order" className="space-y-6">
-            <TabsList>
-              <TabsTrigger value="order" className="flex items-center gap-2">
-                {business.category?.id === 'food' || business.category?.id === 'retail' ? (
-                  <ShoppingCart className="w-4 h-4" />
-                ) : (
-                  <Calendar className="w-4 h-4" />
-                )}
-                {business.category?.id === 'food' || business.category?.id === 'retail' ? 'Order' : 'Book Service'}
-              </TabsTrigger>
-              <TabsTrigger value="info">Info</TabsTrigger>
-              <TabsTrigger value="reviews">Reviews</TabsTrigger>
-            </TabsList>
+          {business && (
+            <Tabs defaultValue="order" className="space-y-6">
+              <TabsList>
+                <TabsTrigger value="order" className="flex items-center gap-2">
+                  {business.category?.id === 'food' || business.category?.id === 'retail' ? (
+                    <ShoppingCart className="w-4 h-4" />
+                  ) : (
+                    <Calendar className="w-4 h-4" />
+                  )}
+                  {business.category?.id === 'food' || business.category?.id === 'retail' ? 'Order' : 'Book Service'}
+                </TabsTrigger>
+                <TabsTrigger value="info">Info</TabsTrigger>
+                <TabsTrigger value="reviews">Reviews</TabsTrigger>
+              </TabsList>
 
-            <TabsContent value="order">
-              {renderOrderingInterface()}
-            </TabsContent>
+              <TabsContent value="order">
+                {renderOrderingInterface()}
+              </TabsContent>
 
-            <TabsContent value="info">
-              <Card className="p-6">
-                <h3 className="text-lg font-semibold text-stone-800 mb-4">About</h3>
-                <p className="text-stone-700">{business.long_description || business.description}</p>
-              </Card>
-            </TabsContent>
+              <TabsContent value="info">
+                <Card className="p-6">
+                  <h3 className="text-lg font-semibold text-stone-800 mb-4">About</h3>
+                  <p className="text-stone-700">{business.long_description || business.description}</p>
+                </Card>
+              </TabsContent>
 
-            <TabsContent value="reviews">
-              <Card className="p-6 text-center">
-                <Star className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-gray-800 mb-2">Reviews Coming Soon</h3>
-                <p className="text-gray-600">Customer reviews and ratings will be available soon.</p>
-              </Card>
-            </TabsContent>
-          </Tabs>
-        )}
+              <TabsContent value="reviews">
+                <Card className="p-6 text-center">
+                  <Star className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold text-gray-800 mb-2">Reviews Coming Soon</h3>
+                  <p className="text-gray-600">Customer reviews and ratings will be available soon.</p>
+                </Card>
+              </TabsContent>
+            </Tabs>
+          )}
+        </div>
       </div>
 
       {/* Shopping Cart Sidebar */}
       <ShoppingCartComponent />
-    </div>
+    </CustomerLayout>
   )
 }

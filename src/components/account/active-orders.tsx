@@ -101,8 +101,8 @@ export default function ActiveOrdersTab({
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      {/* Header - Hide on mobile */}
+      <div className="hidden md:flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h2 className="text-2xl font-bold text-stone-800">Active Orders</h2>
           <p className="text-stone-600 text-sm">Track your current orders and appointments</p>
@@ -131,8 +131,8 @@ export default function ActiveOrdersTab({
       )}
 
       <div className="space-y-6">
-          {/* Filters */}
-          <Card className="p-4">
+          {/* Filters - Hide on mobile */}
+          <Card className="hidden md:block p-4">
             <div className="flex flex-col gap-4">
               {/* Row 1: Search Bar */}
               <div className="w-full">

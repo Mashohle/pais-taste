@@ -4,6 +4,12 @@ import { useState, useMemo } from 'react'
 import { useRouter } from "next/navigation"
 import OrderHistoryTab from '@/components/account/order-history'
 import { useOrderHistory } from '@/lib/hooks/use-order-history'
+import { MobilePageHeader } from '@/components/account/mobile-page-header'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Input } from '@/components/ui/input'
+import { SlidersHorizontal, Search } from 'lucide-react'
+import { MobileHistoryFilterSheet } from '@/components/account/mobile-history-filter-sheet'
 
 export default function HistoryPage() {
   const router = useRouter()
@@ -12,6 +18,7 @@ export default function HistoryPage() {
   const [selectedStatus, setSelectedStatus] = useState('all')
   const [selectedBusiness, setSelectedBusiness] = useState('all')
   const [selectedTimeRange, setSelectedTimeRange] = useState('all')
+  const [showFilters, setShowFilters] = useState(false)
 
   // Memoize filters to prevent infinite loop
   const filters = useMemo(() => ({
@@ -99,34 +106,127 @@ export default function HistoryPage() {
   ].filter(Boolean).length
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <OrderHistoryTab
-        orders={filteredOrders}
-        ordersByType={ordersByType}
-        stats={stats}
-        loading={loading}
-        error={error}
-        hasMore={hasMore}
-        searchTerm={searchTerm}
-        selectedBusinessType={selectedBusinessType}
-        selectedStatus={selectedStatus}
-        selectedBusiness={selectedBusiness}
-        selectedTimeRange={selectedTimeRange}
-        uniqueBusinesses={uniqueBusinesses}
-        activeFilterCount={activeFilterCount}
-        onSearchChange={setSearchTerm}
-        onBusinessTypeChange={setSelectedBusinessType}
-        onStatusChange={setSelectedStatus}
-        onBusinessChange={setSelectedBusiness}
-        onTimeRangeChange={setSelectedTimeRange}
-        onClearFilters={clearFilters}
-        onViewDetails={handleViewDetails}
-        onReorder={handleReorder}
-        onRebook={handleRebook}
-        onWriteReview={handleWriteReview}
-        onFetchMore={fetchMore}
-        onRefetch={refetch}
-      />
-    </div>
+    <>
+      {/* Mobile View */}
+      <div className="md:hidden min-h-screen bg-stone-50">
+        <MobilePageHeader
+          title="History"
+          subtitle="View all your past orders and bookings"
+        />
+        <div className="bg-stone-50 rounded-t-[2.5rem] -mt-20 relative z-10 min-h-screen pb-24" style={{ boxShadow: 'inset 0 8px 12px -8px rgba(0,0,0,0.15)' }}>
+          <div className="px-5 pt-6">
+            {/* Search Bar */}
+            <div className="mb-4">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-stone-400 w-4 h-4" />
+                <Input
+                  placeholder="Search businesses, items..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 bg-white"
+                />
+              </div>
+            </div>
+
+            {/* Top Bar: Count + Filter */}
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-sm font-medium text-stone-700">
+                {stats?.totalOrders || 0} past {stats?.totalOrders === 1 ? 'order' : 'orders'}
+              </p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowFilters(true)}
+                className="flex items-center gap-2"
+              >
+                <SlidersHorizontal className="w-4 h-4" />
+                Filters
+                {activeFilterCount > 0 && (
+                  <Badge variant="default" className="ml-1 text-xs px-1.5 py-0 h-5">
+                    {activeFilterCount}
+                  </Badge>
+                )}
+              </Button>
+            </div>
+
+            <OrderHistoryTab
+              orders={filteredOrders}
+              ordersByType={ordersByType}
+              stats={stats}
+              loading={loading}
+              error={error}
+              hasMore={hasMore}
+              searchTerm={searchTerm}
+              selectedBusinessType={selectedBusinessType}
+              selectedStatus={selectedStatus}
+              selectedBusiness={selectedBusiness}
+              selectedTimeRange={selectedTimeRange}
+              uniqueBusinesses={uniqueBusinesses}
+              activeFilterCount={activeFilterCount}
+              onSearchChange={setSearchTerm}
+              onBusinessTypeChange={setSelectedBusinessType}
+              onStatusChange={setSelectedStatus}
+              onBusinessChange={setSelectedBusiness}
+              onTimeRangeChange={setSelectedTimeRange}
+              onClearFilters={clearFilters}
+              onViewDetails={handleViewDetails}
+              onReorder={handleReorder}
+              onRebook={handleRebook}
+              onWriteReview={handleWriteReview}
+              onFetchMore={fetchMore}
+              onRefetch={refetch}
+            />
+
+            {/* Filter Sheet */}
+            <MobileHistoryFilterSheet
+              isOpen={showFilters}
+              onClose={() => setShowFilters(false)}
+              selectedBusinessType={selectedBusinessType}
+              onBusinessTypeChange={setSelectedBusinessType}
+              selectedStatus={selectedStatus}
+              onStatusChange={setSelectedStatus}
+              selectedBusiness={selectedBusiness}
+              onBusinessChange={setSelectedBusiness}
+              selectedTimeRange={selectedTimeRange}
+              onTimeRangeChange={setSelectedTimeRange}
+              uniqueBusinesses={uniqueBusinesses}
+              onClearFilters={clearFilters}
+              activeFilterCount={activeFilterCount}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Desktop View */}
+      <div className="hidden md:block">
+        <OrderHistoryTab
+          orders={filteredOrders}
+          ordersByType={ordersByType}
+          stats={stats}
+          loading={loading}
+          error={error}
+          hasMore={hasMore}
+          searchTerm={searchTerm}
+          selectedBusinessType={selectedBusinessType}
+          selectedStatus={selectedStatus}
+          selectedBusiness={selectedBusiness}
+          selectedTimeRange={selectedTimeRange}
+          uniqueBusinesses={uniqueBusinesses}
+          activeFilterCount={activeFilterCount}
+          onSearchChange={setSearchTerm}
+          onBusinessTypeChange={setSelectedBusinessType}
+          onStatusChange={setSelectedStatus}
+          onBusinessChange={setSelectedBusiness}
+          onTimeRangeChange={setSelectedTimeRange}
+          onClearFilters={clearFilters}
+          onViewDetails={handleViewDetails}
+          onReorder={handleReorder}
+          onRebook={handleRebook}
+          onWriteReview={handleWriteReview}
+          onFetchMore={fetchMore}
+          onRefetch={refetch}
+        />
+      </div>
+    </>
   )
 }

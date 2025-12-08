@@ -48,7 +48,14 @@ function AccountLayoutContent({ children }: { children: React.ReactNode }) {
     const [sidebarOpen, setSidebarOpen] = useState(false)
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-stone-50 via-stone-100 to-stone-200">
+        <>
+        {/* Mobile: Simple layout without sidebar */}
+        <div className="md:hidden">
+            {children}
+        </div>
+
+        {/* Desktop: Full layout with sidebar */}
+        <div className="hidden md:block min-h-screen bg-gradient-to-br from-stone-50 via-stone-100 to-stone-200">
             {/* Header - Matches Admin Portal Style */}
             <nav className="bg-white/90 backdrop-blur-md border-b border-stone-200 sticky top-0 z-50">
                 <div className="px-4 sm:px-6 lg:px-8">
@@ -197,5 +204,6 @@ function AccountLayoutContent({ children }: { children: React.ReactNode }) {
                 </main>
             </div>
         </div>
+        </>
     )
 }

@@ -27,11 +27,12 @@ interface UserProfile {
 interface ProfileEditFormProps {
   profile: UserProfile | null
   onSave: (data: Partial<UserProfile>) => Promise<void>
-  onCancel: () => void
+  onCancel?: () => void
   saving: boolean
+  hideCancel?: boolean
 }
 
-export default function ProfileEditForm({ profile, onSave, onCancel, saving }: ProfileEditFormProps) {
+export default function ProfileEditForm({ profile, onSave, onCancel, saving, hideCancel }: ProfileEditFormProps) {
   const [formData, setFormData] = useState({
     full_name: profile?.full_name || '',
     phone: profile?.phone || '',
@@ -188,14 +189,16 @@ export default function ProfileEditForm({ profile, onSave, onCancel, saving }: P
       </div>
 
       <div className="flex gap-2 pt-4">
-        <Button type="submit" disabled={saving} className="bg-stone-700 hover:bg-stone-800">
+        <Button type="submit" disabled={saving} className="bg-stone-700 hover:bg-stone-800 flex-1 md:flex-none">
           {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
           Save Changes
         </Button>
-        <Button type="button" variant="outline" onClick={onCancel}>
-          <X className="w-4 h-4 mr-2" />
-          Cancel
-        </Button>
+        {!hideCancel && onCancel && (
+          <Button type="button" variant="outline" onClick={onCancel} className="flex-1 md:flex-none">
+            <X className="w-4 h-4 mr-2" />
+            Cancel
+          </Button>
+        )}
       </div>
     </form>
   )

@@ -133,8 +133,8 @@ export default function OrderHistoryTab({
 
   return (
     <div className="space-y-6">
-      {/* Header with Order Count */}
-      <div className="flex items-center justify-between">
+      {/* Header with Order Count - Hide on mobile */}
+      <div className="hidden md:flex items-center justify-between">
         <div className="flex items-center gap-3">
           <History className="w-6 h-6 text-stone-600" />
           <h2 className="text-xl font-semibold text-stone-800">
@@ -146,8 +146,8 @@ export default function OrderHistoryTab({
         </Badge>
       </div>
 
-      {/* Filters - 2 rows layout matching active-orders */}
-      <Card className="p-4 bg-white/50 backdrop-blur-sm border-stone-200">
+      {/* Filters - 2 rows layout matching active-orders - Hide on mobile */}
+      <Card className="hidden md:block p-4 bg-white/50 backdrop-blur-sm border-stone-200">
             <div className="flex flex-col gap-4">
               {/* Row 1: Search Bar */}
               <div className="w-full">

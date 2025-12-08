@@ -4,6 +4,12 @@ import { useState, useMemo } from 'react'
 import { useRouter } from "next/navigation"
 import ActiveOrdersTab from '@/components/account/active-orders'
 import { useActiveOrders } from '@/lib/hooks'
+import { MobilePageHeader } from '@/components/account/mobile-page-header'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Input } from '@/components/ui/input'
+import { SlidersHorizontal, Search } from 'lucide-react'
+import { MobileActiveOrdersFilterSheet } from '@/components/account/mobile-active-orders-filter-sheet'
 
 export default function OrdersPage() {
   const router = useRouter()
@@ -90,30 +96,118 @@ export default function OrdersPage() {
     selectedBusiness !== 'all'
   ].filter(Boolean).length
 
+  const [showFilters, setShowFilters] = useState(false)
+
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <ActiveOrdersTab
-        orders={filteredOrders}
-        ordersByType={ordersByType}
-        stats={stats}
-        loading={loading}
-        error={error}
-        hasMore={hasMore}
-        searchTerm={searchTerm}
-        selectedBusinessType={selectedBusinessType}
-        selectedStatus={selectedStatus}
-        selectedBusiness={selectedBusiness}
-        uniqueBusinesses={uniqueBusinesses}
-        activeFilterCount={activeFilterCount}
-        onSearchChange={setSearchTerm}
-        onBusinessTypeChange={setSelectedBusinessType}
-        onStatusChange={setSelectedStatus}
-        onBusinessChange={setSelectedBusiness}
-        onClearFilters={clearFilters}
-        onTrackOrder={handleTrackOrder}
-        onContactBusiness={handleContactBusiness}
-        onFetchMore={fetchMore}
-      />
-    </div>
+    <>
+      {/* Mobile View */}
+      <div className="md:hidden min-h-screen bg-stone-50">
+        <MobilePageHeader
+          title="Orders & Bookings"
+          subtitle="Track your current orders and appointments"
+        />
+        <div className="bg-stone-50 rounded-t-[2.5rem] -mt-20 relative z-10 min-h-screen pb-24" style={{ boxShadow: 'inset 0 8px 12px -8px rgba(0,0,0,0.15)' }}>
+          <div className="px-5 pt-6">
+            {/* Search Bar */}
+            <div className="mb-4">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-stone-400 w-4 h-4" />
+                <Input
+                  placeholder="Search orders, businesses, items..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 bg-white"
+                />
+              </div>
+            </div>
+
+            {/* Top Bar: Count + Filter */}
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-sm font-medium text-stone-700">
+                {stats?.totalActiveOrders || 0} active {stats?.totalActiveOrders === 1 ? 'order' : 'orders'}
+              </p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowFilters(true)}
+                className="flex items-center gap-2"
+              >
+                <SlidersHorizontal className="w-4 h-4" />
+                Filters
+                {activeFilterCount > 0 && (
+                  <Badge variant="default" className="ml-1 text-xs px-1.5 py-0 h-5">
+                    {activeFilterCount}
+                  </Badge>
+                )}
+              </Button>
+            </div>
+
+            <ActiveOrdersTab
+              orders={filteredOrders}
+              ordersByType={ordersByType}
+              stats={stats}
+              loading={loading}
+              error={error}
+              hasMore={hasMore}
+              searchTerm={searchTerm}
+              selectedBusinessType={selectedBusinessType}
+              selectedStatus={selectedStatus}
+              selectedBusiness={selectedBusiness}
+              uniqueBusinesses={uniqueBusinesses}
+              activeFilterCount={activeFilterCount}
+              onSearchChange={setSearchTerm}
+              onBusinessTypeChange={setSelectedBusinessType}
+              onStatusChange={setSelectedStatus}
+              onBusinessChange={setSelectedBusiness}
+              onClearFilters={clearFilters}
+              onTrackOrder={handleTrackOrder}
+              onContactBusiness={handleContactBusiness}
+              onFetchMore={fetchMore}
+            />
+
+            {/* Filter Sheet */}
+            <MobileActiveOrdersFilterSheet
+              isOpen={showFilters}
+              onClose={() => setShowFilters(false)}
+              selectedBusinessType={selectedBusinessType}
+              onBusinessTypeChange={setSelectedBusinessType}
+              selectedStatus={selectedStatus}
+              onStatusChange={setSelectedStatus}
+              selectedBusiness={selectedBusiness}
+              onBusinessChange={setSelectedBusiness}
+              uniqueBusinesses={uniqueBusinesses}
+              onClearFilters={clearFilters}
+              activeFilterCount={activeFilterCount}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Desktop View */}
+      <div className="hidden md:block">
+        <ActiveOrdersTab
+          orders={filteredOrders}
+          ordersByType={ordersByType}
+          stats={stats}
+          loading={loading}
+          error={error}
+          hasMore={hasMore}
+          searchTerm={searchTerm}
+          selectedBusinessType={selectedBusinessType}
+          selectedStatus={selectedStatus}
+          selectedBusiness={selectedBusiness}
+          uniqueBusinesses={uniqueBusinesses}
+          activeFilterCount={activeFilterCount}
+          onSearchChange={setSearchTerm}
+          onBusinessTypeChange={setSelectedBusinessType}
+          onStatusChange={setSelectedStatus}
+          onBusinessChange={setSelectedBusiness}
+          onClearFilters={clearFilters}
+          onTrackOrder={handleTrackOrder}
+          onContactBusiness={handleContactBusiness}
+          onFetchMore={fetchMore}
+        />
+      </div>
+    </>
   )
 }

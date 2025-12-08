@@ -163,7 +163,13 @@ export function useBusinessDirectory() {
           id: business.id,
           name: business.name,
           slug: business.slug || business.id,
-          category: business.business_categories?.id || 'general',
+          category: business.business_categories ? {
+            id: business.business_categories.id,
+            name: business.business_categories.name,
+            description: business.business_categories.description || '',
+            icon: business.business_categories.icon || 'building',
+            color: business.business_categories.color || 'gray'
+          } : undefined,
           category_name: business.business_categories?.name || 'General',
           description: business.description || 'No description available',
           long_description: business.long_description || business.description || '',

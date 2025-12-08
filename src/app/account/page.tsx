@@ -7,6 +7,8 @@ import { useCustomerAuth } from '@/lib/context/customer-auth-context'
 import ProfileTab from '@/components/account/profile'
 import SettingsTab from '@/components/account/settings'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { MobileAccountHeader } from '@/components/account/mobile-account-header'
+import { MobileAccountContent } from '@/components/account/mobile-account-content'
 
 export default function AccountPage() {
   const [isLoading, setIsLoading] = useState(false)
@@ -37,46 +39,71 @@ export default function AccountPage() {
 
   if (loading) {
     return (
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex items-center justify-center py-12">
+      <>
+        {/* Mobile Loading */}
+        <div className="md:hidden min-h-screen bg-stone-50 flex items-center justify-center">
           <div className="text-center">
             <Loader2 className="w-8 h-8 animate-spin text-stone-600 mx-auto mb-4" />
             <p className="text-stone-600">Loading your profile...</p>
           </div>
         </div>
-      </div>
+
+        {/* Desktop Loading */}
+        <div className="hidden md:flex items-center justify-center py-12">
+          <div className="text-center">
+            <Loader2 className="w-8 h-8 animate-spin text-stone-600 mx-auto mb-4" />
+            <p className="text-stone-600">Loading your profile...</p>
+          </div>
+        </div>
+      </>
     )
   }
 
+  // For mobile, /account is now the menu hub (not edit profile)
+  // Edit profile will be a separate route or we keep it here for desktop
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <Tabs defaultValue="profile" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 mb-8">
-          <TabsTrigger value="profile">Profile</TabsTrigger>
-          <TabsTrigger value="settings">Settings</TabsTrigger>
-        </TabsList>
+    <>
+      {/* Mobile View - Simple menu hub */}
+      <div className="md:hidden min-h-screen bg-stone-50">
+        <MobileAccountHeader user={user} profile={profile} />
+        <MobileAccountContent
+          onSignOut={handleSignOut}
+          isSigningOut={isLoading}
+          activeOrdersCount={activeOrders.length}
+          orderHistoryCount={orderHistory.length}
+        />
+      </div>
 
-        <TabsContent value="profile">
-          <ProfileTab
-            profile={profile}
-            user={user}
-            profileLoading={loading}
-            activeOrders={activeOrders || []}
-            orderHistory={orderHistory || []}
-          />
-        </TabsContent>
+      {/* Desktop View - Tabs with Profile & Settings */}
+      <div className="hidden md:block">
+        <Tabs defaultValue="profile" className="w-full">
+          <TabsList className="grid w-full grid-cols-2 mb-8">
+            <TabsTrigger value="profile">Profile</TabsTrigger>
+            <TabsTrigger value="settings">Settings</TabsTrigger>
+          </TabsList>
 
-        <TabsContent value="settings">
-          <SettingsTab
-            profile={profile}
-            activeOrders={activeOrders || []}
-            orderHistory={orderHistory || []}
-            onSignOut={handleSignOut}
-            onEditProfile={handleEditProfile}
-            isSigningOut={isLoading}
-          />
-        </TabsContent>
-      </Tabs>
-    </div>
+          <TabsContent value="profile">
+            <ProfileTab
+              profile={profile}
+              user={user}
+              profileLoading={loading}
+              activeOrders={activeOrders || []}
+              orderHistory={orderHistory || []}
+            />
+          </TabsContent>
+
+          <TabsContent value="settings">
+            <SettingsTab
+              profile={profile}
+              activeOrders={activeOrders || []}
+              orderHistory={orderHistory || []}
+              onSignOut={handleSignOut}
+              onEditProfile={handleEditProfile}
+              isSigningOut={isLoading}
+            />
+          </TabsContent>
+        </Tabs>
+      </div>
+    </>
   )
 }

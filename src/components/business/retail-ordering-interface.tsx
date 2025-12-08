@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Plus, Minus, Search, ShoppingCart, MapPin, Info, Package, Star, Truck } from "lucide-react"
+import { MobileMenuSearch } from './mobile-menu-search'
 
 // Mock products data for retail business
 const mockProducts = [
@@ -258,9 +259,36 @@ export default function RetailOrderingInterface({ business }: RetailOrderingProp
   }
 
   return (
-    <div className="space-y-6">
-      {/* Search & Filters */}
-      <Card className="p-4">
+    <div className="space-y-4 md:space-y-6">
+      {/* Mobile Search & Filters */}
+      <div className="md:hidden">
+        <MobileMenuSearch
+          searchTerm={searchTerm}
+          onSearchChange={setSearchTerm}
+          selectedCategory={selectedCategory}
+          onCategoryChange={setSelectedCategory}
+          categories={categories}
+          resultsCount={filteredProducts.length}
+        />
+        {/* Mobile Sort - Below search */}
+        <div className="mt-3">
+          <Select value={sortBy} onValueChange={setSortBy}>
+            <SelectTrigger className="w-full h-11 bg-white border-2 border-stone-200 rounded-xl">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="popular">Most Popular</SelectItem>
+              <SelectItem value="price_low">Price: Low to High</SelectItem>
+              <SelectItem value="price_high">Price: High to Low</SelectItem>
+              <SelectItem value="rating">Highest Rated</SelectItem>
+              <SelectItem value="name">Name A-Z</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      {/* Desktop Search & Filters */}
+      <Card className="hidden md:block p-4">
         <div className="flex flex-col lg:flex-row gap-4">
           <div className="flex-1">
             <div className="relative">
@@ -300,10 +328,10 @@ export default function RetailOrderingInterface({ business }: RetailOrderingProp
         </div>
       </Card>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
         {/* Products Grid */}
         <div className="lg:col-span-2">
-          <div className="flex items-center justify-between mb-6">
+          <div className="hidden md:flex items-center justify-between mb-6">
             <h3 className="text-xl font-semibold text-stone-800">
               {selectedCategory === 'All' ? 'All Products' : selectedCategory}
             </h3>
@@ -311,8 +339,8 @@ export default function RetailOrderingInterface({ business }: RetailOrderingProp
               {filteredProducts.length} products found
             </div>
           </div>
-          
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+          <div className="grid grid-cols-2 gap-3 md:gap-4">
             {filteredProducts.map(product => (
               <Card key={product.id} className={`overflow-hidden hover:shadow-md transition-shadow ${!product.in_stock ? 'opacity-60' : ''}`}>
                 <CardContent className="p-0">
