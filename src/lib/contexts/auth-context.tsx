@@ -64,13 +64,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const fetchProfile = async () => {
     try {
       setProfileLoading(true)
-      console.log('🔍 API: Fetching user profile')
 
       const response = await fetch('/api/auth/profile')
 
       if (!response.ok) {
         if (response.status === 401) {
-          console.log('❌ API: Not authenticated')
           setProfile(null)
           setSession(null)
           setUser(null)
@@ -80,14 +78,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
       }
 
       const data = await response.json()
-      console.log('✅ API: Profile fetched successfully:', data.profile?.role_id)
 
       setSession(data.session)
       setUser(data.user)
       setProfile(data.profile)
 
     } catch (error) {
-      console.error('💥 API: Profile fetch error:', error)
+      console.error('API: Profile fetch error:', error)
       setProfile(null)
     } finally {
       setProfileLoading(false)
@@ -97,24 +94,19 @@ export function AuthProvider({ children }: AuthProviderProps) {
   // Initialize auth state
   useEffect(() => {
     const initAuth = async () => {
-      console.log('🚀 Initializing auth...')
+      // Get authenticated user from Supabase (secure method)
+      const { data: { user } } = await supabase.auth.getUser()
 
-      // Get initial session from Supabase
-      const { data: { session } } = await supabase.auth.getSession()
-      console.log('🚀 Initial session:', !!session, session?.user?.email)
-
-      if (session?.user) {
-        // If we have a session, fetch the profile from API
+      if (user) {
+        // If we have a user, fetch the profile from API
         await fetchProfile()
       } else {
-        console.log('❌ No initial session')
         setSession(null)
         setUser(null)
         setProfile(null)
       }
 
       setLoading(false)
-      console.log('🏁 Auth initialization complete')
     }
 
     initAuth()

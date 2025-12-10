@@ -33,14 +33,12 @@ const app: FirebaseApp = initializeApp(firebaseConfig)
 export const messaging: null = null
 
 export const initializeMessaging = async (): Promise<null> => {
-  console.log('Firebase messaging is disabled')
   return null
 }
 
 export const analytics = null
 
 export const requestForToken = async (): Promise<null> => {
-  console.log('Firebase messaging is disabled')
   return null
 }
 

@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import { useCustomerAuth } from '@/lib/context/customer-auth-context'
 
 interface ProtectedRouteProps {
@@ -17,15 +17,22 @@ export function ProtectedRoute({
 }: ProtectedRouteProps) {
   const { user, loading } = useCustomerAuth()
   const router = useRouter()
+  const pathname = usePathname()
 
   useEffect(() => {
     if (!loading && !user) {
       console.log('ProtectedRoute: No user - redirecting to', redirectTo)
-      router.push(redirectTo)
+      // If redirecting to customer login, include current path as redirect param
+      if (redirectTo === '/login') {
+        const encodedPath = encodeURIComponent(pathname)
+        router.push(`${redirectTo}?redirect=${encodedPath}`)
+      } else {
+        router.push(redirectTo)
+      }
     } else if (!loading && user) {
       console.log('ProtectedRoute: User authenticated')
     }
-  }, [user, loading, router, redirectTo])
+  }, [user, loading, router, redirectTo, pathname])
 
   if (loading) {
     return (

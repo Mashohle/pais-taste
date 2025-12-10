@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useCustomerAuth } from '@/lib/context/customer-auth-context'
 
 interface CustomerAuthFormData {
@@ -23,7 +23,9 @@ interface CustomerAuthState {
 
 export function useCustomerAuthForm() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { user } = useCustomerAuth()
+  const redirectUrl = searchParams.get('redirect') || '/account'
 
   const [state, setState] = useState<CustomerAuthState>({
     formData: {
@@ -43,9 +45,9 @@ export function useCustomerAuthForm() {
   // Redirect if already logged in
   useEffect(() => {
     if (user) {
-      router.push('/account')
+      router.push(redirectUrl)
     }
-  }, [user, router])
+  }, [user, router, redirectUrl])
 
   const updateFormData = (field: keyof CustomerAuthFormData, value: string) => {
     setState(prev => ({
@@ -115,8 +117,8 @@ export function useCustomerAuthForm() {
         if (!response.ok) {
           setError(data.error || 'Login failed')
         } else {
-          // Success - redirect will happen via useEffect when user state updates
-          console.log('✅ Customer login successful')
+          // Success - reload page to trigger auth context refresh
+          window.location.href = redirectUrl
         }
       } else {
         // Sign up via API

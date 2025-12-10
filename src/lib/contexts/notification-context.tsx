@@ -17,7 +17,6 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
 
   useEffect(() => {
     // Firebase messaging disabled
-    console.log('Firebase messaging is disabled - not listening for messages')
   }, [])
 
   const showNotification = (notification: NotificationData) => {

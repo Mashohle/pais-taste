@@ -50,12 +50,10 @@ export function useDashboardStats(): UseDashboardStatsReturn {
 
     // Prevent duplicate fetches using global map
     if (fetchedBusinessIds.get(businessId)) {
-      console.log('📊 Dashboard Stats: Skipping duplicate fetch (already fetched)')
       setLoading(false)
       return
     }
 
-    console.log('📊 Dashboard Stats: Fetching stats for business:', businessId)
     fetchedBusinessIds.set(businessId, true)
 
     try {

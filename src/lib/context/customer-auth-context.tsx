@@ -95,11 +95,11 @@ export function CustomerAuthProvider({ children }: CustomerAuthProviderProps) {
   // Initialize auth state
   useEffect(() => {
     const initAuth = async () => {
-      // Get initial session from Supabase
-      const { data: { session } } = await supabase.auth.getSession()
+      // Get authenticated user from Supabase (secure method)
+      const { data: { user } } = await supabase.auth.getUser()
 
-      if (session?.user) {
-        // If we have a session, fetch the profile from API
+      if (user) {
+        // If we have a user, fetch the profile from API
         await fetchProfile()
       } else {
         setData(null)

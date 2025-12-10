@@ -105,9 +105,11 @@ export default function OrderTrackingPage({ params }: OrderTrackingPageProps) {
   const [isVerifying, setIsVerifying] = useState(false)
   const [copied, setCopied] = useState(false)
 
-  const fetchOrder = useCallback(async () => {
+  const fetchOrder = useCallback(async (showLoading = true) => {
     try {
-      setLoading(true)
+      if (showLoading) {
+        setLoading(true)
+      }
 
       // Fetch order directly by ID (works for both authenticated and guest orders)
       const { data: orderData, error: orderError } = await supabase
@@ -127,17 +129,23 @@ export default function OrderTrackingPage({ params }: OrderTrackingPageProps) {
 
       if (orderError || !orderData) {
         setOrderNotFound(true)
-        setLoading(false)
+        if (showLoading) {
+          setLoading(false)
+        }
         return
       }
 
       setOrder(orderData)
       await loadBusinessData(orderData.business_id)
-      setLoading(false)
+      if (showLoading) {
+        setLoading(false)
+      }
     } catch (error) {
       console.error('Error fetching order:', error)
       setOrderNotFound(true)
-      setLoading(false)
+      if (showLoading) {
+        setLoading(false)
+      }
     }
   }, [resolvedParams.id])
 
@@ -162,7 +170,30 @@ export default function OrderTrackingPage({ params }: OrderTrackingPageProps) {
     }
 
     checkAccessAndFetchOrder()
-  }, [resolvedParams.id, checkAccessAndFetchOrder])
+
+    // Set up real-time subscription for order updates
+    const channel = supabase
+      .channel(`order-${resolvedParams.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // Listen to all events (INSERT, UPDATE, DELETE)
+          schema: 'public',
+          table: 'orders',
+          filter: `id=eq.${resolvedParams.id}`
+        },
+        () => {
+          // Refetch the complete order data when an update is detected (without showing loading state)
+          fetchOrder(false)
+        }
+      )
+      .subscribe()
+
+    // Cleanup subscription on unmount
+    return () => {
+      channel.unsubscribe()
+    }
+  }, [resolvedParams.id, checkAccessAndFetchOrder, fetchOrder])
 
   const verifyPhoneNumber = async () => {
     setPhoneError('')
@@ -497,79 +528,6 @@ export default function OrderTrackingPage({ params }: OrderTrackingPageProps) {
 
         <Card className="mb-6 bg-gradient-to-r from-stone-100/95 via-stone-50/60 to-stone-25/20 backdrop-blur-md border-stone-200/50 shadow-2xl">
           <CardHeader>
-            <CardTitle className="text-stone-800 flex items-center gap-2">
-              <Package className="w-5 h-5" />
-              Order Details
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <h4 className="font-semibold text-stone-800 mb-2">Items Ordered</h4>
-                <div className="space-y-2">
-                  {order.order_items.map((item, index: number) => (
-                    <div key={index} className="flex justify-between items-center text-sm">
-                      <span className="text-stone-700">
-                        {item.menu_items?.name || 'Unknown Item'} x{item.quantity}
-                      </span>
-                      <span className="font-semibold text-stone-800">R{item.unit_price * item.quantity}</span>
-                    </div>
-                  ))}
-                  <div className="border-t border-stone-300 pt-2 mt-2">
-                    <div className="flex justify-between items-center font-bold text-stone-800">
-                      <span>Total</span>
-                      <span>R{order.total_amount}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                <div className="flex items-center gap-2">
-                  <MapPin className="w-4 h-4 text-stone-600" />
-                  <div>
-                    <p className="text-xs text-stone-600">Pickup Location</p>
-                    <p className="font-semibold text-stone-800">{order.pickup_location}</p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-stone-600" />
-                  <div>
-                    <p className="text-xs text-stone-600">Order Time</p>
-                    <p className="font-semibold text-stone-800">
-                      {new Date(order.created_at).toLocaleTimeString('en-ZA', { 
-                        hour: '2-digit', 
-                        minute: '2-digit' 
-                      })}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-emerald-600" />
-                  <div>
-                    <p className="text-xs text-stone-600">Estimated Ready Time</p>
-                    <p className="font-semibold text-emerald-700">{getEstimatedReadyTime()}</p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <Badge className={`text-xs ${
-                    order.payment_status === 'paid' 
-                      ? 'bg-green-600 text-white' 
-                      : 'bg-yellow-600 text-white'
-                  }`}>
-                    {order.payment_status === 'paid' ? 'Paid' : 'Payment on Pickup'}
-                  </Badge>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="mb-6 bg-gradient-to-r from-stone-100/95 via-stone-50/60 to-stone-25/20 backdrop-blur-md border-stone-200/50 shadow-2xl">
-          <CardHeader>
             <CardTitle className="text-stone-800">Order Progress</CardTitle>
           </CardHeader>
           <CardContent>
@@ -611,7 +569,7 @@ export default function OrderTrackingPage({ params }: OrderTrackingPageProps) {
                           </h4>
                           {current && (
                             <Badge className="text-xs bg-emerald-500 text-white animate-pulse">
-                              {order.order_status === 'ready' ? 'Ready for Pickup!' : 
+                              {order.order_status === 'ready' ? 'Ready for Pickup!' :
                                order.order_status === 'collected' ? 'Ready for Pickup!' :
                                order.order_status === 'completed' ? 'Ready for Pickup!' :
                                `In Progress - ${getStatusTimestamp()}`}
@@ -633,6 +591,79 @@ export default function OrderTrackingPage({ params }: OrderTrackingPageProps) {
                     </div>
                   )
                 })}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="mb-6 bg-gradient-to-r from-stone-100/95 via-stone-50/60 to-stone-25/20 backdrop-blur-md border-stone-200/50 shadow-2xl">
+          <CardHeader>
+            <CardTitle className="text-stone-800 flex items-center gap-2">
+              <Package className="w-5 h-5" />
+              Order Details
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <h4 className="font-semibold text-stone-800 mb-2">Items Ordered</h4>
+                <div className="space-y-2">
+                  {order.order_items.map((item, index: number) => (
+                    <div key={index} className="flex justify-between items-center text-sm">
+                      <span className="text-stone-700">
+                        {item.menu_items?.name || 'Unknown Item'} x{item.quantity}
+                      </span>
+                      <span className="font-semibold text-stone-800">R{item.unit_price * item.quantity}</span>
+                    </div>
+                  ))}
+                  <div className="border-t border-stone-300 pt-2 mt-2">
+                    <div className="flex justify-between items-center font-bold text-stone-800">
+                      <span>Total</span>
+                      <span>R{order.total_amount}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <MapPin className="w-4 h-4 text-stone-600" />
+                  <div>
+                    <p className="text-xs text-stone-600">Pickup Location</p>
+                    <p className="font-semibold text-stone-800">{order.pickup_location}</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-stone-600" />
+                  <div>
+                    <p className="text-xs text-stone-600">Order Time</p>
+                    <p className="font-semibold text-stone-800">
+                      {new Date(order.created_at).toLocaleTimeString('en-ZA', {
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-emerald-600" />
+                  <div>
+                    <p className="text-xs text-stone-600">Estimated Ready Time</p>
+                    <p className="font-semibold text-emerald-700">{getEstimatedReadyTime()}</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <Badge className={`text-xs ${
+                    order.payment_status === 'paid'
+                      ? 'bg-green-600 text-white'
+                      : 'bg-yellow-600 text-white'
+                  }`}>
+                    {order.payment_status === 'paid' ? 'Paid' : 'Payment on Pickup'}
+                  </Badge>
+                </div>
               </div>
             </div>
           </CardContent>

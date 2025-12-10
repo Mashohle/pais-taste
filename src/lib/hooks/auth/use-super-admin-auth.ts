@@ -29,8 +29,6 @@ export function useSuperAdminAuth() {
     const checkSuperAdminStatus = () => {
       if (!mounted) return
 
-      console.log('🔥 Super Admin: Auth state change:', !!user, user?.email)
-
       if (!user || !profile) {
         updateState({
           loading: authLoading,
@@ -42,12 +40,6 @@ export function useSuperAdminAuth() {
 
       // Check if user has super admin role
       const isSuperAdmin = profile.role === 'super-admin'
-
-      console.log('🔍 Super Admin: Role check:', {
-        email: user.email,
-        role: profile.role,
-        isSuperAdmin
-      })
 
       updateState({
         loading: false,

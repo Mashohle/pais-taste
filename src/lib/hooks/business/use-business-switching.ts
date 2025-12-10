@@ -22,8 +22,7 @@ export function useBusinessSwitching() {
     const {
       confirmSwitch = true,
       preserveCart = false,
-      redirectTo,
-      showNotification = true
+      redirectTo
     } = options
 
     setIsSwitching(true)
@@ -57,12 +56,6 @@ export function useBusinessSwitching() {
       }
 
       // Note: Business will be set when user adds first item from new business
-
-      // Show success notification if requested
-      if (showNotification && typeof window !== 'undefined') {
-        // You could integrate with a toast library here
-        console.log(`Switched to ${targetBusinessName || 'business'}`)
-      }
 
       // Redirect if specified
       if (redirectTo) {

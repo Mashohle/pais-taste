@@ -15,12 +15,15 @@ export function AppProviders({ children }: AppProvidersProps) {
   const pathname = usePathname()
   const isAdminRoute = pathname?.startsWith('/admin')
 
-  // Admin routes have their own BusinessAdminProvider, so skip global CustomerAuthProvider and CartProvider
+  // Admin routes have their own BusinessAdminProvider, but still need CustomerAuthProvider
+  // for shared hooks like useOrders
   if (isAdminRoute) {
     return (
-      <NotificationProvider>
-        {children}
-      </NotificationProvider>
+      <CustomerAuthProvider>
+        <NotificationProvider>
+          {children}
+        </NotificationProvider>
+      </CustomerAuthProvider>
     )
   }
 

@@ -41,7 +41,6 @@ export function useAdminLogin() {
   // Redirect if already logged in AND has business access
   useEffect(() => {
     if (user && hasBusinessAccess) {
-      console.log('🔐 Admin Login: User already has business access, redirecting')
       router.push('/admin')
     }
   }, [user, hasBusinessAccess, router])
@@ -63,8 +62,6 @@ export function useAdminLogin() {
     setLoading(true)
 
     try {
-      console.log('🔐 Admin Login: Attempting sign in via API')
-
       const response = await fetch('/api/auth/sign-in', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -80,20 +77,11 @@ export function useAdminLogin() {
         setError(data.error || 'Login failed')
         updateField('password', '')
       } else {
-        console.log('✅ Admin Login: Sign in successful')
-        console.log('🔍 Admin Login: API Response:', data)
-
         // Check if user has business access and redirect with proper auth sync
         if (data.profile && (data.profile.role_id === 'business-owner' || data.profile.role_id === 'business-admin')) {
-          console.log('🔀 Admin Login: User has business role, redirecting with full page reload for clean state')
           // Use window.location for clean state initialization - most reliable approach
           window.location.href = '/admin'
         } else {
-          console.log('❌ Admin Login: Access check failed:', {
-            hasProfile: !!data.profile,
-            roleId: data.profile?.role_id,
-            expectedRoles: ['business-owner', 'business-admin']
-          })
           setError('Access denied: Your account does not have business admin permissions.')
         }
       }

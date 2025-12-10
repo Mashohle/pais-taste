@@ -84,8 +84,8 @@ export function useMenuItems(forAdmin: boolean = false) {
   const updateMenuItem = async (id: string, updates: Partial<MenuItem>) => {
     try {
       // Check if user is authenticated
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session) {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
         throw new Error('Authentication required')
       }
 
@@ -112,8 +112,8 @@ export function useMenuItems(forAdmin: boolean = false) {
   const deleteMenuItem = async (id: string) => {
     try {
       // Check if user is authenticated
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session) {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
         throw new Error('Authentication required')
       }
 
@@ -146,8 +146,8 @@ export function useMenuItems(forAdmin: boolean = false) {
   const createMenuItem = async (menuItem: Omit<MenuItem, 'id' | 'created_at' | 'updated_at'>) => {
     try {
       // Check if user is authenticated
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session) {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
         throw new Error('Authentication required')
       }
 
@@ -180,8 +180,8 @@ export function useMenuItems(forAdmin: boolean = false) {
   const uploadMenuItemImage = async (file: File, menuItemId: string): Promise<string | null> => {
     try {
       // Check if user is authenticated
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session) {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
         console.error('No active session for upload')
         return null
       }
@@ -218,8 +218,8 @@ export function useMenuItems(forAdmin: boolean = false) {
   const deleteMenuItemImage = async (imageUrl: string): Promise<boolean> => {
     try {
       // Check if user is authenticated
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session) {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
         console.error('No active session for deletion')
         return false
       }

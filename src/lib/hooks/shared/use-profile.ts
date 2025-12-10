@@ -64,15 +64,13 @@ export function useProfile() {
         throw new Error(data.error || 'Failed to update profile')
       }
 
-      console.log('✅ Profile Hook: Profile updated successfully')
-
       // Refresh the profile in auth context
       await refetch()
 
       return data.profile
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to update profile'
-      console.error('💥 Profile Hook: Update error:', errorMessage)
+      console.error('Profile update error:', errorMessage)
       setError(errorMessage)
       throw err
     } finally {
@@ -86,8 +84,6 @@ export function useProfile() {
     try {
       setUpdating(true)
       setError(null)
-
-      console.log('📸 Profile Hook: Uploading avatar via API')
 
       const formData = new FormData()
       formData.append('avatar', file)
@@ -103,15 +99,13 @@ export function useProfile() {
         throw new Error(data.error || 'Failed to upload avatar')
       }
 
-      console.log('✅ Profile Hook: Avatar uploaded successfully')
-
       // Refresh the profile in auth context
       await refetch()
 
       return data.avatar_url
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to upload avatar'
-      console.error('💥 Profile Hook: Avatar upload error:', errorMessage)
+      console.error('Avatar upload error:', errorMessage)
       setError(errorMessage)
       throw err
     } finally {
@@ -126,8 +120,6 @@ export function useProfile() {
       setUpdating(true)
       setError(null)
 
-      console.log('🗑️ Profile Hook: Deleting avatar via API')
-
       const response = await fetch('/api/auth/profile/avatar', {
         method: 'DELETE'
       })
@@ -138,13 +130,11 @@ export function useProfile() {
         throw new Error(data.error || 'Failed to delete avatar')
       }
 
-      console.log('✅ Profile Hook: Avatar deleted successfully')
-
       // Refresh the profile in auth context
       await refetch()
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to delete avatar'
-      console.error('💥 Profile Hook: Avatar delete error:', errorMessage)
+      console.error('Avatar delete error:', errorMessage)
       setError(errorMessage)
       throw err
     } finally {

@@ -7,8 +7,7 @@ import { useOrderHistory } from '@/lib/hooks/use-order-history'
 import { MobilePageHeader } from '@/components/account/mobile-page-header'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Input } from '@/components/ui/input'
-import { SlidersHorizontal, Search } from 'lucide-react'
+import { SlidersHorizontal } from 'lucide-react'
 import { MobileHistoryFilterSheet } from '@/components/account/mobile-history-filter-sheet'
 
 export default function HistoryPage() {
@@ -112,22 +111,15 @@ export default function HistoryPage() {
         <MobilePageHeader
           title="History"
           subtitle="View all your past orders and bookings"
+          showSearch={true}
+          searchTerm={searchTerm}
+          onSearchChange={setSearchTerm}
+          searchPlaceholder="Search businesses, items..."
+          showBackButton={true}
+          backHref="/account"
         />
         <div className="bg-stone-50 rounded-t-[2.5rem] -mt-20 relative z-10 min-h-screen pb-24" style={{ boxShadow: 'inset 0 8px 12px -8px rgba(0,0,0,0.15)' }}>
           <div className="px-5 pt-6">
-            {/* Search Bar */}
-            <div className="mb-4">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-stone-400 w-4 h-4" />
-                <Input
-                  placeholder="Search businesses, items..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 bg-white"
-                />
-              </div>
-            </div>
-
             {/* Top Bar: Count + Filter */}
             <div className="flex items-center justify-between mb-4">
               <p className="text-sm font-medium text-stone-700">
