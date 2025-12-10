@@ -22,6 +22,7 @@ import {
   Wrench
 } from "lucide-react"
 import Link from "next/link"
+import { MobileApplicationWrapper } from '@/components/business/mobile-application-wrapper'
 
 function BusinessApplicationForm() {
   const {
@@ -743,72 +744,79 @@ function BusinessApplicationForm() {
 
   const renderStep6 = () => (
     <Card>
-      <CardHeader>
+      <CardHeader className="md:block hidden">
         <CardTitle className="flex items-center space-x-2">
           <Clock className="w-5 h-5" />
           <span>Operating Hours</span>
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-6">
-        <div className="space-y-4">
+      <CardContent className="space-y-3 md:space-y-6">
+        <div className="space-y-3">
           {Object.entries(formData.operatingHours).map(([day, hours]) => (
-            <div key={day} className="flex items-center space-x-4 p-4 border rounded-lg">
-              <div className="w-24">
-                <span className="font-medium text-slate-900 capitalize">{day}</span>
-              </div>
-              
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id={`${day}-closed`}
-                  checked={hours.closed}
-                  onCheckedChange={(checked) =>
-                    updateFormData('operatingHours', {
-                      ...formData.operatingHours,
-                      [day]: { ...hours, closed: checked === true }
-                    })
-                  }
-                />
-                <label htmlFor={`${day}-closed`} className="text-sm text-slate-600">Closed</label>
-              </div>
-              
-              {!hours.closed && (
+            <div key={day} className="border rounded-lg p-3 bg-white">
+              {/* Day and Closed Toggle */}
+              <div className="flex items-center justify-between mb-2">
+                <span className="font-medium text-stone-900 capitalize text-sm">{day}</span>
                 <div className="flex items-center space-x-2">
-                  <Input
-                    type="time"
-                    value={hours.open}
-                    onChange={(e) => 
+                  <Checkbox
+                    id={`${day}-closed`}
+                    checked={hours.closed}
+                    onCheckedChange={(checked) =>
                       updateFormData('operatingHours', {
                         ...formData.operatingHours,
-                        [day]: { ...hours, open: e.target.value }
+                        [day]: { ...hours, closed: checked === true }
                       })
                     }
-                    className="w-24"
                   />
-                  <span className="text-slate-500">to</span>
-                  <Input
-                    type="time"
-                    value={hours.close}
-                    onChange={(e) => 
-                      updateFormData('operatingHours', {
-                        ...formData.operatingHours,
-                        [day]: { ...hours, close: e.target.value }
-                      })
-                    }
-                    className="w-24"
-                  />
+                  <label htmlFor={`${day}-closed`} className="text-xs text-slate-600">Closed</label>
+                </div>
+              </div>
+
+              {/* Time Inputs */}
+              {!hours.closed && (
+                <div className="flex items-center gap-2">
+                  <div className="flex-1">
+                    <label className="text-[10px] text-slate-500 block mb-1">Open</label>
+                    <Input
+                      type="time"
+                      value={hours.open}
+                      onChange={(e) =>
+                        updateFormData('operatingHours', {
+                          ...formData.operatingHours,
+                          [day]: { ...hours, open: e.target.value }
+                        })
+                      }
+                      className="w-full text-sm"
+                    />
+                  </div>
+                  <span className="text-slate-400 text-xs mt-4">-</span>
+                  <div className="flex-1">
+                    <label className="text-[10px] text-slate-500 block mb-1">Close</label>
+                    <Input
+                      type="time"
+                      value={hours.close}
+                      onChange={(e) =>
+                        updateFormData('operatingHours', {
+                          ...formData.operatingHours,
+                          [day]: { ...hours, close: e.target.value }
+                        })
+                      }
+                      className="w-full text-sm"
+                    />
+                  </div>
                 </div>
               )}
             </div>
           ))}
         </div>
-        
-        <div className="bg-blue-50 p-4 rounded-lg">
+
+        <div className="bg-blue-50 p-3 rounded-lg border border-blue-100">
           <div className="flex items-start space-x-2">
-            <AlertCircle className="w-5 h-5 text-blue-600 mt-0.5" />
+            <AlertCircle className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
             <div>
-              <p className="text-sm font-medium text-blue-900">Operating Hours Note</p>
-              <p className="text-sm text-blue-700 mt-1">
-                These hours will be displayed to customers. You can always update them later from your business dashboard.
+              <p className="text-xs font-medium text-blue-900">Operating Hours Note</p>
+              <p className="text-xs text-blue-700 mt-1">
+                These hours will be displayed to customers. You can update them later from your dashboard.
               </p>
             </div>
           </div>
@@ -977,76 +985,112 @@ function BusinessApplicationForm() {
     }
   }
 
+  // Check if step can proceed
+  const canProceed = (): boolean => {
+    // Basic validation for required fields per step
+    switch (currentStep) {
+      case 1:
+        return !!(formData.businessName && formData.businessCategory)
+      case 2:
+        return !!(formData.ownerFirstName && formData.ownerLastName && formData.ownerEmail && formData.ownerPassword && formData.ownerPasswordConfirm)
+      case 8:
+        return !!(formData.agreeToTerms && formData.agreeToCommission)
+      default:
+        return true
+    }
+  }
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-stone-50 to-stone-100">
-      {/* Navigation Header */}
-      <nav className="bg-white/90 backdrop-blur-md border-b border-stone-200 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <Link href="/" className="flex items-center space-x-4">
-              <div className="text-2xl font-bold bg-gradient-to-r from-stone-600 to-stone-800 bg-clip-text text-transparent">
-                SideHusl
-              </div>
-              <Badge variant="secondary" className="text-xs">
-                Business Application
-              </Badge>
-            </Link>
-            <Badge variant="outline" className="text-stone-600 border-stone-300">
-              Step {currentStep} of {steps.length}
-            </Badge>
-          </div>
-        </div>
-      </nav>
-
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Progress Steps */}
-        {renderStepIndicator()}
-
-        {/* Current Step Content */}
-        <div className="mb-8">
-          <div className="text-center mb-6">
-            <h2 className="text-2xl font-bold text-slate-900">{steps[currentStep - 1].title}</h2>
-            <p className="text-slate-600 mt-1">{steps[currentStep - 1].description}</p>
-          </div>
-          
+    <>
+      {/* Mobile View */}
+      <div className="md:hidden">
+        <MobileApplicationWrapper
+          currentStep={currentStep}
+          totalSteps={steps.length}
+          stepTitle={steps[currentStep - 1].title}
+          stepDescription={steps[currentStep - 1].description}
+          canProceed={canProceed()}
+          isSubmitting={isSubmitting}
+          onPrevious={prevStep}
+          onNext={nextStep}
+          onSubmit={submitApplication}
+          onBack={prevStep}
+        >
           {renderCurrentStep()}
-        </div>
+        </MobileApplicationWrapper>
+      </div>
 
-        {/* Navigation - Hide on final step since submit button is in the card */}
-        {currentStep < steps.length && (
-          <div className="flex items-center justify-between">
-            <Button
-              variant="outline"
-              onClick={prevStep}
-              disabled={currentStep === 1}
-              className="flex items-center space-x-2"
-            >
-              <span>Previous</span>
-            </Button>
+      {/* Desktop View */}
+      <div className="hidden md:block min-h-screen bg-gradient-to-br from-stone-50 to-stone-100">
+        {/* Navigation Header */}
+        <nav className="bg-white/90 backdrop-blur-md border-b border-stone-200 sticky top-0 z-50">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex justify-between items-center h-16">
+              <Link href="/" className="flex items-center space-x-4">
+                <div className="text-2xl font-bold bg-gradient-to-r from-stone-600 to-stone-800 bg-clip-text text-transparent">
+                  SideHusl
+                </div>
+                <Badge variant="secondary" className="text-xs">
+                  Business Application
+                </Badge>
+              </Link>
+              <Badge variant="outline" className="text-stone-600 border-stone-300">
+                Step {currentStep} of {steps.length}
+              </Badge>
+            </div>
+          </div>
+        </nav>
 
-            <Button
-              onClick={nextStep}
-              className="bg-stone-600 hover:bg-stone-700 flex items-center space-x-2"
-            >
-              <span>Next</span>
-            </Button>
+        <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* Progress Steps */}
+          {renderStepIndicator()}
+
+          {/* Current Step Content */}
+          <div className="mb-8">
+            <div className="text-center mb-6">
+              <h2 className="text-2xl font-bold text-slate-900">{steps[currentStep - 1].title}</h2>
+              <p className="text-slate-600 mt-1">{steps[currentStep - 1].description}</p>
+            </div>
+
+            {renderCurrentStep()}
           </div>
-        )}
-        
-        {/* Show previous button only on final step */}
-        {currentStep === steps.length && (
-          <div className="flex justify-start">
-            <Button
-              variant="outline"
-              onClick={prevStep}
-              className="flex items-center space-x-2"
-            >
-              <span>Previous</span>
-            </Button>
-          </div>
-        )}
-      </main>
-    </div>
+
+          {/* Navigation - Hide on final step since submit button is in the card */}
+          {currentStep < steps.length && (
+            <div className="flex items-center justify-between">
+              <Button
+                variant="outline"
+                onClick={prevStep}
+                disabled={currentStep === 1}
+                className="flex items-center space-x-2"
+              >
+                <span>Previous</span>
+              </Button>
+
+              <Button
+                onClick={nextStep}
+                className="bg-stone-600 hover:bg-stone-700 flex items-center space-x-2"
+              >
+                <span>Next</span>
+              </Button>
+            </div>
+          )}
+
+          {/* Show previous button only on final step */}
+          {currentStep === steps.length && (
+            <div className="flex justify-start">
+              <Button
+                variant="outline"
+                onClick={prevStep}
+                className="flex items-center space-x-2"
+              >
+                <span>Previous</span>
+              </Button>
+            </div>
+          )}
+        </main>
+      </div>
+    </>
   )
 }
 

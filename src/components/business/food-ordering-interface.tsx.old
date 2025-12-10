@@ -8,8 +8,9 @@ import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Plus, Minus, Search, MapPin, Clock, Utensils, Phone } from "lucide-react"
-import { useCart } from '@/lib/context/cart-context'
+import { useCart } from '@/lib/contexts/cart-context'
 import { MobileMenuSearch } from './mobile-menu-search'
+import { FloatingCartButton } from '@/components/cart/floating-cart-button'
 
 // Mock menu data for the food business
 const mockMenu = [
@@ -131,10 +132,13 @@ export default function FoodOrderingInterface({ business }: FoodOrderingProps) {
   const [menuItems, setMenuItems] = useState<MenuItem[]>([])
   
   const {
-    cart,
+    state: cartState,
     addItem,
     updateQuantity,
-    clearCart
+    setBusiness,
+    clearCart,
+    setCartOpen,
+    itemCount
   } = useCart()
 
   // Use menu items from business prop or fallback to mock data
@@ -145,6 +149,22 @@ export default function FoodOrderingInterface({ business }: FoodOrderingProps) {
       setMenuItems(mockMenu) // Fallback to mock data
     }
   }, [business?.menu_items])
+
+  // Set business context in cart
+  useEffect(() => {
+    if (business?.id && business?.name) {
+      const businessData = {
+        id: business.id,
+        name: business.name,
+        slug: business.slug || business.id,
+        category: business.category || 'food',
+        logo_url: business.logo_url,
+        delivery_fee: business.delivery_fee
+      }
+      setBusiness(businessData)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [business?.id, business?.name])
 
   // Dynamically generate categories from menu items
   const categories = useMemo(() => {
@@ -166,12 +186,12 @@ export default function FoodOrderingInterface({ business }: FoodOrderingProps) {
     })
   }, [menuItems, selectedCategory, searchTerm])
 
-  // Cart calculations
-  const cartTotal = cart.items.reduce((sum, item) => sum + (item.price * item.quantity), 0)
+  // Cart calculations using global cart state
+  const cartTotal = cartState.items.reduce((sum, item) => sum + (item.price * item.quantity), 0)
   const deliveryFee = orderType === 'delivery' ? business.delivery_fee : 0
   const orderTotal = cartTotal + deliveryFee
 
-  const handleAddToCart = (menuItem: MenuItem) => {
+  const handleAddToCart = async (menuItem: MenuItem) => {
     try {
       const cartItem = {
         business_id: business.id,
@@ -180,25 +200,15 @@ export default function FoodOrderingInterface({ business }: FoodOrderingProps) {
         description: menuItem.description,
         price: menuItem.price,
         quantity: 1,
-        menu_item_id: menuItem.id
+        menu_item_id: menuItem.id,
+        is_available: true
       }
 
-      // Set business on first item add
-      const businessData = {
-        id: business.id,
-        name: business.name,
-        slug: business.slug || business.id,
-        category: business.category || 'food',
-        logo_url: business.logo_url,
-        delivery_fee: business.delivery_fee
-      }
-
-      addItem(cartItem, businessData)
+      await addItem(cartItem)
+      // toast.success(`${menuItem.name} added to cart`)
     } catch (error) {
+      // toast.error(error.message)
       console.error('Error adding to cart:', error)
-      if (error instanceof Error) {
-        alert(error.message)
-      }
     }
   }
 
@@ -214,7 +224,7 @@ export default function FoodOrderingInterface({ business }: FoodOrderingProps) {
   }
 
   const getCartItemQuantity = (menuItemId: string): number => {
-    const cartItem = cart.items.find(item => item.menu_item_id === menuItemId)
+    const cartItem = cartState.items.find(item => item.id === menuItemId)
     return cartItem?.quantity || 0
   }
 
@@ -222,7 +232,7 @@ export default function FoodOrderingInterface({ business }: FoodOrderingProps) {
     // TODO: Integrate with actual ordering system
     console.log('Order placed:', {
       business: business.id,
-      items: cart.items,
+      items: cartState.items,
       orderType,
       deliveryAddress,
       total: orderTotal
@@ -347,12 +357,7 @@ export default function FoodOrderingInterface({ business }: FoodOrderingProps) {
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => {
-                              const cartItem = cart.items.find(i => i.menu_item_id === item.id)
-                              if (cartItem) {
-                                handleUpdateQuantity(cartItem.id, cartItem.quantity - 1)
-                              }
-                            }}
+                            onClick={() => handleUpdateQuantity(item.id, getCartItemQuantity(item.id) - 1)}
                             className="h-7 w-7 md:h-8 md:w-8 p-0"
                           >
                             <Minus className="w-3 h-3 md:w-4 md:h-4" />
@@ -488,7 +493,7 @@ export default function FoodOrderingInterface({ business }: FoodOrderingProps) {
             <div className="bg-gray-50 rounded-lg p-4">
               <h4 className="font-medium mb-2">Order Summary</h4>
               <div className="space-y-1 text-sm">
-                {cart.items.map(item => (
+                {cartState.items.map(item => (
                   <div key={item.id} className="flex justify-between">
                     <span>{item.quantity}x {item.name}</span>
                     <span>R{(item.price * item.quantity).toFixed(2)}</span>
@@ -527,6 +532,9 @@ export default function FoodOrderingInterface({ business }: FoodOrderingProps) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Floating Cart Button */}
+      <FloatingCartButton />
     </div>
   )
 }

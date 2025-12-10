@@ -3,29 +3,27 @@
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { X, Plus, Minus, Trash2, ShoppingCartIcon as CartIcon } from "lucide-react"
-import { useCart } from '@/lib/contexts/cart-context'
+import { useCart } from '@/lib/context/cart-context'
 import { useRouter } from 'next/navigation'
 
 export function ShoppingCart() {
-    const { state, updateQuantity, removeItem, clearCart, subtotal, total, hasItems, setCartOpen } = useCart()
+    const { cart, isOpen, updateQuantity, removeItem, clearCart, subtotal, total, hasItems, setCartOpen, itemCount } = useCart()
     const router = useRouter()
 
-    const totalItems = state.items.reduce((sum, item) => sum + item.quantity, 0)
-
     // Don't render if cart is hidden
-    if (!state.isOpen) return null
+    if (!isOpen) return null
 
     return (
         <>
             {/* Backdrop */}
             <div
-                className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 transition-opacity duration-300"
+                className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] transition-opacity duration-300"
                 onClick={() => setCartOpen(false)}
             />
 
             {/* Sidebar */}
             <div
-                className="fixed top-0 right-0 h-full w-full sm:w-96 bg-gradient-to-b from-stone-50/95 via-stone-25/90 to-stone-50/95 backdrop-blur-xl border-l border-stone-200/60 shadow-2xl z-50 transform transition-transform duration-300 ease-in-out translate-x-0"
+                className="fixed top-0 right-0 h-full w-full sm:w-96 md:w-[420px] bg-gradient-to-b from-stone-50/95 via-stone-25/90 to-stone-50/95 backdrop-blur-xl border-l border-stone-200/60 shadow-2xl z-[101] transform transition-transform duration-300 ease-in-out translate-x-0"
             >
                 {/* Decorative pattern overlay */}
                 <div className="absolute inset-0 opacity-10 pointer-events-none">
@@ -42,17 +40,17 @@ export function ShoppingCart() {
 
                 <div className="relative h-full flex flex-col">
                     {/* Header */}
-                    <div className="flex items-center justify-between p-4 sm:p-6 border-b border-stone-200/50 bg-white/40 backdrop-blur-sm">
-                        <div className="flex items-center space-x-3">
-                            <CartIcon className="w-6 h-6 text-stone-700" />
-                            <h2 className="text-xl font-bold text-stone-800">Your Order</h2>
-                            {totalItems > 0 && <Badge className="bg-stone-700 text-white">{totalItems}</Badge>}
+                    <div className="flex items-center justify-between p-4 border-b border-stone-200/50 bg-white/40 backdrop-blur-sm">
+                        <div className="flex items-center space-x-2 sm:space-x-3">
+                            <CartIcon className="w-5 h-5 sm:w-6 sm:h-6 text-stone-700" />
+                            <h2 className="text-lg sm:text-xl font-bold text-stone-800">Your Order</h2>
+                            {itemCount > 0 && <Badge className="bg-stone-700 text-white text-xs">{itemCount}</Badge>}
                         </div>
                         <Button
                             variant="ghost"
                             size="sm"
                             onClick={() => setCartOpen(false)}
-                            className="text-stone-600 hover:text-stone-800 hover:bg-stone-100/50"
+                            className="text-stone-600 hover:text-stone-800 hover:bg-stone-100/50 h-8 w-8 p-0"
                         >
                             <X className="w-5 h-5" />
                         </Button>
@@ -60,7 +58,7 @@ export function ShoppingCart() {
 
                     {/* Cart Content */}
                     <div className="flex-1 overflow-y-auto">
-                        {state.items.length === 0 ? (
+                        {cart.items.length === 0 ? (
                             // Empty State - keep existing
                             <div className="flex flex-col items-center justify-center h-full p-6 text-center">
                                 <div className="w-24 h-24 rounded-full bg-stone-100/80 backdrop-blur-sm flex items-center justify-center mb-4 border border-stone-200/50">
@@ -76,11 +74,11 @@ export function ShoppingCart() {
                             </div>
                         ) : (
                             // Cart Items
-                            <div className="p-4 sm:p-6 space-y-4">
-                                {state.items.map((item) => (
+                            <div className="p-3 sm:p-4 md:p-6 space-y-3">
+                                {cart.items.map((item) => (
                                     <div
                                         key={item.id}
-                                        className="relative bg-white/85 backdrop-blur-sm rounded-xl p-4 border border-stone-200/60 shadow-lg overflow-hidden"
+                                        className="relative bg-white/85 backdrop-blur-sm rounded-xl p-3 sm:p-4 border border-stone-200/60 shadow-lg overflow-hidden"
                                     >
                                         {/* Glassmorphism overlay */}
                                         <div className="absolute inset-0 bg-gradient-to-br from-white/50 via-transparent to-transparent rounded-xl"></div>
@@ -140,7 +138,7 @@ export function ShoppingCart() {
                                 ))}
 
                                 {/* Clear Cart Button */}
-                                {state.items.length > 0 && (
+                                {cart.items.length > 0 && (
                                     <Button
                                         variant="ghost"
                                         size="sm"
@@ -157,21 +155,21 @@ export function ShoppingCart() {
 
                     {/* Footer with Subtotal and Checkout */}
                     {hasItems && (
-                        <div className="border-t border-stone-200/50 bg-white/40 backdrop-blur-sm p-4 sm:p-6 space-y-4">
-                            <div className="space-y-2">
+                        <div className="border-t border-stone-200/50 bg-white/40 backdrop-blur-sm p-4 space-y-3">
+                            <div className="space-y-1.5">
                                 <div className="flex justify-between items-center">
-                                    <span className="text-sm font-medium text-stone-600">Subtotal:</span>
-                                    <span className="text-sm font-semibold text-stone-800">R{subtotal.toFixed(2)}</span>
+                                    <span className="text-xs sm:text-sm font-medium text-stone-600">Subtotal:</span>
+                                    <span className="text-xs sm:text-sm font-semibold text-stone-800">R{subtotal.toFixed(2)}</span>
                                 </div>
-                                {state.business?.delivery_fee && (
+                                {cart.business?.delivery_fee && (
                                     <div className="flex justify-between items-center">
-                                        <span className="text-sm font-medium text-stone-600">Delivery:</span>
-                                        <span className="text-sm font-semibold text-stone-800">R{state.business.delivery_fee.toFixed(2)}</span>
+                                        <span className="text-xs sm:text-sm font-medium text-stone-600">Delivery:</span>
+                                        <span className="text-xs sm:text-sm font-semibold text-stone-800">R{cart.business.delivery_fee.toFixed(2)}</span>
                                     </div>
                                 )}
-                                <div className="flex justify-between items-center pt-2 border-t border-stone-200">
-                                    <span className="text-lg font-semibold text-stone-700">Total:</span>
-                                    <span className="text-xl font-bold text-stone-800">R{total.toFixed(2)}</span>
+                                <div className="flex justify-between items-center pt-1.5 border-t border-stone-200">
+                                    <span className="text-base sm:text-lg font-semibold text-stone-700">Total:</span>
+                                    <span className="text-lg sm:text-xl font-bold text-stone-800">R{total.toFixed(2)}</span>
                                 </div>
                             </div>
                             <Button
@@ -179,14 +177,14 @@ export function ShoppingCart() {
                                     setCartOpen(false)
                                     router.push('/checkout')
                                 }}
-                                className="w-full bg-stone-700 hover:bg-stone-800 text-white shadow-lg hover:shadow-xl transition-all duration-200 py-3"
+                                className="w-full bg-stone-700 hover:bg-stone-800 text-white shadow-lg hover:shadow-xl transition-all duration-200 h-12 text-sm sm:text-base"
                                 size="lg"
                             >
                                 Proceed to Checkout
                             </Button>
-                            {state.business && (
-                                <p className="text-xs text-stone-500 text-center">
-                                    {state.business.name}
+                            {cart.business && (
+                                <p className="text-[10px] sm:text-xs text-stone-500 text-center">
+                                    {cart.business.name}
                                 </p>
                             )}
                         </div>

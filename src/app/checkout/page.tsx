@@ -6,7 +6,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 
 import { useCheckout } from '@/lib/hooks'
-import { useCart } from '@/lib/contexts/cart-context'
+import { useCart } from '@/lib/context/cart-context'
 import { BusinessErrorDisplay } from '@/components/business/business-error-boundary'
 
 import { Button } from "@/components/ui/button"

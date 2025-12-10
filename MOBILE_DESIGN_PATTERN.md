@@ -289,6 +289,12 @@ This creates a visually appealing layered effect with depth and modern aesthetic
 7. **Settings** (`/account/settings`)
    - App preferences
 
+8. **Business Application** (`/business/apply`)
+   - Multi-step business application form (8 steps)
+   - Progress bar and step counter
+   - Mobile-optimized with sticky bottom navigation
+   - Reuses desktop form rendering logic with mobile wrapper
+
 ### Pending Implementation 🔄
 The following pages should be refactored to use this pattern:
 
@@ -312,7 +318,10 @@ The following pages should be refactored to use this pattern:
    - Individual booking details
    - Booking management
 
-6. **Any other modal/standalone pages**
+6. **Business Application Success** (`/business/apply/success`)
+   - Success confirmation page
+
+7. **Any other modal/standalone pages**
 
 ---
 

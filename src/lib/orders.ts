@@ -1,5 +1,5 @@
 import { supabase } from './supabase'
-import { CartItem } from './contexts/cart-context'
+import { CartItem } from './services/cart.service'
 import { getOrderUserId } from './constants/users'
 
 interface OrderData {
@@ -124,7 +124,6 @@ export async function createOrder(orderData: OrderData) {
 
     return order
   } catch (error) {
-    console.error('Error creating order:', error)
     throw error
   }
 }
@@ -180,7 +179,6 @@ export async function updateOrderStatus(orderId: string, newStatusCode: string) 
     if (error) throw error
     return true
   } catch (error) {
-    console.error('Error updating order status:', error)
     throw error
   }
 }
@@ -199,7 +197,6 @@ export async function markOrderAsPaid(orderId: string) {
     if (error) throw error
     return true
   } catch (error) {
-    console.error('Error marking order as paid:', error)
     throw error
   }
 }
@@ -224,10 +221,10 @@ export async function getValidStatusTransitions(orderId: string) {
       .limit(1)
     
     if (statusError) throw statusError
-    
+
     return statuses[0]?.can_transition_to || []
-  } catch (error) {
-    console.error('Error getting valid status transitions:', error)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  } catch (_error) {
     return []
   }
 }

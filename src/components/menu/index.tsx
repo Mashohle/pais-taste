@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge"
 import { Plus, Package } from "lucide-react"
 import { useMenuItems } from '@/lib/hooks'
 import { ShoppingCart } from "@/components/cart"
-import { useCart } from '@/lib/contexts/cart-context'
+import { useCart } from '@/lib/context/cart-context'
 import { useMemo } from 'react'
 
 interface ProcessedGroup {
@@ -33,7 +33,7 @@ interface ProcessedGroup {
 
 export function MenuGrid() {
 	const { items, loading, error } = useMenuItems()
-	const { state, addItem } = useCart()
+	const { cart, addItem } = useCart()
 
 	// Process menu items into groups
 	const processedGroups = useMemo(() => {
@@ -78,13 +78,13 @@ export function MenuGrid() {
 	// Memoized counts for performance
 	const itemCounts = useMemo(() => {
 		const counts: Record<string, number> = {}
-		state.items.forEach(item => {
+		cart.items.forEach(item => {
 			// Generate same ID format as handleAddToCart uses
 			const itemId = `${item.menu_item_id}-${item.item_type}`
 			counts[itemId] = (counts[itemId] || 0) + item.quantity
 		})
 		return counts
-	}, [state.items])
+	}, [cart.items])
 
 	if (loading) {
 		return (
@@ -136,22 +136,21 @@ export function MenuGrid() {
 			return
 		}
 
-		// Get business_id from cart state
-		const businessId = state.business?.id
+		// Get business_id from cart
+		const businessId = cart.business?.id
 		if (!businessId) {
 			alert('Please select a business first.')
 			return
 		}
 
-		await addItem({
+		addItem({
 			business_id: businessId,
 			item_type: 'menu_item',
 			name: item.name,
 			description: item.description,
 			price: item.price,
 			quantity: 1,
-			menu_item_id: `${group.id}-${type}`, // Use the same ID format for tracking
-			is_available: true
+			menu_item_id: `${group.id}-${type}` // Use the same ID format for tracking
 		})
 	}
 

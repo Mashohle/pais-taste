@@ -7,9 +7,9 @@ import { useActiveOrders } from '@/lib/hooks'
 import { MobilePageHeader } from '@/components/account/mobile-page-header'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Input } from '@/components/ui/input'
-import { SlidersHorizontal, Search } from 'lucide-react'
+import { SlidersHorizontal } from 'lucide-react'
 import { MobileActiveOrdersFilterSheet } from '@/components/account/mobile-active-orders-filter-sheet'
+import { CustomerLayout } from '@/components/layout/customer-layout'
 
 export default function OrdersPage() {
   const router = useRouter()
@@ -99,27 +99,19 @@ export default function OrdersPage() {
   const [showFilters, setShowFilters] = useState(false)
 
   return (
-    <>
+    <CustomerLayout>
       {/* Mobile View */}
       <div className="md:hidden min-h-screen bg-stone-50">
         <MobilePageHeader
           title="Orders & Bookings"
           subtitle="Track your current orders and appointments"
+          showSearch={true}
+          searchTerm={searchTerm}
+          onSearchChange={setSearchTerm}
+          searchPlaceholder="Search orders, businesses, items..."
         />
-        <div className="bg-stone-50 rounded-t-[2.5rem] -mt-20 relative z-10 min-h-screen pb-24" style={{ boxShadow: 'inset 0 8px 12px -8px rgba(0,0,0,0.15)' }}>
+        <div className="bg-stone-50 rounded-t-[2.5rem] -mt-24 relative z-10 min-h-screen pb-24" style={{ boxShadow: 'inset 0 8px 12px -8px rgba(0,0,0,0.15)' }}>
           <div className="px-5 pt-6">
-            {/* Search Bar */}
-            <div className="mb-4">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-stone-400 w-4 h-4" />
-                <Input
-                  placeholder="Search orders, businesses, items..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 bg-white"
-                />
-              </div>
-            </div>
 
             {/* Top Bar: Count + Filter */}
             <div className="flex items-center justify-between mb-4">
@@ -208,6 +200,6 @@ export default function OrdersPage() {
           onFetchMore={fetchMore}
         />
       </div>
-    </>
+    </CustomerLayout>
   )
 }

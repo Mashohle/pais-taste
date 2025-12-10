@@ -1,19 +1,20 @@
 import { useEffect, useMemo } from 'react'
-import { useCart } from '@/lib/contexts/cart-context'
+import { useCart } from '@/lib/context/cart-context'
 import { useBusiness } from '../business/use-business'
 import { useBusinessErrorHandler } from '../business/use-business-error-handler'
+import { CartItem } from '@/lib/services/cart.service'
 
 export interface CheckoutData {
   business: ReturnType<typeof useBusiness>['business'] | null
-  cartItems: ReturnType<typeof useCart>['state']['items']
+  cartItems: CartItem[]
   subtotal: number
   total: number
   hasItems: boolean
 }
 
 export function useCheckout() {
-  const { state, subtotal, total, hasItems, hasUnavailableItems } = useCart()
-  const businessId = state.business?.id || null
+  const { cart, subtotal, total, hasItems } = useCart()
+  const businessId = cart.business?.id || null
 
   // Get business data using the business hook
   const {
@@ -29,10 +30,10 @@ export function useCheckout() {
     error: validationError
   } = useBusinessErrorHandler()
 
-  // Cart items (only available ones for checkout) - memoized to prevent recreating on every render
+  // Cart items - memoized to prevent recreating on every render
   const orderItems = useMemo(
-    () => state.items.filter(item => item.is_available),
-    [state.items]
+    () => cart.items,
+    [cart.items]
   )
 
   // Validate checkout data
@@ -62,7 +63,7 @@ export function useCheckout() {
           operation: 'validate checkout',
           component: 'useCheckout',
           businessId: businessId,
-          businessName: state.business?.name
+          businessName: cart.business?.name
         }
       )
     }
@@ -83,12 +84,11 @@ export function useCheckout() {
     isLoading: isLoadingBusiness || isValidating,
     hasError: !!businessError || hasValidationError,
     error: businessError || validationError,
-    hasUnavailableItems,
 
     // Convenience getters
     isEmpty: !hasItems,
     businessId: businessId,
-    businessName: state.business?.name || business?.name,
+    businessName: cart.business?.name || business?.name,
     isBusinessActive: business?.is_active || false
   }
 }

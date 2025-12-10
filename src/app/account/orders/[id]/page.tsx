@@ -21,7 +21,7 @@ import {
 import Link from "next/link"
 import { supabase } from "@/lib/supabase"
 import { useCustomerAuth } from "@/lib/context/customer-auth-context"
-import { useCart } from "@/lib/contexts/cart-context"
+import { useCart } from "@/lib/context/cart-context"
 
 interface OrderDetails {
   id: string
@@ -94,7 +94,7 @@ const formatCurrency = (amount: number) => {
 export default function OrderDetailsPage() {
   const params = useParams()
   const { user } = useCustomerAuth()
-  const { addItems } = useCart()
+  const { addItem } = useCart()
   
   const [order, setOrder] = useState<OrderDetails | null>(null)
   const [loading, setLoading] = useState(true)
@@ -176,7 +176,10 @@ export default function OrderDetailsPage() {
       }
 
       // Add all items to cart
-      await addItems(cartItems)
+      // Note: We don't have full business details, so just add items without business context
+      cartItems.forEach(item => {
+        addItem(item)
+      })
 
       // Show success message
       const itemNames = cartItems.map(item => item.name).join(', ')

@@ -3,6 +3,7 @@
 import { ReactNode } from 'react'
 import { MobileLayout } from './mobile-layout'
 import { DesktopLayout } from './desktop-layout'
+import { ShoppingCart } from '@/components/cart'
 
 interface CustomerLayoutProps {
   children: ReactNode
@@ -26,6 +27,9 @@ export function CustomerLayout({ children, showBottomNav = true, showTopNav = tr
           {children}
         </DesktopLayout>
       </div>
+
+      {/* Global Shopping Cart Sidebar */}
+      <ShoppingCart />
     </>
   )
 }

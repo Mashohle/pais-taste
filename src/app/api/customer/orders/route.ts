@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
-import { CartItem } from '@/lib/contexts/cart-context'
+import { CartItem } from '@/lib/services/cart.service'
 
 interface OrderData {
   customer_name: string

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useCart } from '@/lib/contexts/cart-context'
+import { useCart } from '@/lib/context/cart-context'
 import { useRouter } from 'next/navigation'
 
 export interface BusinessSwitchOptions {
@@ -10,7 +10,7 @@ export interface BusinessSwitchOptions {
 }
 
 export function useBusinessSwitching() {
-  const { setBusiness, state } = useCart()
+  const { cart, clearCart } = useCart()
   const [isSwitching, setIsSwitching] = useState(false)
   const router = useRouter()
 
@@ -29,7 +29,7 @@ export function useBusinessSwitching() {
     setIsSwitching(true)
 
     try {
-      const currentBusinessId = state.business?.id
+      const currentBusinessId = cart.business?.id
 
       // If switching to same business, nothing to do
       if (currentBusinessId === targetBusinessId) {
@@ -37,12 +37,12 @@ export function useBusinessSwitching() {
       }
 
       // Check if user has items from different business
-      const hasConflictingItems = state.items.length > 0 && currentBusinessId !== targetBusinessId
+      const hasConflictingItems = cart.items.length > 0 && currentBusinessId !== targetBusinessId
 
       // Confirm if needed
       if (hasConflictingItems && confirmSwitch && !preserveCart) {
         const confirmed = window.confirm(
-          `You have items from ${state.business?.name || 'another business'} in your cart. ` +
+          `You have items from ${cart.business?.name || 'another business'} in your cart. ` +
           `Switching to ${targetBusinessName || 'this business'} will clear your cart. Continue?`
         )
 
@@ -51,13 +51,12 @@ export function useBusinessSwitching() {
         }
       }
 
-      // Switch to new business (cart will be cleared if items exist from different business)
-      await setBusiness({
-        id: targetBusinessId,
-        name: targetBusinessName || '',
-        slug: targetBusinessId,
-        category: 'unknown'
-      })
+      // Clear cart when switching to different business
+      if (hasConflictingItems) {
+        await clearCart()
+      }
+
+      // Note: Business will be set when user adds first item from new business
 
       // Show success notification if requested
       if (showNotification && typeof window !== 'undefined') {
@@ -118,8 +117,8 @@ export function useBusinessSwitching() {
   }
 
   const shouldWarnAboutBusinessSwitch = (targetBusinessId: string): boolean => {
-    const currentBusinessId = state.business?.id
-    return state.items.length > 0 && currentBusinessId !== targetBusinessId
+    const currentBusinessId = cart.business?.id
+    return cart.items.length > 0 && currentBusinessId !== targetBusinessId
   }
 
   return {
