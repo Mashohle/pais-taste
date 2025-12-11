@@ -12,6 +12,7 @@ interface MobilePageHeaderProps {
   searchPlaceholder?: string
   showBackButton?: boolean
   backHref?: string
+  onBackClick?: () => void
 }
 
 export function MobilePageHeader({
@@ -22,9 +23,18 @@ export function MobilePageHeader({
   onSearchChange,
   searchPlaceholder = 'Search...',
   showBackButton = false,
-  backHref = '/'
+  backHref = '/',
+  onBackClick
 }: MobilePageHeaderProps) {
   const router = useRouter()
+
+  const handleBackClick = () => {
+    if (onBackClick) {
+      onBackClick()
+    } else {
+      router.push(backHref)
+    }
+  }
 
   return (
     <div className="bg-white pb-24 relative">
@@ -33,7 +43,7 @@ export function MobilePageHeader({
         {showBackButton && (
           <div className="mb-4">
             <button
-              onClick={() => router.push(backHref)}
+              onClick={handleBackClick}
               className="p-2 -ml-2 hover:bg-stone-100 rounded-full transition-colors flex items-center justify-center"
             >
               <ChevronLeft className="w-6 h-6 text-stone-700" />

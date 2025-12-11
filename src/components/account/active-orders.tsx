@@ -225,7 +225,7 @@ export default function ActiveOrdersTab({
                           {businessType.name} ({typeOrders.length})
                         </h3>
                       </div>
-                      <div className="space-y-4 ml-10">
+                      <div className="space-y-2.5 ml-10">
                         {typeOrders.map((order) => (
                           <UniversalOrderCard
                             key={order.id}
@@ -240,7 +240,7 @@ export default function ActiveOrdersTab({
                 })
               ) : (
                 /* Show all orders in selected type */
-                <div className="space-y-4">
+                <div className="space-y-2.5">
                   {orders.map((order) => (
                     <UniversalOrderCard
                       key={order.id}

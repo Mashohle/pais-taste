@@ -5,10 +5,13 @@ import { useRouter } from "next/navigation"
 import OrderHistoryTab from '@/components/account/order-history'
 import { useOrderHistory } from '@/lib/hooks/use-order-history'
 import { MobilePageHeader } from '@/components/account/mobile-page-header'
+import { MobileHistoryCard } from '@/components/account/mobile-history-card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { SlidersHorizontal } from 'lucide-react'
+import { SlidersHorizontal, History } from 'lucide-react'
 import { MobileHistoryFilterSheet } from '@/components/account/mobile-history-filter-sheet'
+import { Card, CardContent } from '@/components/ui/card'
+import Link from 'next/link'
 
 export default function HistoryPage() {
   const router = useRouter()
@@ -141,33 +144,75 @@ export default function HistoryPage() {
               </Button>
             </div>
 
-            <OrderHistoryTab
-              orders={filteredOrders}
-              ordersByType={ordersByType}
-              stats={stats}
-              loading={loading}
-              error={error}
-              hasMore={hasMore}
-              searchTerm={searchTerm}
-              selectedBusinessType={selectedBusinessType}
-              selectedStatus={selectedStatus}
-              selectedBusiness={selectedBusiness}
-              selectedTimeRange={selectedTimeRange}
-              uniqueBusinesses={uniqueBusinesses}
-              activeFilterCount={activeFilterCount}
-              onSearchChange={setSearchTerm}
-              onBusinessTypeChange={setSelectedBusinessType}
-              onStatusChange={setSelectedStatus}
-              onBusinessChange={setSelectedBusiness}
-              onTimeRangeChange={setSelectedTimeRange}
-              onClearFilters={clearFilters}
-              onViewDetails={handleViewDetails}
-              onReorder={handleReorder}
-              onRebook={handleRebook}
-              onWriteReview={handleWriteReview}
-              onFetchMore={fetchMore}
-              onRefetch={refetch}
-            />
+            {/* Mobile Order Cards */}
+            {loading && filteredOrders.length === 0 ? (
+              <div className="space-y-4">
+                {[...Array(3)].map((_, i) => (
+                  <Card key={i} className="h-32 animate-pulse bg-stone-100" />
+                ))}
+              </div>
+            ) : error ? (
+              <Card className="bg-red-50/50 backdrop-blur-sm border-red-200">
+                <CardContent className="text-center py-12">
+                  <History className="w-12 h-12 text-red-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold text-red-800 mb-2">
+                    Error Loading History
+                  </h3>
+                  <p className="text-red-600 mb-4">{error}</p>
+                  <Button
+                    variant="outline"
+                    onClick={refetch}
+                    className="border-red-300 text-red-700 hover:bg-red-100"
+                  >
+                    Try Again
+                  </Button>
+                </CardContent>
+              </Card>
+            ) : filteredOrders.length > 0 ? (
+              <div className="space-y-2.5">
+                {filteredOrders.map((order) => (
+                  <MobileHistoryCard
+                    key={order.id}
+                    order={order}
+                    onViewDetails={() => handleViewDetails(order.id, order.type)}
+                    onReorder={() => handleReorder(order.id, order.business_id)}
+                    onRebook={() => handleRebook(order.id, order.business_id)}
+                    onWriteReview={() => handleWriteReview(order.id, order.business_id, order.business_name)}
+                  />
+                ))}
+
+                {/* Load More Button */}
+                {hasMore && !loading && (
+                  <div className="flex justify-center mt-4">
+                    <Button
+                      onClick={fetchMore}
+                      variant="outline"
+                      className="flex items-center gap-2 border-stone-300 text-stone-700 hover:bg-stone-100"
+                    >
+                      <History className="w-4 h-4" />
+                      Load More
+                    </Button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <Card className="bg-gradient-to-r from-stone-100/95 via-stone-50/60 to-stone-25/20 backdrop-blur-md border-stone-200/50 shadow-2xl">
+                <CardContent className="text-center py-12">
+                  <History className="w-16 h-16 text-stone-400 mx-auto mb-4" />
+                  <h3 className="text-xl font-semibold text-stone-800 mb-2">
+                    No History Yet
+                  </h3>
+                  <p className="text-stone-600 mb-6">
+                    Start exploring local businesses!
+                  </p>
+                  <Link href="/directory">
+                    <Button className="bg-stone-700 hover:bg-stone-800 text-white">
+                      Discover Businesses
+                    </Button>
+                  </Link>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Filter Sheet */}
             <MobileHistoryFilterSheet

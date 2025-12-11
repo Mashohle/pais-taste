@@ -125,8 +125,8 @@ export default function UniversalOrderCard({
   const businessColor = getBusinessColor(order.business_category)
 
   return (
-    <Card className="hover:shadow-md transition-shadow">
-      <CardContent className="p-6">
+    <Card className="p-4 hover:shadow-md transition-shadow active:scale-[0.98]">
+      <CardContent className="p-0">
         <div className="flex items-start justify-between mb-4">
           <div className="flex items-center space-x-3">
             {/* Business Category Icon */}
