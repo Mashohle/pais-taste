@@ -12,8 +12,6 @@ import Image from 'next/image'
 import { useAdminLogin } from '@/lib/hooks'
 
 function AdminLoginForm() {
-  console.log('🔑 LOGIN PAGE: AdminLogin component rendering')
-
   const {
     email,
     password,
@@ -25,8 +23,6 @@ function AdminLoginForm() {
     handleSubmit,
     canSubmit
   } = useAdminLogin()
-
-  console.log('🔑 LOGIN PAGE: Login hook state:', { error, isLoading, canSubmit })
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-stone-50 via-stone-100 to-stone-200 flex items-center justify-center p-4 relative overflow-hidden">

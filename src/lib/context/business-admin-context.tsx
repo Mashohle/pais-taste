@@ -1,8 +1,8 @@
 "use client"
 
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react'
-import { createClient } from '@/lib/supabase/client'
-import { User } from '@supabase/supabase-js'
+import { User, Session } from '@supabase/supabase-js'
+import { BaseAuthProvider, useBaseAuth } from './base-auth-context'
 
 interface UserBusiness {
   id: string
@@ -56,18 +56,16 @@ interface BusinessProfileData {
 }
 
 interface BusinessAdminContextType {
-  // Auth state
+  // Base auth state
   user: User | null
-  profile: UserProfile | null
-  session: null
-
-  // Business-specific data
-  userBusinesses: UserBusiness[]
-  currentBusiness: UserBusiness | null
-
-  // Loading states
+  session: Session | null
   loading: boolean
   error: string | null
+
+  // Business-specific state
+  profile: UserProfile | null
+  userBusinesses: UserBusiness[]
+  currentBusiness: UserBusiness | null
 
   // Computed values
   isAuthenticated: boolean
@@ -82,18 +80,28 @@ interface BusinessAdminContextType {
 
 const BusinessAdminContext = createContext<BusinessAdminContextType | undefined>(undefined)
 
-export function BusinessAdminProvider({ children }: { children: ReactNode }) {
+function BusinessAdminProviderInner({ children }: { children: ReactNode }) {
+  // Get base auth state from BaseAuthProvider
+  const baseAuth = useBaseAuth()
+  const { user, session, loading: baseLoading, error: baseError } = baseAuth
+
+  // Business-specific state
   const [data, setData] = useState<BusinessProfileData | null>(null)
   const [currentBusiness, setCurrentBusiness] = useState<UserBusiness | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const supabase = createClient()
+  const [profileLoading, setProfileLoading] = useState(true) // Start as true to prevent flash
+  const [profileError, setProfileError] = useState<string | null>(null)
 
-  // Fetch combined business profile (user + profile + businesses in one call)
+  // Fetch combined business profile (profile + businesses via API)
   const fetchBusinessProfile = useCallback(async () => {
+    if (!user) {
+      setData(null)
+      setProfileLoading(false)
+      return
+    }
+
     try {
-      setLoading(true)
-      setError(null)
+      setProfileLoading(true)
+      setProfileError(null)
 
       const response = await fetch('/api/auth/business-profile')
 
@@ -115,44 +123,56 @@ export function BusinessAdminProvider({ children }: { children: ReactNode }) {
 
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch business profile'
-      setError(errorMessage)
+      setProfileError(errorMessage)
       setData(null)
     } finally {
-      setLoading(false)
+      setProfileLoading(false)
     }
-  }, [])
+  }, [user])
 
-  // Initialize on mount - only run once
+  // Fetch profile when user changes
   useEffect(() => {
-    fetchBusinessProfile()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+    if (user) {
+      fetchBusinessProfile()
+    } else {
+      setData(null)
+      setProfileLoading(false)
+    }
+  }, [user, fetchBusinessProfile])
 
-  // Sign out function
+  // Sign out
   const signOut = async () => {
-    await supabase.auth.signOut()
+    await baseAuth.signOut()
     setData(null)
     setCurrentBusiness(null)
   }
 
+  // Refetch both base auth and business profile
+  const refetch = async () => {
+    await baseAuth.refetch()
+    await fetchBusinessProfile()
+  }
+
   // Computed values
-  const isAuthenticated = !!data?.user
+  const isAuthenticated = !!user && !!session
   const isBusinessUser = data?.isBusinessUser || false
   const hasBusinessAccess = (data?.businesses?.length || 0) > 0
 
+  // Combined loading and error states
+  const loading = baseLoading || profileLoading
+  const error = baseError || profileError
+
   const value: BusinessAdminContextType = {
-    // Auth state
-    user: data?.user || null,
-    profile: data?.profile || null,
-    session: null,
-
-    // Business-specific data
-    userBusinesses: data?.businesses || [],
-    currentBusiness,
-
-    // Loading states
+    // Base auth state
+    user,
+    session,
     loading,
     error,
+
+    // Business-specific state
+    profile: data?.profile || null,
+    userBusinesses: data?.businesses || [],
+    currentBusiness,
 
     // Computed values
     isAuthenticated,
@@ -161,14 +181,23 @@ export function BusinessAdminProvider({ children }: { children: ReactNode }) {
 
     // Actions
     signOut,
-    refetch: fetchBusinessProfile,
-    setCurrentBusiness
+    refetch,
+    setCurrentBusiness,
   }
 
   return (
     <BusinessAdminContext.Provider value={value}>
       {children}
     </BusinessAdminContext.Provider>
+  )
+}
+
+// Export the full provider with BaseAuthProvider wrapper
+export function BusinessAdminProvider({ children }: { children: ReactNode }) {
+  return (
+    <BaseAuthProvider>
+      <BusinessAdminProviderInner>{children}</BusinessAdminProviderInner>
+    </BaseAuthProvider>
   )
 }
 

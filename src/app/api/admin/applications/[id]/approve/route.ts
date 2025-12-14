@@ -118,16 +118,19 @@ export async function POST(
 
     // Try to create user account, or find existing user
     let userId = null
-    const userPassword = application.owner_password || Math.random().toString(36).slice(-12)
+    let isNewUser = false
+    const temporaryPassword = Math.random().toString(36).slice(-12) + Math.random().toString(36).slice(-12).toUpperCase() + '!@#'
+
     const { data: authUser, error: authError } = await adminSupabase.auth.admin.createUser({
       email: application.owner_email,
-      password: userPassword,
+      password: temporaryPassword,
       email_confirm: true,
       user_metadata: {
         first_name: application.owner_first_name,
         last_name: application.owner_last_name,
         phone: application.owner_phone,
-        id_number: application.owner_id_number
+        id_number: application.owner_id_number,
+        role_id: 'business-owner'
       }
     })
 
@@ -147,6 +150,7 @@ export async function POST(
       }
     } else if (authUser?.user) {
       userId = authUser.user.id
+      isNewUser = true
       console.log('Created new user:', authUser.user.email)
     }
 
@@ -228,15 +232,59 @@ export async function POST(
       )
     }
 
-    // TODO: Send welcome email to business owner
-    // TODO: Send notification about new business to platform admin
+    // Send email to business owner
+    let emailSent = false
+
+    if (userId) {
+      try {
+        if (isNewUser) {
+          // NEW users: Send Invite email (uses Supabase's "Invite User" template)
+          // This takes them to password setup page
+          const { error: inviteError } = await adminSupabase.auth.admin.inviteUserByEmail(
+            application.owner_email,
+            {
+              redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/auth/callback?next=/auth/set-password`
+            }
+          )
+
+          if (inviteError) {
+            console.error('❌ Failed to send invite email:', inviteError)
+          } else {
+            console.log('✅ Invite email sent to NEW user:', application.owner_email)
+            console.log('   → Will redirect to: /auth/set-password')
+            emailSent = true
+          }
+        } else {
+          // EXISTING users: Send Magic Link email (uses Supabase's "Magic Link" template)
+          // This takes them directly to admin portal
+          const { error: magicLinkError } = await adminSupabase.auth.signInWithOtp({
+            email: application.owner_email,
+            options: {
+              emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/auth/callback?next=/admin`
+            }
+          })
+
+          if (magicLinkError) {
+            console.error('❌ Failed to send magic link email:', magicLinkError)
+          } else {
+            console.log('✅ Magic link sent to EXISTING user:', application.owner_email)
+            console.log('   → Will redirect to: /admin')
+            emailSent = true
+          }
+        }
+      } catch (emailError) {
+        console.error('❌ Failed to send email:', emailError)
+        // Don't fail the approval if email fails
+      }
+    }
 
     return NextResponse.json({
       message: 'Application approved successfully',
       business_id: business.id,
-      user_created: !!authUser?.user,
+      user_created: isNewUser,
       user_found: !!userId,
-      business_user_created: !!userId
+      business_user_created: !!userId,
+      email_sent: emailSent
     })
 
   } catch (error) {

@@ -42,8 +42,6 @@ export interface BusinessApplicationFormData {
   ownerEmail: string
   ownerPhone: string
   ownerIdNumber: string
-  ownerPassword: string
-  ownerPasswordConfirm: string
 
   // Business Address (Headquarters)
   streetAddress: string
@@ -85,7 +83,6 @@ interface ApplicationSubmissionData {
   owner_email: string
   owner_phone?: string
   owner_id_number?: string
-  owner_password?: string
   street_address?: string
   suburb?: string
   city?: string
@@ -160,8 +157,6 @@ const initialFormData: BusinessApplicationFormData = {
   ownerEmail: '',
   ownerPhone: '',
   ownerIdNumber: '',
-  ownerPassword: '',
-  ownerPasswordConfirm: '',
 
   // Business Address
   streetAddress: '',
@@ -262,16 +257,6 @@ export function BusinessApplicationProvider({ children }: BusinessApplicationPro
       }
     }
 
-    // Password validation
-    if (field === 'ownerPassword' && value && (value as string).length < 6) {
-      return 'Password must be at least 6 characters'
-    }
-
-    // Password confirmation
-    if (field === 'ownerPasswordConfirm' && value !== formData.ownerPassword) {
-      return 'Passwords do not match'
-    }
-
     return null
   }, [formData])
 
@@ -292,9 +277,7 @@ export function BusinessApplicationProvider({ children }: BusinessApplicationPro
       const fields: (keyof BusinessApplicationFormData)[] = [
         'ownerFirstName',
         'ownerLastName',
-        'ownerEmail',
-        'ownerPassword',
-        'ownerPasswordConfirm'
+        'ownerEmail'
       ]
       fields.forEach(field => {
         const error = validateField(field)
@@ -389,7 +372,6 @@ export function BusinessApplicationProvider({ children }: BusinessApplicationPro
       owner_email: formData.ownerEmail,
       owner_phone: formData.ownerPhone,
       owner_id_number: formData.ownerIdNumber,
-      owner_password: formData.ownerPassword,
 
       street_address: formData.streetAddress,
       suburb: formData.suburb,

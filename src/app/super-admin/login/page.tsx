@@ -86,9 +86,17 @@ function SuperAdminLoginForm() {
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-medium text-stone-700">
-                  Password
-                </label>
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-medium text-stone-700">
+                    Password
+                  </label>
+                  <Link
+                    href="/super-admin/forgot-password"
+                    className="text-xs text-stone-600 hover:text-stone-800 font-medium"
+                  >
+                    Forgot password?
+                  </Link>
+                </div>
                 <div className="relative">
                   <Lock className="absolute left-3 top-3 h-4 w-4 text-stone-400" />
                   <Input

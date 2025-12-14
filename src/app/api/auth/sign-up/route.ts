@@ -22,7 +22,8 @@ export async function POST(request: NextRequest) {
         data: {
           full_name,
           phone
-        }
+        },
+        emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`
       }
     })
 

@@ -266,36 +266,12 @@ function BusinessApplicationForm() {
           <p className="text-xs text-slate-500 mt-1">Required for verification purposes</p>
         </div>
 
-        <div className="border-t pt-6">
-          <h4 className="font-medium text-slate-900 mb-4">Account Password</h4>
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">Password</label>
-              <Input
-                type="password"
-                value={formData.ownerPassword}
-                onChange={(e) => updateFormData('ownerPassword', e.target.value)}
-                placeholder="Choose a secure password"
-              />
-              {validationErrors.ownerPassword ? (
-                <p className="text-xs text-red-600 mt-1">{validationErrors.ownerPassword}</p>
-              ) : (
-                <p className="text-xs text-slate-500 mt-1">Minimum 6 characters</p>
-              )}
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">Confirm Password</label>
-              <Input
-                type="password"
-                value={formData.ownerPasswordConfirm}
-                onChange={(e) => updateFormData('ownerPasswordConfirm', e.target.value)}
-                placeholder="Confirm your password"
-              />
-              {validationErrors.ownerPasswordConfirm ? (
-                <p className="text-xs text-red-600 mt-1">{validationErrors.ownerPasswordConfirm}</p>
-              ) : (
-                <p className="text-xs text-slate-500 mt-1">Must match the password above</p>
-              )}
+        <div className="bg-blue-50 p-4 rounded-lg border border-blue-200 mt-6">
+          <div className="flex items-start space-x-2">
+            <AlertCircle className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+            <div className="text-sm text-blue-900">
+              <p className="font-medium mb-1">Account Setup</p>
+              <p>Once your application is approved, you&apos;ll receive an email with a secure link to set up your password and access your business admin portal.</p>
             </div>
           </div>
         </div>
@@ -992,7 +968,7 @@ function BusinessApplicationForm() {
       case 1:
         return !!(formData.businessName && formData.businessCategory)
       case 2:
-        return !!(formData.ownerFirstName && formData.ownerLastName && formData.ownerEmail && formData.ownerPassword && formData.ownerPasswordConfirm)
+        return !!(formData.ownerFirstName && formData.ownerLastName && formData.ownerEmail)
       case 8:
         return !!(formData.agreeToTerms && formData.agreeToCommission)
       default:

@@ -1,6 +1,7 @@
 'use client'
 
 import { CustomerAuthProvider } from "@/lib/context/customer-auth-context"
+import { SuperAdminAuthProvider } from "@/lib/context/super-admin-context"
 import { BusinessDataProvider } from "@/lib/context/business-data-context"
 import { CartProvider } from "@/lib/context/cart-context"
 import { NotificationProvider } from '@/lib/contexts/notification-context'
@@ -14,6 +15,18 @@ interface AppProvidersProps {
 export function AppProviders({ children }: AppProvidersProps) {
   const pathname = usePathname()
   const isAdminRoute = pathname?.startsWith('/admin')
+  const isSuperAdminRoute = pathname?.startsWith('/super-admin')
+
+  // Super admin routes use SuperAdminAuthProvider
+  if (isSuperAdminRoute) {
+    return (
+      <SuperAdminAuthProvider>
+        <NotificationProvider>
+          {children}
+        </NotificationProvider>
+      </SuperAdminAuthProvider>
+    )
+  }
 
   // Admin routes have their own BusinessAdminProvider, but still need CustomerAuthProvider
   // for shared hooks like useOrders

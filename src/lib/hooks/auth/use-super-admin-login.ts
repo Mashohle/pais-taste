@@ -1,8 +1,8 @@
 "use client"
 
 import { useState, useEffect } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
-import { useCustomerAuth } from '@/lib/context/customer-auth-context'
+import { useRouter } from 'next/navigation'
+import { useSuperAdminAuth } from '@/lib/context/super-admin-context'
 
 interface SuperAdminLoginFormData {
   email: string
@@ -18,8 +18,7 @@ interface SuperAdminLoginState {
 
 export function useSuperAdminLogin() {
   const router = useRouter()
-  const searchParams = useSearchParams()
-  const { user, profile, refetch } = useCustomerAuth()
+  const { user, isSuperAdmin, loading: authLoading } = useSuperAdminAuth()
 
   const [state, setState] = useState<SuperAdminLoginState>({
     formData: {
@@ -31,24 +30,15 @@ export function useSuperAdminLogin() {
     error: ''
   })
 
-  // Redirect if already logged in as super admin
+  // Redirect if already logged in as super admin (wait for loading to complete)
   useEffect(() => {
-    if (user && profile && profile.role === 'super_admin') {
-      console.log('🚀 Super Admin Login: User already super admin, redirecting')
+    // Don't redirect while still loading - wait for complete auth state
+    if (authLoading) return
+
+    if (user && isSuperAdmin) {
       router.push('/super-admin')
     }
-  }, [user, profile, router])
-
-  // Handle error messages from URL parameters
-  useEffect(() => {
-    const errorParam = searchParams.get('error')
-    if (errorParam === 'insufficient_permissions') {
-      setState(prev => ({
-        ...prev,
-        error: 'Access denied: Super admin permissions required.'
-      }))
-    }
-  }, [searchParams])
+  }, [user, isSuperAdmin, authLoading, router])
 
   // Update form data
   const updateFormData = (field: keyof SuperAdminLoginFormData, value: string) => {
@@ -80,12 +70,10 @@ export function useSuperAdminLogin() {
   // Form submission handler
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setLoading(true)
     setError('')
+    setLoading(true)
 
     try {
-      console.log('🔐 Super Admin Login: Attempting sign in via API')
-
       const response = await fetch('/api/auth/sign-in', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -98,30 +86,38 @@ export function useSuperAdminLogin() {
       const data = await response.json()
 
       if (!response.ok) {
-        throw new Error(data.error || 'Login failed')
-      }
-
-      console.log('✅ Super Admin Login: Sign in successful')
-
-      // Check if user has super admin role and redirect with proper auth sync
-      if (data.profile?.role === 'super_admin') {
-        console.log('🔀 Super Admin Login: Redirecting to dashboard with auth sync')
-
-        // Refresh profile to ensure auth context is in sync
-        await refetch()
-
-        // Small delay to ensure auth context has updated
-        setTimeout(() => {
-          router.push('/super-admin')
-        }, 150)
+        setError(data.error || 'Login failed')
+        setLoading(false)
       } else {
-        throw new Error('Access denied: Super admin permissions required')
-      }
+        // Check if user has super admin role
+        if (data.profile && data.profile.role_id === 'super-admin') {
+          // Now verify they actually have super admin access by checking the super-admin-profile endpoint
+          try {
+            const superAdminProfileResponse = await fetch('/api/auth/super-admin-profile')
+            const superAdminProfileData = await superAdminProfileResponse.json()
 
-    } catch (err) {
-      console.error('Super admin login error:', err)
-      setError(err instanceof Error ? err.message : 'Invalid credentials or insufficient permissions')
-    } finally {
+            if (superAdminProfileData.profile && superAdminProfileData.profile.role_id === 'super-admin') {
+              // User has both role AND super admin access - proceed to super admin
+              // Use window.location for clean state initialization
+              // Keep loading state active - it will show until the new page loads
+              window.location.href = '/super-admin'
+            } else {
+              // User has the role but profile doesn't confirm
+              setError('Access denied: Super admin permissions required.')
+              setLoading(false)
+            }
+          } catch {
+            // If super admin profile check fails, show generic error
+            setError('Failed to verify super admin access. Please try again.')
+            setLoading(false)
+          }
+        } else {
+          setError('Access denied: Super admin permissions required.')
+          setLoading(false)
+        }
+      }
+    } catch {
+      setError('Network error. Please try again.')
       setLoading(false)
     }
   }

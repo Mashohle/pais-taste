@@ -16,17 +16,20 @@ export function BusinessAdminGuard({ children, fallback }: BusinessAdminGuardPro
 
   useEffect(() => {
     // Don't redirect from login page
-    if (pathname === '/admin/login' || loading) return
+    if (pathname === '/admin/login') return
 
+    // Don't redirect while loading - wait for complete auth state
+    if (loading) return
+
+    // Check authentication
     if (!isAuthenticated) {
-      console.log('Not authenticated, redirecting to login')
       router.push('/admin/login')
       return
     }
 
+    // If authenticated but no business access, just show error UI below
+    // Don't redirect back to login to avoid error flash
     if (!hasBusinessAccess) {
-      console.log('Not business access, redirecting with error')
-      router.push('/admin/login?error=no_business_access')
       return
     }
   }, [isAuthenticated, hasBusinessAccess, loading, pathname, router])

@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
-import { useSuperAdminAuth } from '@/lib/hooks'
+import { useSuperAdminAuth } from '@/lib/context/super-admin-context'
 
 interface SuperAdminGuardProps {
   children: React.ReactNode
@@ -16,17 +16,20 @@ export function SuperAdminGuard({ children, fallback }: SuperAdminGuardProps) {
 
   useEffect(() => {
     // Don't redirect from login page
-    if (pathname === '/super-admin/login' || loading) return
+    if (pathname === '/super-admin/login') return
 
+    // Don't redirect while loading - wait for complete auth state
+    if (loading) return
+
+    // Check authentication
     if (!isAuthenticated) {
-      console.log('Not authenticated, redirecting to login')
       router.push('/super-admin/login')
       return
     }
 
+    // If authenticated but not super admin, just show error UI below
+    // Don't redirect back to login to avoid error flash
     if (!isSuperAdmin) {
-      console.log('Not super admin, redirecting with error')
-      router.push('/super-admin/login?error=insufficient_permissions')
       return
     }
   }, [isAuthenticated, isSuperAdmin, loading, pathname, router])
@@ -39,10 +42,10 @@ export function SuperAdminGuard({ children, fallback }: SuperAdminGuardProps) {
   // Show loading state
   if (loading) {
     return fallback || (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-stone-50 via-stone-100 to-stone-200 flex items-center justify-center">
         <div className="text-center">
-          <div className="w-16 h-16 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-slate-600">Verifying super admin access...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-stone-600 mx-auto mb-4"></div>
+          <p className="text-stone-700">Verifying super admin access...</p>
         </div>
       </div>
     )
@@ -51,16 +54,16 @@ export function SuperAdminGuard({ children, fallback }: SuperAdminGuardProps) {
   // Show error state
   if (error && !isSuperAdmin) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-stone-50 via-stone-100 to-stone-200 flex items-center justify-center">
         <div className="text-center max-w-md">
           <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <span className="text-red-600 text-2xl">⚠️</span>
           </div>
-          <h2 className="text-xl font-semibold text-slate-900 mb-2">Access Denied</h2>
-          <p className="text-slate-600 mb-6">{error}</p>
+          <h2 className="text-xl font-semibold text-stone-900 mb-2">Access Denied</h2>
+          <p className="text-stone-600 mb-6">{error}</p>
           <button
             onClick={() => router.push('/super-admin/login')}
-            className="bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700 transition-colors"
+            className="bg-stone-600 text-white px-6 py-2 rounded-lg hover:bg-stone-700 transition-colors"
           >
             Go to Login
           </button>

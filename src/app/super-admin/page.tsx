@@ -17,102 +17,14 @@ import {
   Eye,
   ArrowUpRight,
   Activity,
-  MapPin
+  MapPin,
+  Loader2
 } from "lucide-react"
+import { useSuperAdminDashboard } from '@/lib/hooks/super-admin'
 
 export default function SuperAdminDashboard() {
   const [timeRange, setTimeRange] = useState('7d')
-
-  // Mock platform data - in real app would fetch from APIs
-  const platformMetrics = {
-    totalBusinesses: 1247,
-    businessGrowth: 12.5,
-    activeUsers: 15632,
-    userGrowth: 8.3,
-    monthlyRevenue: 897500, // R897,500
-    revenueGrowth: 15.7,
-    totalOrders: 3821,
-    orderGrowth: 22.1
-  }
-
-  const businessStats = {
-    pending: 3,
-    active: 1184,
-    suspended: 8,
-    categories: [
-      { name: 'Food & Restaurant', count: 542, growth: 18.2 },
-      { name: 'Retail & Shopping', count: 389, growth: 15.4 },
-      { name: 'Services', count: 316, growth: 9.8 }
-    ]
-  }
-
-  const recentActivity = [
-    {
-      id: '1',
-      type: 'business_application',
-      business: 'Mama Zulu\'s Kitchen',
-      category: 'Food',
-      action: 'Applied for approval - Soweto location',
-      time: '2 hours ago',
-      status: 'pending'
-    },
-    {
-      id: '2', 
-      type: 'dispute',
-      business: 'Elite Car Wash',
-      user: 'John Doe',
-      action: 'Order dispute raised',
-      time: '4 hours ago',
-      status: 'urgent'
-    },
-    {
-      id: '3',
-      type: 'business_approved',
-      business: 'African Crafts Co',
-      category: 'Retail',
-      action: 'Business approved and activated',
-      time: '6 hours ago',
-      status: 'completed'
-    },
-    {
-      id: '4',
-      type: 'large_order',
-      business: 'Spice Route Restaurant',
-      action: 'Large catering order placed (R24,500)',
-      time: '8 hours ago',
-      status: 'info'
-    }
-  ]
-
-  const topBusinesses = [
-    {
-      name: 'Pai\'s Taste Food Special',
-      category: 'Food',
-      location: 'Montana, Pretoria',
-      revenue: 154200, // R154,200
-      orders: 234,
-      rating: 4.8,
-      growth: 23.5
-    },
-    {
-      name: 'Urban Style Boutique',
-      category: 'Retail',
-      location: 'Sandton, Johannesburg', 
-      revenue: 128300, // R128,300
-      orders: 189,
-      rating: 4.6,
-      growth: 18.2
-    },
-    {
-      name: 'Premium Auto Detailing',
-      category: 'Services',
-      location: 'Umhlanga, Durban',
-      revenue: 96500, // R96,500
-      orders: 156,
-      rating: 4.9,
-      growth: 31.8
-    }
-  ]
+  const { data, loading, error } = useSuperAdminDashboard(timeRange)
 
   const getActivityIcon = (type: string) => {
     switch (type) {
@@ -134,13 +46,45 @@ export default function SuperAdminDashboard() {
     }
   }
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="text-center">
+          <Loader2 className="w-12 h-12 animate-spin text-indigo-600 mx-auto mb-4" />
+          <p className="text-slate-600">Loading dashboard...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="text-center max-w-md">
+          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <AlertTriangle className="w-8 h-8 text-red-600" />
+          </div>
+          <h2 className="text-xl font-semibold text-slate-900 mb-2">Failed to Load Dashboard</h2>
+          <p className="text-slate-600 mb-6">{error}</p>
+          <Button onClick={() => window.location.reload()} className="bg-indigo-600 hover:bg-indigo-700">
+            Reload Page
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
+  if (!data) {
+    return null
+  }
+
   return (
     <div className="space-y-6">
       {/* Page Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-slate-900">Platform Dashboard</h1>
-          <p className="text-slate-600 mt-1">Monitor and manage the LocalHub marketplace</p>
+          <p className="text-slate-600 mt-1">Monitor and manage the SideHusl marketplace</p>
         </div>
         <div className="flex items-center space-x-3">
           <select
@@ -171,13 +115,13 @@ export default function SuperAdminDashboard() {
           </CardHeader>
           <CardContent>
             <div className="flex items-center justify-between">
-              <p className="text-2xl font-bold text-slate-900">{platformMetrics.totalBusinesses.toLocaleString()}</p>
+              <p className="text-2xl font-bold text-slate-900">{data.platformMetrics.totalBusinesses.toLocaleString()}</p>
               <div className="flex items-center text-green-600">
                 <TrendingUp className="w-4 h-4 mr-1" />
-                <span className="text-sm font-medium">+{platformMetrics.businessGrowth}%</span>
+                <span className="text-sm font-medium">+{data.platformMetrics.businessGrowth}%</span>
               </div>
             </div>
-            <p className="text-xs text-slate-600 mt-1">+{Math.round(platformMetrics.totalBusinesses * platformMetrics.businessGrowth / 100)} this week</p>
+            <p className="text-xs text-slate-600 mt-1">+{Math.round(data.platformMetrics.totalBusinesses * data.platformMetrics.businessGrowth / 100)} this week</p>
           </CardContent>
         </Card>
 
@@ -190,13 +134,13 @@ export default function SuperAdminDashboard() {
           </CardHeader>
           <CardContent>
             <div className="flex items-center justify-between">
-              <p className="text-2xl font-bold text-slate-900">{platformMetrics.activeUsers.toLocaleString()}</p>
+              <p className="text-2xl font-bold text-slate-900">{data.platformMetrics.activeUsers.toLocaleString()}</p>
               <div className="flex items-center text-green-600">
                 <TrendingUp className="w-4 h-4 mr-1" />
-                <span className="text-sm font-medium">+{platformMetrics.userGrowth}%</span>
+                <span className="text-sm font-medium">+{data.platformMetrics.userGrowth}%</span>
               </div>
             </div>
-            <p className="text-xs text-slate-600 mt-1">+{Math.round(platformMetrics.activeUsers * platformMetrics.userGrowth / 100)} this week</p>
+            <p className="text-xs text-slate-600 mt-1">+{Math.round(data.platformMetrics.activeUsers * data.platformMetrics.userGrowth / 100)} this week</p>
           </CardContent>
         </Card>
 
@@ -209,13 +153,13 @@ export default function SuperAdminDashboard() {
           </CardHeader>
           <CardContent>
             <div className="flex items-center justify-between">
-              <p className="text-2xl font-bold text-slate-900">R{platformMetrics.monthlyRevenue.toLocaleString('en-ZA')}</p>
+              <p className="text-2xl font-bold text-slate-900">R{data.platformMetrics.monthlyRevenue.toLocaleString('en-ZA')}</p>
               <div className="flex items-center text-green-600">
                 <TrendingUp className="w-4 h-4 mr-1" />
-                <span className="text-sm font-medium">+{platformMetrics.revenueGrowth}%</span>
+                <span className="text-sm font-medium">+{data.platformMetrics.revenueGrowth}%</span>
               </div>
             </div>
-            <p className="text-xs text-slate-600 mt-1">+R{Math.round(platformMetrics.monthlyRevenue * platformMetrics.revenueGrowth / 100).toLocaleString('en-ZA')} vs last month</p>
+            <p className="text-xs text-slate-600 mt-1">+R{Math.round(data.platformMetrics.monthlyRevenue * data.platformMetrics.revenueGrowth / 100).toLocaleString('en-ZA')} vs last month</p>
           </CardContent>
         </Card>
 
@@ -228,13 +172,13 @@ export default function SuperAdminDashboard() {
           </CardHeader>
           <CardContent>
             <div className="flex items-center justify-between">
-              <p className="text-2xl font-bold text-slate-900">{platformMetrics.totalOrders.toLocaleString()}</p>
+              <p className="text-2xl font-bold text-slate-900">{data.platformMetrics.totalOrders.toLocaleString()}</p>
               <div className="flex items-center text-green-600">
                 <TrendingUp className="w-4 h-4 mr-1" />
-                <span className="text-sm font-medium">+{platformMetrics.orderGrowth}%</span>
+                <span className="text-sm font-medium">+{data.platformMetrics.orderGrowth}%</span>
               </div>
             </div>
-            <p className="text-xs text-slate-600 mt-1">+{Math.round(platformMetrics.totalOrders * platformMetrics.orderGrowth / 100)} this week</p>
+            <p className="text-xs text-slate-600 mt-1">+{Math.round(data.platformMetrics.totalOrders * data.platformMetrics.orderGrowth / 100)} this week</p>
           </CardContent>
         </Card>
       </div>
@@ -256,15 +200,15 @@ export default function SuperAdminDashboard() {
               {/* Business Status Summary */}
               <div className="grid grid-cols-3 gap-4">
                 <div className="text-center p-3 bg-yellow-50 rounded-lg">
-                  <p className="text-2xl font-bold text-yellow-600">{businessStats.pending}</p>
+                  <p className="text-2xl font-bold text-yellow-600">{data.businessStats.pending}</p>
                   <p className="text-sm text-yellow-700">Pending Approval</p>
                 </div>
                 <div className="text-center p-3 bg-green-50 rounded-lg">
-                  <p className="text-2xl font-bold text-green-600">{businessStats.active}</p>
+                  <p className="text-2xl font-bold text-green-600">{data.businessStats.active}</p>
                   <p className="text-sm text-green-700">Active</p>
                 </div>
                 <div className="text-center p-3 bg-red-50 rounded-lg">
-                  <p className="text-2xl font-bold text-red-600">{businessStats.suspended}</p>
+                  <p className="text-2xl font-bold text-red-600">{data.businessStats.suspended}</p>
                   <p className="text-sm text-red-700">Suspended</p>
                 </div>
               </div>
@@ -272,7 +216,7 @@ export default function SuperAdminDashboard() {
               {/* Category Breakdown */}
               <div className="space-y-3">
                 <h4 className="font-medium text-slate-900">Categories</h4>
-                {businessStats.categories.map((category, index) => (
+                {data.businessStats.categories.map((category, index) => (
                   <div key={index} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
                     <div>
                       <p className="font-medium text-slate-900">{category.name}</p>
@@ -304,7 +248,7 @@ export default function SuperAdminDashboard() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {recentActivity.map((activity) => (
+              {data.recentActivity.map((activity) => (
                 <div key={activity.id} className="flex items-start space-x-3 p-3 hover:bg-slate-50 rounded-lg transition-colors">
                   <div className={`p-2 rounded-lg ${getActivityColor(activity.status)}`}>
                     {getActivityIcon(activity.type)}
@@ -314,9 +258,11 @@ export default function SuperAdminDashboard() {
                     <p className="text-sm text-slate-600">{activity.action}</p>
                     <p className="text-xs text-slate-500 mt-1">{activity.time}</p>
                   </div>
-                  <Badge variant="outline" className="text-xs">
-                    {activity.category}
-                  </Badge>
+                  {activity.category && (
+                    <Badge variant="outline" className="text-xs">
+                      {activity.category}
+                    </Badge>
+                  )}
                 </div>
               ))}
             </div>
@@ -350,7 +296,7 @@ export default function SuperAdminDashboard() {
                 </tr>
               </thead>
               <tbody>
-                {topBusinesses.map((business, index) => (
+                {data.topBusinesses.map((business, index) => (
                   <tr key={index} className="border-b border-slate-100 hover:bg-slate-50">
                     <td className="py-4 px-2">
                       <div className="font-medium text-slate-900">{business.name}</div>

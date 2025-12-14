@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useState, useCallback, ReactNode } from 'react'
 import { User, Session } from '@supabase/supabase-js'
-import { createClient } from '@/lib/supabase/client'
+import { BaseAuthProvider, useBaseAuth } from './base-auth-context'
 
 export interface UserProfile {
   id: string
@@ -24,19 +24,15 @@ export interface UserProfile {
   updated_at: string
 }
 
-interface CustomerProfileData {
-  user: User
-  session: Session
-  profile: UserProfile
-}
-
 interface CustomerAuthContextType {
-  // State
+  // Base auth state
   user: User | null
   session: Session | null
-  profile: UserProfile | null
   loading: boolean
   error: string | null
+
+  // Customer-specific state
+  profile: UserProfile | null
 
   // Computed values
   isAuthenticated: boolean
@@ -58,113 +54,107 @@ interface CustomerAuthProviderProps {
   children: ReactNode
 }
 
-export function CustomerAuthProvider({ children }: CustomerAuthProviderProps) {
-  const [data, setData] = useState<CustomerProfileData | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const supabase = createClient()
+function CustomerAuthProviderInner({ children }: CustomerAuthProviderProps) {
+  // Get base auth state from BaseAuthProvider
+  const baseAuth = useBaseAuth()
+  const { user, session, loading: baseLoading, error: baseError } = baseAuth
+
+  // Customer-specific state
+  const [profile, setProfile] = useState<UserProfile | null>(null)
+  const [profileLoading, setProfileLoading] = useState(false)
+  const [profileError, setProfileError] = useState<string | null>(null)
 
   // Fetch user profile via API
   const fetchProfile = useCallback(async () => {
+    if (!user) {
+      setProfile(null)
+      setProfileLoading(false)
+      return
+    }
+
     try {
-      setLoading(true)
-      setError(null)
+      setProfileLoading(true)
+      setProfileError(null)
 
       const response = await fetch('/api/auth/profile')
 
       if (!response.ok) {
         if (response.status === 401) {
-          setData(null)
+          setProfile(null)
           return
         }
         throw new Error(`API error: ${response.status}`)
       }
 
       const profileData = await response.json()
-      setData(profileData)
+      setProfile(profileData.profile)
 
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch profile'
-      setError(errorMessage)
-      setData(null)
+      setProfileError(errorMessage)
+      setProfile(null)
     } finally {
-      setLoading(false)
+      setProfileLoading(false)
     }
-  }, [])
+  }, [user])
 
-  // Initialize auth state
+  // Fetch profile when user changes
   useEffect(() => {
-    const initAuth = async () => {
-      // Get authenticated user from Supabase (secure method)
-      const { data: { user } } = await supabase.auth.getUser()
-
-      if (user) {
-        // If we have a user, fetch the profile from API
-        await fetchProfile()
-      } else {
-        setData(null)
-        setLoading(false)
-      }
+    if (user) {
+      fetchProfile()
+    } else {
+      setProfile(null)
+      setProfileLoading(false)
     }
-
-    initAuth()
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (event === 'SIGNED_IN' && session?.user) {
-          await fetchProfile()
-        } else if (event === 'SIGNED_OUT') {
-          setData(null)
-          setLoading(false)
-        } else if (event === 'TOKEN_REFRESHED' && session) {
-          // Update session without refetching profile
-          if (data) {
-            setData({ ...data, session })
-          }
-        }
-      }
-    )
-
-    return () => subscription.unsubscribe()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [user, fetchProfile])
 
   // Sign out
   const signOut = async () => {
-    await supabase.auth.signOut()
-    setData(null)
+    await baseAuth.signOut()
+    setProfile(null)
+  }
+
+  // Refetch both base auth and profile
+  const refetch = async () => {
+    await baseAuth.refetch()
+    await fetchProfile()
   }
 
   // Helper functions
   const getDisplayName = (): string => {
-    if (data?.profile?.full_name) return data.profile.full_name
-    if (data?.user?.user_metadata?.full_name) return data.user.user_metadata.full_name
-    if (data?.user?.email) return data.user.email.split('@')[0]
+    if (profile?.full_name) return profile.full_name
+    if (user?.user_metadata?.full_name) return user.user_metadata.full_name
+    if (user?.email) return user.email.split('@')[0]
     return 'User'
   }
 
   const isProfileComplete = (): boolean => {
-    if (!data?.profile) return false
+    if (!profile) return false
     return !!(
-      data.profile.full_name &&
-      data.profile.phone &&
-      data.profile.preferred_pickup_location
+      profile.full_name &&
+      profile.phone &&
+      profile.preferred_pickup_location
     )
   }
 
   // Computed values
-  const isAuthenticated = !!data?.user && !!data?.session
-  const isSuperAdmin = data?.profile?.role === 'super_admin'
-  const isBusinessUser = data?.profile?.role === 'business_owner' || data?.profile?.role === 'business_admin'
+  const isAuthenticated = !!user && !!session
+  const isSuperAdmin = profile?.role === 'super_admin'
+  const isBusinessUser = profile?.role === 'business_owner' || profile?.role === 'business_admin'
+
+  // Combined loading and error states
+  const loading = baseLoading || profileLoading
+  const error = baseError || profileError
 
   const value: CustomerAuthContextType = {
-    // State
-    user: data?.user || null,
-    session: data?.session || null,
-    profile: data?.profile || null,
+    // Base auth state
+    user,
+    session,
     loading,
     error,
+
+    // Customer-specific state
+    profile,
 
     // Computed values
     isAuthenticated,
@@ -173,7 +163,7 @@ export function CustomerAuthProvider({ children }: CustomerAuthProviderProps) {
 
     // Actions
     signOut,
-    refetch: fetchProfile,
+    refetch,
 
     // Helpers
     getDisplayName,
@@ -184,6 +174,15 @@ export function CustomerAuthProvider({ children }: CustomerAuthProviderProps) {
     <CustomerAuthContext.Provider value={value}>
       {children}
     </CustomerAuthContext.Provider>
+  )
+}
+
+// Export the full provider with BaseAuthProvider wrapper
+export function CustomerAuthProvider({ children }: CustomerAuthProviderProps) {
+  return (
+    <BaseAuthProvider>
+      <CustomerAuthProviderInner>{children}</CustomerAuthProviderInner>
+    </BaseAuthProvider>
   )
 }
 

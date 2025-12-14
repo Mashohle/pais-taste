@@ -16,8 +16,6 @@ export default function AdminLayout({
 }: {
     children: React.ReactNode
 }) {
-    console.log('📄 LAYOUT: AdminLayout called')
-
     return (
         <BusinessAdminProvider>
             <BusinessAdminGuard>
@@ -28,27 +26,17 @@ export default function AdminLayout({
 }
 
 function AdminLayoutContent({ children }: { children: React.ReactNode }) {
-    console.log('🔧 LAYOUT CONTENT: AdminLayoutContent called')
-
     const router = useRouter()
     const pathname = usePathname()
 
     // ALWAYS call hooks first - React rule
-    const { signOut, user, userBusinesses, currentBusiness, setCurrentBusiness, loading, error } = useBusinessAdminAuth()
+    const { signOut, user, userBusinesses, currentBusiness, setCurrentBusiness, loading } = useBusinessAdminAuth()
     const [sidebarOpen, setSidebarOpen] = useState(false)
 
     // CRITICAL: If we're on login page, just return children without any auth logic
     if (pathname === '/admin/login') {
-        console.log('🔧 LAYOUT CONTENT: Login page detected, returning children without auth')
         return <>{children}</>
     }
-
-    console.log('🔧 LAYOUT CONTENT: Auth state:', {
-        userCount: userBusinesses.length,
-        loading,
-        hasUser: !!user,
-        pathname
-    })
 
     const handleSignOut = async () => {
         await signOut()
@@ -167,8 +155,8 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
 
     const navigationItems = getCategoryNavigation()
 
-    // Show loading state while business auth is loading OR when we have user but no businesses yet
-    if (loading || (user && userBusinesses.length === 0 && !error)) {
+    // Show loading state while business auth is loading (but not on login page)
+    if (loading && pathname !== '/admin/login') {
         return (
             <div className="min-h-screen bg-gradient-to-br from-stone-50 to-stone-100 flex items-center justify-center">
                 <div className="text-center">
@@ -180,8 +168,8 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
         )
     }
 
-    // Show no business access message only if we're not loading and have confirmed no businesses
-    if (!loading && userBusinesses.length === 0) {
+    // Show no business access message only if we're not loading, have a user, confirmed no businesses, and not on login page
+    if (!loading && user && userBusinesses.length === 0 && pathname !== '/admin/login') {
         return (
             <div className="min-h-screen bg-gradient-to-br from-stone-50 to-stone-100 flex items-center justify-center">
                 <div className="text-center">
