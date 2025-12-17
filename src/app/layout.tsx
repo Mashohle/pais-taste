@@ -8,6 +8,43 @@ const inter = Inter({ subsets: ['latin'] })
 export const metadata: Metadata = {
 	title: "SideHusl",
 	description: 'Multi-tenant platform for local businesses to manage orders and operations',
+	manifest: '/manifest.json',
+	themeColor: '#57534e',
+	appleWebApp: {
+		capable: true,
+		statusBarStyle: 'default',
+		title: 'SideHusl',
+	},
+	formatDetection: {
+		telephone: false,
+	},
+	openGraph: {
+		type: 'website',
+		siteName: 'SideHusl',
+		title: 'SideHusl - Food & Services Marketplace',
+		description: 'Order food, book services, and discover local businesses in South Africa',
+	},
+	twitter: {
+		card: 'summary',
+		title: 'SideHusl - Food & Services Marketplace',
+		description: 'Order food, book services, and discover local businesses in South Africa',
+	},
+	viewport: {
+		width: 'device-width',
+		initialScale: 1,
+		maximumScale: 5,
+		userScalable: true,
+	},
+	icons: {
+		icon: [
+			{ url: '/icon-192x192.png', sizes: '192x192', type: 'image/png' },
+			{ url: '/icon-512x512.png', sizes: '512x512', type: 'image/png' },
+		],
+		apple: [
+			{ url: '/icon-152x152.png', sizes: '152x152', type: 'image/png' },
+			{ url: '/icon-192x192.png', sizes: '192x192', type: 'image/png' },
+		],
+	},
 }
 
 export default function RootLayout({
