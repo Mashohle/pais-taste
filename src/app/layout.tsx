@@ -1,15 +1,22 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
 import { AppProviders } from '@/components/providers/app-providers'
 
 const inter = Inter({ subsets: ['latin'] })
 
+export const viewport: Viewport = {
+	width: 'device-width',
+	initialScale: 1,
+	maximumScale: 5,
+	userScalable: true,
+	themeColor: '#57534e',
+}
+
 export const metadata: Metadata = {
 	title: "SideHusl",
 	description: 'Multi-tenant platform for local businesses to manage orders and operations',
 	manifest: '/manifest.json',
-	themeColor: '#57534e',
 	appleWebApp: {
 		capable: true,
 		statusBarStyle: 'default',
@@ -28,12 +35,6 @@ export const metadata: Metadata = {
 		card: 'summary',
 		title: 'SideHusl - Food & Services Marketplace',
 		description: 'Order food, book services, and discover local businesses in South Africa',
-	},
-	viewport: {
-		width: 'device-width',
-		initialScale: 1,
-		maximumScale: 5,
-		userScalable: true,
 	},
 	icons: {
 		icon: [
