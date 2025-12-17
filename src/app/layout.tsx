@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
 import { AppProviders } from '@/components/providers/app-providers'
+import { InstallPrompt } from '@/components/pwa/install-prompt'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -76,6 +77,7 @@ export default function RootLayout({
 							{children}
 						</div>
 					</main>
+					<InstallPrompt />
 				</AppProviders>
 			</body>
 		</html>
